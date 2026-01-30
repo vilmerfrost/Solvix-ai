@@ -95,10 +95,49 @@ export async function GET(request: Request) {
           continue;
         }
 
-        console.log(`   📦 Found ${failedFiles.length} file(s)`);
+        console.log(`   📦 Found ${failedFiles.length} file(s) in Azure`);
+        
+        // ============================================
+        // DUPLICATE PROTECTION - Check existing files
+        // ============================================
+        const { data: existingDocs } = await supabase
+          .from("documents")
+          .select("azure_original_filename, filename")
+          .eq("user_id", userId)
+          .not("azure_original_filename", "is", null);
+        
+        const existingPaths = new Set(
+          (existingDocs || []).map(d => d.azure_original_filename)
+        );
+        const existingFilenames = new Set(
+          (existingDocs || []).map(d => d.filename)
+        );
+        
+        // Filter out duplicates
+        const newFiles = failedFiles.filter(f => {
+          const isDuplicatePath = existingPaths.has(f.full_path);
+          const isDuplicateName = existingFilenames.has(f.name);
+          
+          if (isDuplicatePath || isDuplicateName) {
+            return false; // Skip silently in cron (avoid log spam)
+          }
+          return true;
+        });
+        
+        const skippedCount = failedFiles.length - newFiles.length;
+        if (skippedCount > 0) {
+          console.log(`   🔒 Skipped ${skippedCount} duplicate(s)`);
+        }
+        
+        if (newFiles.length === 0) {
+          console.log(`   ✓ All files already imported`);
+          continue;
+        }
+        
+        console.log(`   📥 Importing ${newFiles.length} new file(s)`);
 
-        // Process each file
-        for (const fileInfo of failedFiles) {
+        // Process each NEW file only
+        for (const fileInfo of newFiles) {
           try {
             console.log(`   📄 Processing ${fileInfo.name}`);
 

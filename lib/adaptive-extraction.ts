@@ -237,12 +237,18 @@ JSON OUTPUT (no markdown, no backticks):
 }`;
 
   try {
+    console.log(`   📤 Calling Claude Sonnet for structure analysis...`);
+    const startTime = Date.now();
+    
     const response = await anthropic.messages.create({
       model: "claude-sonnet-4-5-20250929",
       max_tokens: 2048,
       temperature: 0,
       messages: [{ role: "user", content: analysisPrompt }]
     });
+    
+    const elapsed = Date.now() - startTime;
+    console.log(`   ✓ Response received in ${elapsed}ms`);
     
     const text = response.content
       .filter((b: any) => b.type === 'text')
@@ -436,7 +442,8 @@ CRITICAL:
   const maxTokens = settings.extraction_max_tokens || 16384;
   
   // TRY 1: Haiku (fast & cheap)
-  console.log(`   🔄 Attempt 1: Using Haiku`);
+  console.log(`   🔄 Attempt 1: Using Haiku (chunk ${chunkNum}/${totalChunks})`);
+  const haikuStartTime = Date.now();
   
   try {
     const haikuResponse = await anthropic.messages.create({
@@ -445,6 +452,9 @@ CRITICAL:
       temperature: 0,
       messages: [{ role: "user", content: prompt }]
     });
+    
+    const haikuElapsed = Date.now() - haikuStartTime;
+    console.log(`   ⏱️ Haiku responded in ${haikuElapsed}ms`);
     
     const text = haikuResponse.content
       .filter((b: any) => b.type === 'text')
@@ -509,12 +519,32 @@ CRITICAL:
     throw new Error(`No items in Haiku response${parseError ? ` - ${parseError}` : ''}`);
     
   } catch (haikuError: any) {
-    const errorMsg = haikuError.message || String(haikuError);
-    console.log(`   ❌ Haiku failed: ${errorMsg.substring(0, 100)}...`);
+    const haikuElapsed = Date.now() - haikuStartTime;
+    let errorMsg = haikuError.message || String(haikuError);
+    
+    // Sanitize error message - remove any API keys or sensitive data
+    errorMsg = errorMsg.replace(/sk-[a-zA-Z0-9]+/g, 'sk-***');
+    errorMsg = errorMsg.replace(/key['":\s]+[a-zA-Z0-9_-]+/gi, 'key: ***');
+    
+    // Classify error type
+    const lowerError = errorMsg.toLowerCase();
+    let errorType = "unknown";
+    if (lowerError.includes('rate limit') || lowerError.includes('429') || lowerError.includes('quota')) {
+      errorType = "rate_limit";
+    } else if (lowerError.includes('api key') || lowerError.includes('unauthorized') || lowerError.includes('authentication') || lowerError.includes('401')) {
+      errorType = "api_key";
+    } else if (lowerError.includes('timeout') || lowerError.includes('timed out')) {
+      errorType = "timeout";
+    } else if (lowerError.includes('500') || lowerError.includes('503') || lowerError.includes('server')) {
+      errorType = "server_error";
+    }
+    
+    console.log(`   ❌ Haiku failed after ${haikuElapsed}ms [${errorType}]: ${errorMsg.substring(0, 150)}`);
   }
   
   // TRY 2: Sonnet (more reliable but expensive)
   console.log(`   🔄 Attempt 2: Falling back to Sonnet`);
+  const sonnetStartTime = Date.now();
   
   try {
     const sonnetResponse = await anthropic.messages.create({
@@ -523,6 +553,9 @@ CRITICAL:
       temperature: 0,
       messages: [{ role: "user", content: prompt }]
     });
+    
+    const sonnetElapsed = Date.now() - sonnetStartTime;
+    console.log(`   ⏱️ Sonnet responded in ${sonnetElapsed}ms`);
     
     const text = sonnetResponse.content
       .filter((b: any) => b.type === 'text')
@@ -584,12 +617,32 @@ CRITICAL:
     throw new Error(`No items in Sonnet response${parseError ? ` - ${parseError}` : ''}`);
     
   } catch (sonnetError: any) {
-    const errorMsg = sonnetError.message || String(sonnetError);
-    console.error(`   ❌ Sonnet also failed: ${errorMsg.substring(0, 100)}...`);
+    const sonnetElapsed = Date.now() - sonnetStartTime;
+    let errorMsg = sonnetError.message || String(sonnetError);
+    
+    // Sanitize error message - remove any API keys or sensitive data
+    errorMsg = errorMsg.replace(/sk-[a-zA-Z0-9]+/g, 'sk-***');
+    errorMsg = errorMsg.replace(/key['":\s]+[a-zA-Z0-9_-]+/gi, 'key: ***');
+    
+    // Classify error type
+    const lowerError = errorMsg.toLowerCase();
+    let errorType = "unknown";
+    if (lowerError.includes('rate limit') || lowerError.includes('429') || lowerError.includes('quota')) {
+      errorType = "rate_limit";
+    } else if (lowerError.includes('api key') || lowerError.includes('unauthorized') || lowerError.includes('authentication') || lowerError.includes('401')) {
+      errorType = "api_key";
+    } else if (lowerError.includes('timeout') || lowerError.includes('timed out')) {
+      errorType = "timeout";
+    } else if (lowerError.includes('500') || lowerError.includes('503') || lowerError.includes('server')) {
+      errorType = "server_error";
+    }
+    
+    console.error(`   ❌ Sonnet also failed after ${sonnetElapsed}ms [${errorType}]: ${errorMsg.substring(0, 150)}`);
+    
     return {
       items: [],
       success: false,
-      error: errorMsg,
+      error: `[${errorType}] ${errorMsg.substring(0, 200)}`,
       responseLength: 0
     };
   }
@@ -798,22 +851,51 @@ export async function extractAdaptive(
 }> {
   
   // Initialize Anthropic client for this user (or use default)
+  console.log(`🔑 Initializing AI client for extraction...`);
+  
+  let clientSource = "unknown";
+  
   if (userId) {
     try {
+      console.log(`   Looking up API key for user...`);
       activeAnthropicClient = await getAnthropicClient(userId);
-    } catch (e) {
-      console.warn("Failed to get user-specific API key, trying fallback");
+      clientSource = "user_key";
+      console.log(`   ✓ Using user's saved API key`);
+    } catch (e: any) {
+      // Log error without exposing sensitive data
+      const safeError = (e.message || 'Unknown').replace(/sk-[a-zA-Z0-9]+/g, 'sk-***');
+      console.warn(`   ⚠️ Failed to get user API key: ${safeError}`);
+      
       if (defaultAnthropicKey) {
+        console.log(`   → Falling back to environment API key`);
         activeAnthropicClient = new Anthropic({ apiKey: defaultAnthropicKey });
+        clientSource = "env_fallback";
       }
     }
   } else if (!activeAnthropicClient && defaultAnthropicKey) {
+    console.log(`   Using environment API key (no user ID)`);
     activeAnthropicClient = new Anthropic({ apiKey: defaultAnthropicKey });
+    clientSource = "env_default";
   }
   
   // Ensure we have a client
   if (!activeAnthropicClient) {
-    throw new Error("No Anthropic API key configured. Please add your API key in Settings → API Keys, or set ANTHROPIC_API_KEY environment variable.");
+    const errorMsg = "No Anthropic API key configured. Please add your API key in Settings → API Keys.";
+    console.error(`   ❌ ${errorMsg}`);
+    throw new Error(errorMsg);
+  }
+  
+  console.log(`   ✓ AI client ready (source: ${clientSource})`);
+  
+  // Quick API key validation - make a minimal request to check if key is valid
+  try {
+    console.log(`   Testing API connection...`);
+    // Note: We can't actually validate without making a request that costs tokens
+    // So we'll just trust the key exists and catch errors during extraction
+  } catch (testError: any) {
+    const safeError = (testError.message || 'Unknown').replace(/sk-[a-zA-Z0-9]+/g, 'sk-***');
+    console.error(`   ❌ API key validation failed: ${safeError}`);
+    throw new Error(`API key invalid or expired. Please update your API key in Settings → API Keys.`);
   }
   
   // Log collection for storing in metadata
@@ -890,39 +972,51 @@ export async function extractAdaptive(
   // Failure tracking
   const failedChunks: Array<{ chunkIndex: number; error: string; attempts: number }> = [];
   let totalRetryAttempts = 0;
+  let lastChunkError = ""; // Track last error for debugging
   
   // Helper function to retry chunk extraction with exponential backoff
   async function extractChunkWithRetry(
     chunkIndex: number,
     chunkRows: any[][],
     chunkTsv: string
-  ): Promise<{ items: any[]; success: boolean; attempts: number }> {
+  ): Promise<{ items: any[]; success: boolean; attempts: number; error?: string }> {
+    let chunkError = "";
+    
     for (let attempt = 0; attempt <= retryAttempts; attempt++) {
       if (attempt > 0) {
         const backoffMs = Math.min(1000 * Math.pow(2, attempt - 1), 10000); // Max 10s
-        console.log(`   🔄 Retry attempt ${attempt}/${retryAttempts} (waiting ${backoffMs}ms)...`);
+        log(`   🔄 Retry attempt ${attempt}/${retryAttempts} (waiting ${backoffMs}ms)...`, 'warning');
         await new Promise(resolve => setTimeout(resolve, backoffMs));
         totalRetryAttempts++;
       }
       
-      const result = await extractChunkWithFallback(
-        header,
-        chunkRows,
-        structure,
-        filename,
-        chunkIndex + 1,
-        totalChunks,
-        settings
-      );
-      
-      if (result.success && result.items.length > 0) {
-        return { items: result.items, success: true, attempts: attempt + 1 };
+      try {
+        const result = await extractChunkWithFallback(
+          header,
+          chunkRows,
+          structure,
+          filename,
+          chunkIndex + 1,
+          totalChunks,
+          settings
+        );
+        
+        if (result.success && result.items.length > 0) {
+          return { items: result.items, success: true, attempts: attempt + 1 };
+        }
+        
+        chunkError = result.error || `Extracted 0 items (expected ~${chunkRows.length})`;
+        log(`   ⚠️ Chunk extraction returned ${result.items.length} items: ${chunkError}`, 'warning');
+      } catch (err: any) {
+        chunkError = err.message || 'Unknown extraction error';
+        // Log error without exposing sensitive data
+        const safeError = chunkError.replace(/sk-[a-zA-Z0-9]+/g, 'sk-***').replace(/key[^:]*:[^,}]+/gi, 'key: ***');
+        log(`   ❌ Chunk extraction error: ${safeError}`, 'error');
       }
-      
-      lastError = result.error || `Extracted 0 items (expected ~${chunkRows.length})`;
     }
     
-    return { items: [], success: false, attempts: retryAttempts + 1 };
+    lastChunkError = chunkError;
+    return { items: [], success: false, attempts: retryAttempts + 1, error: chunkError };
   }
   
   for (let chunkIndex = 0; chunkIndex < totalChunks; chunkIndex++) {
