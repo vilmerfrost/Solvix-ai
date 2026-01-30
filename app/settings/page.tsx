@@ -18,7 +18,10 @@ import {
   FolderOutput,
   Check,
   ChevronDown,
-  ChevronRight
+  ChevronRight,
+  Key,
+  Bot,
+  ExternalLink
 } from "lucide-react";
 
 interface AzureInputFolder {
@@ -928,6 +931,82 @@ export default function SettingsPage() {
                   >
                     {saving ? "Sparar..." : "Spara verifieringsinställningar"}
                   </button>
+                </div>
+
+                {/* API Keys & Model Selection */}
+                <div className="bg-white rounded-lg border border-gray-200 p-6">
+                  <div className="flex items-start gap-3 mb-4">
+                    <Bot className="w-5 h-5 text-blue-600 mt-1" />
+                    <div className="flex-1">
+                      <h2 className="text-xl font-bold text-gray-900 mb-2">
+                        AI-modeller & API-nycklar
+                      </h2>
+                      <p className="text-sm text-gray-600">
+                        Välj vilken AI-modell som ska användas för dokumentextraktion och hantera dina API-nycklar.
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="space-y-4">
+                    {/* Model Selection Info */}
+                    <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                      <div className="flex items-center gap-2 text-blue-700 mb-2">
+                        <Zap className="w-4 h-4" />
+                        <p className="text-sm font-medium">Multi-Model OCR</p>
+                      </div>
+                      <p className="text-xs text-blue-600">
+                        Välj mellan Google Gemini, OpenAI GPT-4o eller Anthropic Claude för att extrahera data från dina dokument. 
+                        Varje modell har olika styrkor - Gemini rekommenderas för digitala PDFer, GPT-4o för handskrivna dokument.
+                      </p>
+                    </div>
+
+                    {/* Quick Actions */}
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      <Link
+                        href="/settings/api-keys"
+                        className="flex items-center justify-between p-4 bg-gray-50 hover:bg-gray-100 border border-gray-200 rounded-lg transition-colors"
+                      >
+                        <div className="flex items-center gap-3">
+                          <Key className="w-5 h-5 text-gray-600" />
+                          <div>
+                            <p className="font-medium text-gray-900">API-nycklar</p>
+                            <p className="text-xs text-gray-500">Lägg till dina AI-leverantörsnycklar</p>
+                          </div>
+                        </div>
+                        <ExternalLink className="w-4 h-4 text-gray-400" />
+                      </Link>
+
+                      <Link
+                        href="/dashboard"
+                        className="flex items-center justify-between p-4 bg-gray-50 hover:bg-gray-100 border border-gray-200 rounded-lg transition-colors"
+                      >
+                        <div className="flex items-center gap-3">
+                          <Bot className="w-5 h-5 text-gray-600" />
+                          <div>
+                            <p className="font-medium text-gray-900">Välj modell</p>
+                            <p className="text-xs text-gray-500">Välj modell vid bearbetning</p>
+                          </div>
+                        </div>
+                        <ExternalLink className="w-4 h-4 text-gray-400" />
+                      </Link>
+                    </div>
+
+                    {/* Provider Status */}
+                    <div className="p-4 bg-gray-50 border border-gray-200 rounded-lg">
+                      <p className="text-xs text-gray-500 mb-2">Tillgängliga leverantörer</p>
+                      <div className="flex items-center gap-4">
+                        <span className="flex items-center gap-1 text-sm">
+                          <span className="text-lg">🔷</span> Google Gemini
+                        </span>
+                        <span className="flex items-center gap-1 text-sm">
+                          <span className="text-lg">🟢</span> OpenAI
+                        </span>
+                        <span className="flex items-center gap-1 text-sm">
+                          <span className="text-lg">🟠</span> Anthropic
+                        </span>
+                      </div>
+                    </div>
+                  </div>
                 </div>
               </div>
             )}

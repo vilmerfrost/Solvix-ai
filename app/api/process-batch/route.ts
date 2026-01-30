@@ -3,7 +3,7 @@ import { NextResponse } from "next/server";
 
 export async function POST(req: Request) {
   try {
-    const { documentIds } = await req.json();
+    const { documentIds, modelId, customInstructions } = await req.json();
     
     if (!documentIds || !Array.isArray(documentIds) || documentIds.length === 0) {
       return NextResponse.json(
@@ -13,6 +13,8 @@ export async function POST(req: Request) {
     }
     
     console.log(`📦 Batch processing requested for ${documentIds.length} documents`);
+    if (modelId) console.log(`   Model: ${modelId}`);
+    if (customInstructions) console.log(`   Custom instructions provided`);
     
     const supabase = createServiceRoleClient();
     
@@ -80,12 +82,19 @@ export async function POST(req: Request) {
         const docId = validIds[i];
         console.log(`📊 Triggering processing ${i + 1}/${validIds.length} (${docId})`);
         
+        // Build URL with optional parameters
+        const processUrl = new URL(`${baseUrl}/api/process`);
+        processUrl.searchParams.set('id', docId);
+        if (modelId) processUrl.searchParams.set('modelId', modelId);
+        
         // ✅ FIXED: Added ?id=${docId} to pass document ID!
-        await fetch(`${baseUrl}/api/process?id=${docId}`, {
-          method: "GET",
+        // Custom instructions sent via POST body if present
+        await fetch(processUrl.toString(), {
+          method: customInstructions ? "POST" : "GET",
           headers: {
             "Content-Type": "application/json"
-          }
+          },
+          body: customInstructions ? JSON.stringify({ customInstructions }) : undefined
         }).catch(err => console.error(`Failed to trigger process ${i + 1}:`, err));
         
         // Small delay between documents (1 second)

@@ -1,8 +1,10 @@
 "use client";
 
-import { useState } from "react";
-import { Loader2 } from "lucide-react";
+import { useState, useEffect } from "react";
+import { Loader2, ChevronDown, ChevronUp, Bot, Key, AlertCircle } from "lucide-react";
 import { BatchResultModal } from "./batch-result-modal";
+import { ModelSelector, useConfiguredProviders } from "./model-selector";
+import Link from "next/link";
 
 interface BatchProcessButtonProps {
   uploadedDocs: any[];
@@ -14,6 +16,29 @@ export function BatchProcessButton({ uploadedDocs, onSuccess }: BatchProcessButt
   const [selectedDocs, setSelectedDocs] = useState<Set<string>>(new Set());
   const [showResultModal, setShowResultModal] = useState(false);
   const [batchResults, setBatchResults] = useState<any>(null);
+  
+  // Model selection state
+  const [showAdvanced, setShowAdvanced] = useState(false);
+  const [selectedModel, setSelectedModel] = useState('gemini-3-flash');
+  const [customInstructions, setCustomInstructions] = useState('');
+  const { providers: configuredProviders, loading: loadingProviders } = useConfiguredProviders();
+  
+  // Load user preferences
+  useEffect(() => {
+    async function loadPreferences() {
+      try {
+        const response = await fetch('/api/user/preferences');
+        const data = await response.json();
+        if (data.success) {
+          setSelectedModel(data.preferredModel || 'gemini-2.0-flash');
+          setCustomInstructions(data.customInstructions || '');
+        }
+      } catch (err) {
+        console.error('Failed to load preferences:', err);
+      }
+    }
+    loadPreferences();
+  }, []);
   
   const toggleDoc = (docId: string) => {
     const newSelected = new Set(selectedDocs);
@@ -68,11 +93,15 @@ export function BatchProcessButton({ uploadedDocs, onSuccess }: BatchProcessButt
     const documentIds = Array.from(selectedDocs);
     
     try {
-      // Start batch processing
+      // Start batch processing with model selection
       const response = await fetch("/api/process-batch", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ documentIds })
+        body: JSON.stringify({ 
+          documentIds,
+          modelId: selectedModel,
+          customInstructions: customInstructions || undefined
+        })
       });
       
       if (!response.ok) {
@@ -198,12 +227,91 @@ export function BatchProcessButton({ uploadedDocs, onSuccess }: BatchProcessButt
         ))}
       </div>
       
+      {/* Advanced Options Toggle */}
+      <button
+        onClick={() => setShowAdvanced(!showAdvanced)}
+        className="w-full flex items-center justify-between px-3 py-2 text-sm text-blue-700 hover:bg-blue-100 rounded-lg transition-colors mb-3"
+      >
+        <span className="flex items-center gap-2">
+          <Bot className="w-4 h-4" />
+          Avancerade alternativ
+        </span>
+        {showAdvanced ? (
+          <ChevronUp className="w-4 h-4" />
+        ) : (
+          <ChevronDown className="w-4 h-4" />
+        )}
+      </button>
+
+      {/* Advanced Options Panel */}
+      {showAdvanced && (
+        <div className="mb-4 p-4 bg-white rounded-lg border border-blue-200 space-y-4">
+          {/* API Key Warning */}
+          {!loadingProviders && configuredProviders.length === 0 && (
+            <div className="p-3 bg-yellow-50 border border-yellow-200 rounded-lg flex items-start gap-2">
+              <AlertCircle className="w-5 h-5 text-yellow-600 flex-shrink-0 mt-0.5" />
+              <div>
+                <p className="text-sm font-medium text-yellow-800">Inga API-nycklar konfigurerade</p>
+                <p className="text-xs text-yellow-700 mt-1">
+                  Lägg till din API-nyckel för att använda AI-extrahering.
+                </p>
+                <Link
+                  href="/settings/api-keys"
+                  className="inline-flex items-center gap-1 text-xs text-yellow-800 hover:text-yellow-900 underline mt-2"
+                >
+                  <Key className="w-3 h-3" />
+                  Lägg till API-nyckel
+                </Link>
+              </div>
+            </div>
+          )}
+
+          {/* Model Selection */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              AI-modell
+            </label>
+            {loadingProviders ? (
+              <div className="flex items-center gap-2 text-sm text-gray-500">
+                <Loader2 className="w-4 h-4 animate-spin" />
+                Laddar modeller...
+              </div>
+            ) : (
+              <ModelSelector
+                selectedModel={selectedModel}
+                onSelectModel={setSelectedModel}
+                configuredProviders={configuredProviders}
+                showPricing={true}
+                compact={true}
+              />
+            )}
+          </div>
+
+          {/* Custom Instructions */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Anpassade instruktioner (valfritt)
+            </label>
+            <textarea
+              value={customInstructions}
+              onChange={(e) => setCustomInstructions(e.target.value)}
+              placeholder="T.ex. 'Ignorera rader med nollvikt' eller 'Materialet är alltid Brännbart om inte annat anges'"
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none resize-none"
+              rows={3}
+            />
+            <p className="text-xs text-gray-500 mt-1">
+              Dessa instruktioner skickas till AI:n för att anpassa extraktionen.
+            </p>
+          </div>
+        </div>
+      )}
+
       {/* Process button */}
       <button
         onClick={processBatch}
-        disabled={isProcessing || selectedDocs.size === 0}
+        disabled={isProcessing || selectedDocs.size === 0 || (configuredProviders.length === 0 && !loadingProviders)}
         className={`w-full px-4 py-3 rounded-lg font-medium transition-colors ${
-          isProcessing || selectedDocs.size === 0
+          isProcessing || selectedDocs.size === 0 || (configuredProviders.length === 0 && !loadingProviders)
             ? "bg-gray-400 text-gray-200 cursor-not-allowed"
             : "bg-blue-600 hover:bg-blue-700 text-white"
         }`}
@@ -213,6 +321,8 @@ export function BatchProcessButton({ uploadedDocs, onSuccess }: BatchProcessButt
             <Loader2 className="w-5 h-5 animate-spin" />
             Behandlar {selectedDocs.size} dokument...
           </span>
+        ) : configuredProviders.length === 0 && !loadingProviders ? (
+          "Lägg till API-nyckel för att granska"
         ) : (
           `Granska ${selectedDocs.size > 0 ? selectedDocs.size : 'valda'} dokument`
         )}
