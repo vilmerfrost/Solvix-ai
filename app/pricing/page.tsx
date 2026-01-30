@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Check, Loader2, Sparkles, Building2, Zap } from "lucide-react";
 import Link from "next/link";
@@ -71,7 +71,7 @@ const PLANS = [
   },
 ];
 
-export default function PricingPage() {
+function PricingPageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const canceled = searchParams.get("canceled");
@@ -251,5 +251,22 @@ export default function PricingPage() {
         </div>
       </main>
     </div>
+  );
+}
+
+// Loading fallback for Suspense
+function PricingPageLoading() {
+  return (
+    <div className="min-h-screen bg-gradient-to-b from-slate-50 to-white flex items-center justify-center">
+      <Loader2 className="w-8 h-8 animate-spin text-indigo-600" />
+    </div>
+  );
+}
+
+export default function PricingPage() {
+  return (
+    <Suspense fallback={<PricingPageLoading />}>
+      <PricingPageContent />
+    </Suspense>
   );
 }

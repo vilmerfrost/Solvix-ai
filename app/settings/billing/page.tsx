@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import { 
   CreditCard, 
@@ -20,7 +20,7 @@ interface SubscriptionInfo {
   cancelAtPeriodEnd?: boolean;
 }
 
-export default function BillingPage() {
+function BillingPageContent() {
   const searchParams = useSearchParams();
   const success = searchParams.get("success");
   
@@ -220,5 +220,22 @@ export default function BillingPage() {
         )}
       </div>
     </div>
+  );
+}
+
+// Loading fallback for Suspense
+function BillingPageLoading() {
+  return (
+    <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <Loader2 className="w-8 h-8 animate-spin text-indigo-600" />
+    </div>
+  );
+}
+
+export default function BillingPage() {
+  return (
+    <Suspense fallback={<BillingPageLoading />}>
+      <BillingPageContent />
+    </Suspense>
   );
 }
