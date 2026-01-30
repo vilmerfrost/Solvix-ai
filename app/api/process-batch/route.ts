@@ -57,7 +57,12 @@ export async function POST(req: Request) {
     console.log(`✓ ${validIds.length} documents marked as 'processing'`);
     
     // Trigger processing in background (sequential with delay)
-    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000";
+    // Use VERCEL_URL for Vercel deployments, otherwise fall back to configured URL
+    const baseUrl = process.env.VERCEL_URL 
+      ? `https://${process.env.VERCEL_URL}`
+      : process.env.NEXT_PUBLIC_BASE_URL || process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
+    
+    console.log(`   Using base URL: ${baseUrl}`);
     
     // Process each document sequentially (with small delay)
     // 🔧 FIX: Pass document ID to /api/process

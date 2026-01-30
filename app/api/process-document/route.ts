@@ -62,7 +62,10 @@ export async function POST(req: Request) {
     console.log(`✓ Document ${documentId} queued for processing`);
     
     // Trigger processing in background (non-blocking)
-    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000";
+    // Use VERCEL_URL for Vercel deployments, otherwise fall back to configured URL
+    const baseUrl = process.env.VERCEL_URL 
+      ? `https://${process.env.VERCEL_URL}`
+      : process.env.NEXT_PUBLIC_BASE_URL || process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
     fetch(`${baseUrl}/api/process`, {
       method: "GET",
       headers: {
