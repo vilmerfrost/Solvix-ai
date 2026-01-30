@@ -1070,15 +1070,48 @@ export async function GET(req: Request) {
   } catch (error: any) {
     console.error("❌ Processing error:", error);
     
-    // Update document status to error
+    // Classify error type for better user feedback
+    const errorMessage = error.message || 'Unknown error';
+    let errorType = 'unknown';
+    let userFriendlyError = errorMessage;
+    
+    const lowerError = errorMessage.toLowerCase();
+    if (lowerError.includes('api key') || lowerError.includes('authentication') || lowerError.includes('unauthorized')) {
+      errorType = 'api_key';
+      userFriendlyError = 'API-nyckel saknas eller är ogiltig. Lägg till en giltig nyckel i Inställningar → API-nycklar.';
+    } else if (lowerError.includes('rate limit') || lowerError.includes('quota') || lowerError.includes('429')) {
+      errorType = 'rate_limit';
+      userFriendlyError = 'Rate limit nådd. Vänta en stund och försök igen, eller använd en annan modell.';
+    } else if (lowerError.includes('timeout') || lowerError.includes('timed out')) {
+      errorType = 'timeout';
+      userFriendlyError = 'Timeout vid bearbetning. Dokumentet kan vara för stort. Försök med en snabbare modell.';
+    } else if (lowerError.includes('server') || lowerError.includes('500') || lowerError.includes('503')) {
+      errorType = 'server_error';
+      userFriendlyError = 'AI-servern har tillfälliga problem. Försök igen om en stund.';
+    } else if (lowerError.includes('json') || lowerError.includes('parse')) {
+      errorType = 'invalid_response';
+      userFriendlyError = 'Kunde inte tolka AI-svaret. Dokumentformatet kan vara osupporterat.';
+    }
+    
+    // Update document status to error WITH detailed error info
     if (docId) {
       try {
         const supabase = createServiceRoleClient();
         await supabase
           .from("documents")
-          .update({ status: "error", updated_at: new Date().toISOString() })
+          .update({ 
+            status: "error", 
+            updated_at: new Date().toISOString(),
+            extracted_data: {
+              _error: userFriendlyError,
+              _errorType: errorType,
+              _errorDetails: errorMessage,
+              _errorTimestamp: new Date().toISOString(),
+              _suggestions: getSuggestions(errorType)
+            }
+          })
           .eq("id", docId);
-        console.log(`❌ Updated document ${docId} to error status`);
+        console.log(`❌ Updated document ${docId} to error status: ${errorType}`);
       } catch (updateError) {
         console.error("Failed to update error status:", updateError);
       }
@@ -1086,7 +1119,51 @@ export async function GET(req: Request) {
     
     return NextResponse.json({
       success: false,
-      error: error.message
+      error: userFriendlyError,
+      errorType,
+      errorDetails: errorMessage
     }, { status: 500 });
+  }
+}
+
+// Helper function to get suggestions based on error type
+function getSuggestions(errorType: string): string[] {
+  switch (errorType) {
+    case 'api_key':
+      return [
+        'Kontrollera att din API-nyckel är korrekt i Inställningar → API-nycklar',
+        'Skapa en ny API-nyckel hos din AI-leverantör',
+        'Prova en annan modell (Google Gemini, OpenAI, eller Anthropic)'
+      ];
+    case 'rate_limit':
+      return [
+        'Vänta 1-2 minuter innan du försöker igen',
+        'Byt till en annan AI-modell',
+        'Behandla färre dokument åt gången'
+      ];
+    case 'timeout':
+      return [
+        'Använd en snabbare modell (t.ex. Gemini Flash eller Haiku)',
+        'Dela upp stora dokument i mindre delar',
+        'Försök igen vid lägre belastning'
+      ];
+    case 'server_error':
+      return [
+        'Försök igen om några minuter',
+        'Prova en annan AI-leverantör',
+        'Kontrollera status-sidan för din AI-leverantör'
+      ];
+    case 'invalid_response':
+      return [
+        'Kontrollera att dokumentet är läsbart',
+        'Prova med en mer kapabel modell (t.ex. Claude Sonnet eller GPT-4o)',
+        'Ladda upp dokumentet i ett annat format'
+      ];
+    default:
+      return [
+        'Försök igen',
+        'Kontrollera dina API-nycklar',
+        'Prova en annan modell'
+      ];
   }
 }

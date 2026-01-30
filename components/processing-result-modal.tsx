@@ -1,8 +1,9 @@
 "use client";
 
 import { useEffect } from "react";
-import { CheckCircle, AlertTriangle, X, FileText, TrendingUp, Scale, List } from "lucide-react";
+import { CheckCircle, AlertTriangle, X, FileText, TrendingUp, Scale, List, Key, RefreshCw, Zap, HelpCircle } from "lucide-react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 
 interface ProcessingResultModalProps {
   isOpen: boolean;
@@ -16,6 +17,8 @@ interface ProcessingResultModalProps {
     extractedRows?: number;
     totalWeight?: number;
     error?: string;
+    errorType?: string;
+    suggestions?: string[];
   } | null;
 }
 
@@ -111,9 +114,73 @@ export function ProcessingResultModal({ isOpen, onClose, result }: ProcessingRes
               </p>
             )}
             {isError && (
-              <p className="text-red-700 leading-relaxed">
-                {result.error || "Ett fel uppstod vid bearbetning av dokumentet."}
-              </p>
+              <div className="space-y-4">
+                <p className="text-red-700 leading-relaxed font-medium">
+                  {result.error || "Ett fel uppstod vid bearbetning av dokumentet."}
+                </p>
+                
+                {/* Error Type Badge */}
+                {result.errorType && (
+                  <div className="flex items-center gap-2">
+                    <span className={`px-2 py-1 rounded text-xs font-medium ${
+                      result.errorType === 'api_key' ? 'bg-orange-100 text-orange-800' :
+                      result.errorType === 'rate_limit' ? 'bg-yellow-100 text-yellow-800' :
+                      result.errorType === 'server_error' ? 'bg-red-100 text-red-800' :
+                      result.errorType === 'timeout' ? 'bg-blue-100 text-blue-800' :
+                      'bg-gray-100 text-gray-800'
+                    }`}>
+                      {result.errorType === 'api_key' && '🔑 API-nyckel'}
+                      {result.errorType === 'rate_limit' && '⏱️ Rate limit'}
+                      {result.errorType === 'server_error' && '🖥️ Server-fel'}
+                      {result.errorType === 'timeout' && '⌛ Timeout'}
+                      {result.errorType === 'invalid_response' && '📄 Ogiltigt svar'}
+                      {!['api_key', 'rate_limit', 'server_error', 'timeout', 'invalid_response'].includes(result.errorType || '') && '❓ Okänt fel'}
+                    </span>
+                  </div>
+                )}
+                
+                {/* Suggestions Box */}
+                {result.suggestions && result.suggestions.length > 0 && (
+                  <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                    <div className="flex items-center gap-2 mb-2">
+                      <HelpCircle className="w-4 h-4 text-blue-600" />
+                      <span className="font-medium text-blue-900">Förslag</span>
+                    </div>
+                    <ul className="space-y-2">
+                      {result.suggestions.map((suggestion, idx) => (
+                        <li key={idx} className="flex items-start gap-2 text-sm text-blue-800">
+                          <span className="text-blue-500">•</span>
+                          {suggestion}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+                
+                {/* Quick Actions for Error */}
+                <div className="flex flex-wrap gap-2">
+                  {result.errorType === 'api_key' && (
+                    <Link
+                      href="/settings/api-keys"
+                      className="inline-flex items-center gap-2 px-3 py-2 bg-orange-100 hover:bg-orange-200 text-orange-800 rounded-lg text-sm transition-colors"
+                    >
+                      <Key className="w-4 h-4" />
+                      Hantera API-nycklar
+                    </Link>
+                  )}
+                  <button
+                    onClick={() => {
+                      handleClose();
+                      // Trigger retry
+                      window.location.reload();
+                    }}
+                    className="inline-flex items-center gap-2 px-3 py-2 bg-gray-100 hover:bg-gray-200 text-gray-800 rounded-lg text-sm transition-colors"
+                  >
+                    <RefreshCw className="w-4 h-4" />
+                    Försök igen
+                  </button>
+                </div>
+              </div>
             )}
           </div>
 

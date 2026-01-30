@@ -107,7 +107,9 @@ export function GranskaButton({ documentId, filename, onSuccess }: GranskaButton
         qualityScore: validation.qualityScore || validation.completeness,
         extractedRows: extractedData.metadata?.processedRows || extractedData.metadata?.aggregatedRows || extractedData.lineItems?.length || 0,
         totalWeight: extractedData.totalWeightKg || 0,
-        error: doc.status === "error" ? "Bearbetning misslyckades" : undefined
+        error: doc.status === "error" ? (extractedData._error || "Bearbetning misslyckades") : undefined,
+        errorType: extractedData._errorType,
+        suggestions: extractedData._suggestions
       };
       
       setResult(resultData);

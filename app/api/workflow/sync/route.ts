@@ -80,15 +80,68 @@ export async function POST() {
     }
 
     console.log(`\n📦 Found ${failedFiles.length} file(s) to process`);
+    
+    // ============================================
+    // DUPLICATE PROTECTION - Check existing files
+    // ============================================
+    // Get all azure_original_filename values for this user to detect duplicates
+    const { data: existingDocs } = await supabase
+      .from("documents")
+      .select("azure_original_filename, filename")
+      .eq("user_id", user.id)
+      .not("azure_original_filename", "is", null);
+    
+    const existingPaths = new Set(
+      (existingDocs || []).map(d => d.azure_original_filename)
+    );
+    const existingFilenames = new Set(
+      (existingDocs || []).map(d => d.filename)
+    );
+    
+    // Filter out duplicates
+    const newFiles = failedFiles.filter(f => {
+      const isDuplicatePath = existingPaths.has(f.full_path);
+      const isDuplicateName = existingFilenames.has(f.name);
+      
+      if (isDuplicatePath) {
+        console.log(`   ⏭️ Skipping duplicate (path match): ${f.name}`);
+        return false;
+      }
+      if (isDuplicateName) {
+        console.log(`   ⏭️ Skipping duplicate (filename match): ${f.name}`);
+        return false;
+      }
+      return true;
+    });
+    
+    const skippedCount = failedFiles.length - newFiles.length;
+    if (skippedCount > 0) {
+      console.log(`\n🔒 Duplicate protection: ${skippedCount} file(s) already imported, skipping`);
+    }
+    
+    if (newFiles.length === 0) {
+      console.log("\n✅ WORKFLOW SYNC: Complete - All files already imported\n");
+      return NextResponse.json({
+        success: true,
+        message: `All ${failedFiles.length} files already imported (duplicate protection)`,
+        processed: 0,
+        skipped: skippedCount,
+      });
+    }
+    
+    console.log(`\n📥 Importing ${newFiles.length} new file(s)...`);
+    
     const results = {
       total: failedFiles.length,
+      newFiles: newFiles.length,
+      skipped: skippedCount,
       processed: 0,
       errors: 0,
       files: [] as any[],
     };
 
     // Process each file
-    for (const fileInfo of failedFiles) {
+    for (const fileInfo of newFiles) {
       try {
         // Download file (use source_folder as container name)
         const buffer = await connector.downloadFile(fileInfo.full_path, fileInfo.source_folder);

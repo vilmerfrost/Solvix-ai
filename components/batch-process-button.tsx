@@ -1,7 +1,7 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { Loader2, ChevronDown, ChevronUp, Bot, Key, AlertCircle } from "lucide-react";
+import { useState, useEffect, useRef } from "react";
+import { Loader2, ChevronDown, ChevronUp, Bot, Key, AlertCircle, StopCircle } from "lucide-react";
 import { BatchResultModal } from "./batch-result-modal";
 import { ModelSelector, useConfiguredProviders } from "./model-selector";
 import Link from "next/link";
@@ -13,9 +13,13 @@ interface BatchProcessButtonProps {
 
 export function BatchProcessButton({ uploadedDocs, onSuccess }: BatchProcessButtonProps) {
   const [isProcessing, setIsProcessing] = useState(false);
+  const [isCancelling, setIsCancelling] = useState(false);
+  const [processedCount, setProcessedCount] = useState(0);
   const [selectedDocs, setSelectedDocs] = useState<Set<string>>(new Set());
   const [showResultModal, setShowResultModal] = useState(false);
   const [batchResults, setBatchResults] = useState<any>(null);
+  const abortRef = useRef(false);
+  const processingDocsRef = useRef<string[]>([]);
   
   // Model selection state
   const [showAdvanced, setShowAdvanced] = useState(false);
@@ -59,9 +63,19 @@ export function BatchProcessButton({ uploadedDocs, onSuccess }: BatchProcessButt
   };
   
   // Poll for document status until processing is complete
-  const pollDocumentStatus = async (docId: string, maxAttempts = 60): Promise<any> => {
+  const pollDocumentStatus = async (docId: string, maxAttempts = 90): Promise<any> => {
     for (let attempt = 0; attempt < maxAttempts; attempt++) {
+      // Check if cancelled
+      if (abortRef.current) {
+        return { id: docId, status: "cancelled", error: "Cancelled by user" };
+      }
+      
       await new Promise(resolve => setTimeout(resolve, 2000)); // Wait 2 seconds between polls
+      
+      // Check again after waiting
+      if (abortRef.current) {
+        return { id: docId, status: "cancelled", error: "Cancelled by user" };
+      }
       
       try {
         const response = await fetch(`/api/document-status?id=${docId}`);
@@ -83,6 +97,32 @@ export function BatchProcessButton({ uploadedDocs, onSuccess }: BatchProcessButt
     return { id: docId, status: "error", error: "Processing timeout" };
   };
   
+  // Cancel batch processing
+  const handleCancelBatch = async () => {
+    setIsCancelling(true);
+    abortRef.current = true;
+    
+    try {
+      const response = await fetch("/api/cancel-batch", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ documentIds: processingDocsRef.current })
+      });
+      
+      if (response.ok) {
+        console.log("Batch processing cancelled");
+      }
+    } catch (error) {
+      console.error("Cancel batch error:", error);
+    } finally {
+      setIsProcessing(false);
+      setIsCancelling(false);
+      setProcessedCount(0);
+      abortRef.current = false;
+      processingDocsRef.current = [];
+    }
+  };
+  
   const processBatch = async () => {
     if (selectedDocs.size === 0) {
       alert("Välj minst ett dokument att granska");
@@ -90,7 +130,10 @@ export function BatchProcessButton({ uploadedDocs, onSuccess }: BatchProcessButt
     }
     
     setIsProcessing(true);
+    setProcessedCount(0);
+    abortRef.current = false;
     const documentIds = Array.from(selectedDocs);
+    processingDocsRef.current = documentIds;
     
     try {
       // Start batch processing with model selection
@@ -111,9 +154,22 @@ export function BatchProcessButton({ uploadedDocs, onSuccess }: BatchProcessButt
       
       // Poll all documents for completion
       const results: any[] = [];
-      for (const docId of documentIds) {
+      for (let i = 0; i < documentIds.length; i++) {
+        // Check if cancelled
+        if (abortRef.current) {
+          console.log("Batch processing cancelled by user");
+          return;
+        }
+        
+        const docId = documentIds[i];
         const doc = await pollDocumentStatus(docId);
         results.push(doc);
+        setProcessedCount(i + 1);
+      }
+      
+      // Check if cancelled during processing
+      if (abortRef.current) {
+        return;
       }
       
       // Process results
@@ -127,13 +183,13 @@ export function BatchProcessButton({ uploadedDocs, onSuccess }: BatchProcessButt
           status: doc.status,
           confidence: validation.confidence || extractedData.metadata?.confidence,
           qualityScore: validation.qualityScore || validation.completeness,
-          error: doc.status === "error" ? (doc.error || "Bearbetning misslyckades") : undefined
+          error: doc.status === "error" ? (doc.error || extractedData._error || "Bearbetning misslyckades") : undefined
         };
       });
       
       const approved = documents.filter(d => d.status === "approved").length;
       const needsReview = documents.filter(d => d.status === "needs_review").length;
-      const failed = documents.filter(d => d.status === "error").length;
+      const failed = documents.filter(d => d.status === "error" || d.status === "cancelled").length;
       
       setBatchResults({
         total: documents.length,
@@ -145,11 +201,15 @@ export function BatchProcessButton({ uploadedDocs, onSuccess }: BatchProcessButt
       
       setShowResultModal(true);
       setIsProcessing(false);
+      setProcessedCount(0);
+      processingDocsRef.current = [];
       
     } catch (error: any) {
       console.error("Batch process error:", error);
       alert("Kunde inte starta batch-granskning. Försök igen.");
       setIsProcessing(false);
+      setProcessedCount(0);
+      processingDocsRef.current = [];
     }
   };
   
@@ -157,19 +217,49 @@ export function BatchProcessButton({ uploadedDocs, onSuccess }: BatchProcessButt
   
   return (
     <>
-      {/* Loading Overlay */}
+      {/* Loading Overlay with Cancel Button */}
       {isProcessing && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
           <div className="bg-white rounded-lg p-6 shadow-xl max-w-md mx-4">
-            <div className="flex items-center gap-4">
+            <div className="flex items-center gap-4 mb-4">
               <Loader2 className="w-6 h-6 animate-spin text-blue-600" />
-              <div>
+              <div className="flex-1">
                 <h3 className="font-semibold text-gray-900">Processar dokument</h3>
                 <p className="text-sm text-gray-600">
-                  Behandlar {selectedDocs.size} dokument...
+                  {processedCount > 0 
+                    ? `Behandlat ${processedCount} av ${selectedDocs.size} dokument...`
+                    : `Startar behandling av ${selectedDocs.size} dokument...`
+                  }
                 </p>
               </div>
             </div>
+            
+            {/* Progress bar */}
+            <div className="w-full bg-gray-200 rounded-full h-2 mb-4">
+              <div 
+                className="bg-blue-600 h-2 rounded-full transition-all duration-300"
+                style={{ width: `${(processedCount / selectedDocs.size) * 100}%` }}
+              />
+            </div>
+            
+            {/* Cancel Button */}
+            <button
+              onClick={handleCancelBatch}
+              disabled={isCancelling}
+              className="w-full flex items-center justify-center gap-2 px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors disabled:bg-red-400"
+            >
+              {isCancelling ? (
+                <>
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                  Avbryter...
+                </>
+              ) : (
+                <>
+                  <StopCircle className="w-4 h-4" />
+                  Avbryt bearbetning
+                </>
+              )}
+            </button>
           </div>
         </div>
       )}

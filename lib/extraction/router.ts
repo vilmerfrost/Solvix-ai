@@ -250,3 +250,262 @@ export async function setCustomInstructions(instructions: string | null, userId:
     .update({ custom_instructions: instructions })
     .eq("user_id", userId);
 }
+
+// ============================================================================
+// ROBUST EXTRACTION WITH RETRY & FALLBACK
+// ============================================================================
+
+interface ExtractOptions {
+  maxRetries?: number;
+  fallbackToOtherProviders?: boolean;
+  onLog?: (message: string, level?: 'info' | 'success' | 'warning' | 'error') => void;
+}
+
+interface ErrorDetail {
+  provider: string;
+  model: string;
+  error: string;
+  errorType: 'api_key' | 'rate_limit' | 'server_error' | 'timeout' | 'invalid_response' | 'unknown';
+  timestamp: string;
+}
+
+/**
+ * Classify error type for better user feedback
+ */
+function classifyError(error: any): ErrorDetail['errorType'] {
+  const message = (error.message || error.toString()).toLowerCase();
+  
+  if (message.includes('api key') || message.includes('authentication') || message.includes('unauthorized') || message.includes('invalid key') || message.includes('api_key')) {
+    return 'api_key';
+  }
+  if (message.includes('rate limit') || message.includes('quota') || message.includes('too many requests') || message.includes('429')) {
+    return 'rate_limit';
+  }
+  if (message.includes('timeout') || message.includes('timed out') || message.includes('deadline')) {
+    return 'timeout';
+  }
+  if (message.includes('server') || message.includes('500') || message.includes('503') || message.includes('502') || message.includes('internal')) {
+    return 'server_error';
+  }
+  if (message.includes('json') || message.includes('parse') || message.includes('invalid response')) {
+    return 'invalid_response';
+  }
+  
+  return 'unknown';
+}
+
+/**
+ * Get user-friendly error message
+ */
+export function getErrorMessage(errorType: ErrorDetail['errorType'], provider: string): string {
+  switch (errorType) {
+    case 'api_key':
+      return `Invalid or missing API key for ${provider}. Please check your API key in Settings → API Keys.`;
+    case 'rate_limit':
+      return `Rate limit exceeded for ${provider}. Please wait a moment and try again, or use a different model.`;
+    case 'server_error':
+      return `${provider} server is experiencing issues. Try again later or use a different model.`;
+    case 'timeout':
+      return `Request timed out. The document may be too large. Try a faster model or split the document.`;
+    case 'invalid_response':
+      return `Failed to parse response from ${provider}. The document format may be unsupported.`;
+    default:
+      return `An error occurred with ${provider}. Please try again or use a different model.`;
+  }
+}
+
+/**
+ * Model fallback order based on cost/speed tradeoffs
+ */
+const FALLBACK_ORDER: Record<AIProvider, AIProvider[]> = {
+  'anthropic': ['google', 'openai'],
+  'google': ['anthropic', 'openai'],
+  'openai': ['google', 'anthropic'],
+};
+
+/**
+ * Get default model for a provider
+ */
+function getDefaultModelForProvider(provider: AIProvider): string {
+  switch (provider) {
+    case 'google': return 'gemini-2.5-flash';
+    case 'anthropic': return 'claude-haiku-4';
+    case 'openai': return 'gpt-4o-mini';
+    default: return 'gemini-2.5-flash';
+  }
+}
+
+/**
+ * Robust extraction with automatic retry and provider fallback
+ */
+export async function extractWithRetryAndFallback(
+  request: ExtractionRequest,
+  userId: string,
+  modelId?: string,
+  options: ExtractOptions = {}
+): Promise<ExtractionResult & { attempts: ErrorDetail[] }> {
+  const { maxRetries = 2, fallbackToOtherProviders = true, onLog } = options;
+  const log = onLog || ((msg: string) => console.log(msg));
+  
+  const attempts: ErrorDetail[] = [];
+  
+  // Get starting model
+  const startingModelId = modelId || await getUserPreferredModel(userId);
+  const startingModel = getModelById(startingModelId);
+  
+  if (!startingModel) {
+    return {
+      success: false,
+      items: [],
+      model: startingModelId,
+      provider: 'unknown',
+      tokensUsed: { input: 0, output: 0 },
+      cost: 0,
+      processingTimeMs: 0,
+      error: `Unknown model: ${startingModelId}`,
+      attempts
+    };
+  }
+  
+  // Get all configured providers
+  const configuredProviders = await getConfiguredProviders(userId);
+  
+  if (configuredProviders.length === 0) {
+    return {
+      success: false,
+      items: [],
+      model: startingModelId,
+      provider: startingModel.provider,
+      tokensUsed: { input: 0, output: 0 },
+      cost: 0,
+      processingTimeMs: 0,
+      error: 'No API keys configured. Please add an API key in Settings → API Keys.',
+      attempts
+    };
+  }
+  
+  // Build list of models to try
+  const modelsToTry: { modelId: string; provider: AIProvider }[] = [];
+  
+  // First, try the requested model if its provider is configured
+  if (configuredProviders.includes(startingModel.provider)) {
+    modelsToTry.push({ modelId: startingModelId, provider: startingModel.provider });
+  }
+  
+  // Then add fallback providers
+  if (fallbackToOtherProviders) {
+    const fallbackProviders = FALLBACK_ORDER[startingModel.provider] || [];
+    for (const fallbackProvider of fallbackProviders) {
+      if (configuredProviders.includes(fallbackProvider)) {
+        const fallbackModelId = getDefaultModelForProvider(fallbackProvider);
+        // Avoid duplicates
+        if (!modelsToTry.some(m => m.modelId === fallbackModelId)) {
+          modelsToTry.push({ modelId: fallbackModelId, provider: fallbackProvider });
+        }
+      }
+    }
+  }
+  
+  if (modelsToTry.length === 0) {
+    return {
+      success: false,
+      items: [],
+      model: startingModelId,
+      provider: startingModel.provider,
+      tokensUsed: { input: 0, output: 0 },
+      cost: 0,
+      processingTimeMs: 0,
+      error: `No API key configured for ${startingModel.provider}. Please add your API key in Settings.`,
+      attempts
+    };
+  }
+  
+  // Try each model with retries
+  for (const { modelId: currentModelId, provider } of modelsToTry) {
+    log(`🔄 Trying ${provider} (${currentModelId})...`, 'info');
+    
+    for (let attempt = 1; attempt <= maxRetries; attempt++) {
+      try {
+        const result = await extractWithModel(request, userId, currentModelId);
+        
+        if (result.success) {
+          if (attempts.length > 0) {
+            log(`✅ Success with ${provider} after ${attempts.length} failed attempt(s)`, 'success');
+          }
+          return { ...result, attempts };
+        }
+        
+        // Extraction returned but with error
+        const errorType = classifyError({ message: result.error });
+        attempts.push({
+          provider,
+          model: currentModelId,
+          error: result.error || 'Unknown error',
+          errorType,
+          timestamp: new Date().toISOString()
+        });
+        
+        log(`⚠️ ${provider} failed (attempt ${attempt}/${maxRetries}): ${result.error}`, 'warning');
+        
+        // Don't retry API key errors - they won't fix themselves
+        if (errorType === 'api_key') {
+          break;
+        }
+        
+        // Wait before retry (exponential backoff)
+        if (attempt < maxRetries) {
+          const waitMs = 1000 * Math.pow(2, attempt - 1);
+          log(`   Waiting ${waitMs}ms before retry...`, 'info');
+          await new Promise(resolve => setTimeout(resolve, waitMs));
+        }
+        
+      } catch (error: any) {
+        const errorType = classifyError(error);
+        attempts.push({
+          provider,
+          model: currentModelId,
+          error: error.message || 'Unknown error',
+          errorType,
+          timestamp: new Date().toISOString()
+        });
+        
+        log(`❌ ${provider} error (attempt ${attempt}/${maxRetries}): ${error.message}`, 'error');
+        
+        // Don't retry API key errors
+        if (errorType === 'api_key') {
+          break;
+        }
+        
+        // Wait before retry
+        if (attempt < maxRetries) {
+          const waitMs = 1000 * Math.pow(2, attempt - 1);
+          await new Promise(resolve => setTimeout(resolve, waitMs));
+        }
+      }
+    }
+    
+    // Log fallback attempt
+    const remainingModels = modelsToTry.slice(modelsToTry.findIndex(m => m.modelId === currentModelId) + 1);
+    if (remainingModels.length > 0) {
+      log(`🔀 Falling back to ${remainingModels[0].provider}...`, 'info');
+    }
+  }
+  
+  // All attempts failed
+  const lastAttempt = attempts[attempts.length - 1];
+  const userFriendlyError = lastAttempt 
+    ? getErrorMessage(lastAttempt.errorType, lastAttempt.provider)
+    : 'All extraction attempts failed. Please check your API keys and try again.';
+  
+  return {
+    success: false,
+    items: [],
+    model: startingModelId,
+    provider: startingModel.provider,
+    tokensUsed: { input: 0, output: 0 },
+    cost: 0,
+    processingTimeMs: 0,
+    error: userFriendlyError,
+    attempts
+  };
+}
