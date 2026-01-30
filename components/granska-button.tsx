@@ -1,8 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { ProcessingResultModal } from "./processing-result-modal";
-import { Loader2 } from "lucide-react";
+import { Loader2, StopCircle } from "lucide-react";
 
 interface GranskaButtonProps {
   documentId: string;
@@ -12,13 +12,25 @@ interface GranskaButtonProps {
 
 export function GranskaButton({ documentId, filename, onSuccess }: GranskaButtonProps) {
   const [isProcessing, setIsProcessing] = useState(false);
+  const [isCancelling, setIsCancelling] = useState(false);
   const [showResultModal, setShowResultModal] = useState(false);
   const [result, setResult] = useState<any>(null);
+  const abortRef = useRef(false);
   
   // Poll for document status until processing is complete
   const pollDocumentStatus = async (docId: string, maxAttempts = 60): Promise<any> => {
     for (let attempt = 0; attempt < maxAttempts; attempt++) {
+      // Check if cancelled
+      if (abortRef.current) {
+        throw new Error("cancelled");
+      }
+      
       await new Promise(resolve => setTimeout(resolve, 2000)); // Wait 2 seconds between polls
+      
+      // Check again after waiting
+      if (abortRef.current) {
+        throw new Error("cancelled");
+      }
       
       try {
         const response = await fetch(`/api/document-status?id=${docId}`);
@@ -40,8 +52,32 @@ export function GranskaButton({ documentId, filename, onSuccess }: GranskaButton
     throw new Error("Processing timeout");
   };
   
+  const handleCancel = async () => {
+    setIsCancelling(true);
+    abortRef.current = true;
+    
+    try {
+      const response = await fetch("/api/cancel-processing", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ documentId })
+      });
+      
+      if (response.ok) {
+        console.log("Processing cancelled successfully");
+      }
+    } catch (error) {
+      console.error("Cancel error:", error);
+    } finally {
+      setIsProcessing(false);
+      setIsCancelling(false);
+      abortRef.current = false;
+    }
+  };
+  
   const handleGranska = async () => {
     setIsProcessing(true);
+    abortRef.current = false;
     
     try {
       // Start processing
@@ -79,6 +115,12 @@ export function GranskaButton({ documentId, filename, onSuccess }: GranskaButton
       setIsProcessing(false);
       
     } catch (error: any) {
+      // Don't show error modal if cancelled
+      if (error.message === "cancelled") {
+        console.log("Processing was cancelled by user");
+        return;
+      }
+      
       console.error("Granska error:", error);
       
       // Show error result
@@ -95,24 +137,42 @@ export function GranskaButton({ documentId, filename, onSuccess }: GranskaButton
   
   return (
     <>
-      <button
-        onClick={handleGranska}
-        disabled={isProcessing}
-        className={`px-4 py-2 rounded-lg font-medium transition-colors ${
-          isProcessing
-            ? "bg-gray-400 text-gray-200 cursor-not-allowed"
-            : "bg-blue-600 hover:bg-blue-700 text-white"
-        }`}
-      >
-        {isProcessing ? (
-          <span className="flex items-center gap-2">
-            <Loader2 className="w-4 h-4 animate-spin" />
-            Behandlar...
-          </span>
-        ) : (
-          "Granska"
+      <div className="flex items-center gap-2">
+        <button
+          onClick={handleGranska}
+          disabled={isProcessing}
+          className={`px-4 py-2 rounded-lg font-medium transition-colors ${
+            isProcessing
+              ? "bg-gray-400 text-gray-200 cursor-not-allowed"
+              : "bg-blue-600 hover:bg-blue-700 text-white"
+          }`}
+        >
+          {isProcessing ? (
+            <span className="flex items-center gap-2">
+              <Loader2 className="w-4 h-4 animate-spin" />
+              Behandlar...
+            </span>
+          ) : (
+            "Granska"
+          )}
+        </button>
+        
+        {/* Stop/Cancel Button - only visible during processing */}
+        {isProcessing && (
+          <button
+            onClick={handleCancel}
+            disabled={isCancelling}
+            className="p-2 rounded-lg bg-red-600 hover:bg-red-700 text-white transition-colors disabled:bg-red-400"
+            title="Avbryt bearbetning"
+          >
+            {isCancelling ? (
+              <Loader2 className="w-5 h-5 animate-spin" />
+            ) : (
+              <StopCircle className="w-5 h-5" />
+            )}
+          </button>
         )}
-      </button>
+      </div>
       
       <ProcessingResultModal
         isOpen={showResultModal}
