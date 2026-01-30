@@ -4,10 +4,64 @@
 
 import Anthropic from "@anthropic-ai/sdk";
 import { getTenantConfig, DEFAULT_TENANT_CONFIG } from "@/config/tenant";
+import { createServiceRoleClient } from "@/lib/supabase";
 
-const anthropic = new Anthropic({
-  apiKey: process.env.ANTHROPIC_API_KEY!,
-});
+// Default Anthropic key from environment (fallback)
+const defaultAnthropicKey = process.env.ANTHROPIC_API_KEY;
+
+// Dynamic client getter that uses user's key if available
+async function getAnthropicClient(userId?: string): Promise<Anthropic> {
+  // Try to get user's API key first
+  if (userId) {
+    const supabase = createServiceRoleClient();
+    const { data: keyData } = await supabase
+      .from("user_api_keys")
+      .select("encrypted_key, is_valid")
+      .eq("user_id", userId)
+      .eq("provider", "anthropic")
+      .single();
+    
+    if (keyData?.encrypted_key && keyData.is_valid) {
+      try {
+        const { decryptAPIKey } = await import("@/lib/encryption");
+        const decryptedKey = decryptAPIKey(keyData.encrypted_key);
+        if (decryptedKey) {
+          return new Anthropic({ apiKey: decryptedKey });
+        }
+      } catch (e) {
+        console.warn("Failed to decrypt user API key, falling back to env");
+      }
+    }
+  }
+  
+  // Fallback to environment variable
+  if (!defaultAnthropicKey) {
+    throw new Error("No Anthropic API key configured. Please add your API key in Settings → API Keys.");
+  }
+  
+  return new Anthropic({ apiKey: defaultAnthropicKey });
+}
+
+// Current active client - set at start of each extraction
+// This allows us to use user-specific keys while maintaining the existing code structure
+let activeAnthropicClient: Anthropic | null = defaultAnthropicKey 
+  ? new Anthropic({ apiKey: defaultAnthropicKey })
+  : null;
+
+// Getter for the active client (throws if not initialized)
+function getActiveClient(): Anthropic {
+  if (!activeAnthropicClient) {
+    throw new Error("No Anthropic API key configured. Please add your API key in Settings → API Keys.");
+  }
+  return activeAnthropicClient;
+}
+
+// Alias for backward compatibility - uses the active client
+const anthropic = {
+  messages: {
+    create: async (params: any) => getActiveClient().messages.create(params)
+  }
+};
 
 // ============================================================================
 // KNOWN ATTRIBUTE SYNONYMS (Swedish reference - LLM translates on-the-fly)
@@ -722,7 +776,8 @@ export async function extractAdaptive(
   excelData: any[][],
   filename: string,
   settings: any,
-  onLog?: LogCallback
+  onLog?: LogCallback,
+  userId?: string
 ): Promise<{
   lineItems: any[];
   metadata: any;
@@ -741,6 +796,25 @@ export async function extractAdaptive(
     itemsFlagged: number;
   };
 }> {
+  
+  // Initialize Anthropic client for this user (or use default)
+  if (userId) {
+    try {
+      activeAnthropicClient = await getAnthropicClient(userId);
+    } catch (e) {
+      console.warn("Failed to get user-specific API key, trying fallback");
+      if (defaultAnthropicKey) {
+        activeAnthropicClient = new Anthropic({ apiKey: defaultAnthropicKey });
+      }
+    }
+  } else if (!activeAnthropicClient && defaultAnthropicKey) {
+    activeAnthropicClient = new Anthropic({ apiKey: defaultAnthropicKey });
+  }
+  
+  // Ensure we have a client
+  if (!activeAnthropicClient) {
+    throw new Error("No Anthropic API key configured. Please add your API key in Settings → API Keys, or set ANTHROPIC_API_KEY environment variable.");
+  }
   
   // Log collection for storing in metadata
   const processingLog: string[] = [];

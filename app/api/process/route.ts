@@ -155,9 +155,47 @@ function validateAndFixDate(extractedDate: string | null, filenameDate: string |
   return extracted;
 }
 
-const anthropic = new Anthropic({
-  apiKey: process.env.ANTHROPIC_API_KEY!,
-});
+// Dynamic Anthropic client - created per-request with user's API key
+// Falls back to env variable if no user key is configured
+let defaultAnthropicKey = process.env.ANTHROPIC_API_KEY;
+
+async function getAnthropicClient(userId?: string): Promise<Anthropic> {
+  // Try to get user's API key first
+  if (userId) {
+    const supabase = createServiceRoleClient();
+    const { data: keyData } = await supabase
+      .from("user_api_keys")
+      .select("encrypted_key, is_valid")
+      .eq("user_id", userId)
+      .eq("provider", "anthropic")
+      .single();
+    
+    if (keyData?.encrypted_key && keyData.is_valid) {
+      try {
+        // Decrypt the key
+        const { decryptAPIKey } = await import("@/lib/encryption");
+        const decryptedKey = decryptAPIKey(keyData.encrypted_key);
+        if (decryptedKey) {
+          return new Anthropic({ apiKey: decryptedKey });
+        }
+      } catch (e) {
+        console.warn("Failed to decrypt user API key, falling back to env");
+      }
+    }
+  }
+  
+  // Fallback to environment variable
+  if (!defaultAnthropicKey) {
+    throw new Error("No Anthropic API key configured. Please add your API key in Settings → API Keys.");
+  }
+  
+  return new Anthropic({ apiKey: defaultAnthropicKey });
+}
+
+// Legacy global client for backward compatibility (will be removed)
+const anthropic = defaultAnthropicKey 
+  ? new Anthropic({ apiKey: defaultAnthropicKey })
+  : null;
 
 // ============================================================================
 // SETTINGS
@@ -483,8 +521,11 @@ function cleanPDFExtractionData(items: any[]): any[] {
 async function extractFromPDF(
   pdfBuffer: ArrayBuffer,
   filename: string,
-  settings: any
+  settings: any,
+  userId?: string
 ): Promise<any> {
+  // Get Anthropic client for this user
+  const userAnthropicClient = await getAnthropicClient(userId);
   
   // ✅ Processing log for tracking (matches extractAdaptive pattern)
   const processingLog: string[] = [];
@@ -590,7 +631,7 @@ Extract ALL material rows from the table. Return JSON only!`;
 
   try {
     log(`📤 Calling Claude Sonnet for PDF OCR...`, 'info');
-    const response = await anthropic.messages.create({
+    const response = await userAnthropicClient.messages.create({
       model: "claude-sonnet-4-5-20250929", // Use Sonnet for better PDF OCR quality
       max_tokens: 16384,
       messages: [
@@ -952,7 +993,9 @@ export async function GET(req: Request) {
       const adaptiveResult = await extractAdaptive(
         jsonData as any[][],
         doc.filename,
-        settings
+        settings,
+        undefined, // onLog callback
+        doc.user_id // Pass userId for API key lookup
       );
       
       // Convert to expected format
@@ -969,7 +1012,8 @@ export async function GET(req: Request) {
       extractedData = await extractFromPDF(
         arrayBuffer,
         doc.filename,
-        settings
+        settings,
+        doc.user_id
       );
     } else {
       throw new Error(`Unsupported file type: ${doc.filename}. Only Excel (.xlsx, .xls) and PDF (.pdf) are supported.`);
