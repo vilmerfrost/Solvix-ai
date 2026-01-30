@@ -1,5 +1,8 @@
 import { createServiceRoleClient } from "@/lib/supabase";
 import { NextResponse } from "next/server";
+import { processDocument } from "@/lib/process-document";
+
+export const maxDuration = 300; // 5 minutes max for document processing
 
 export async function POST(req: Request) {
   try {
@@ -59,33 +62,29 @@ export async function POST(req: Request) {
       throw updateError;
     }
     
-    console.log(`✓ Document ${documentId} queued for processing`);
+    console.log(`✓ Document ${documentId} marked as processing`);
     
-    // Trigger processing in background (non-blocking)
-    // Use VERCEL_URL for Vercel deployments, otherwise fall back to configured URL
-    const baseUrl = process.env.VERCEL_URL 
-      ? `https://${process.env.VERCEL_URL}`
-      : process.env.NEXT_PUBLIC_BASE_URL || process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
-    fetch(`${baseUrl}/api/process`, {
-      method: "GET",
-      headers: {
-        "Content-Type": "application/json"
-      }
-    }).catch(err => {
-      console.error("Failed to trigger processing:", err);
-      // Non-critical - job will be picked up by cron or next request
-    });
+    // Process the document directly (no HTTP call needed!)
+    console.log(`🚀 Starting direct processing...`);
+    const result = await processDocument(documentId);
+    
+    if (result.success) {
+      console.log(`✅ Processing complete: ${result.status}`);
+    } else {
+      console.log(`❌ Processing failed: ${result.error}`);
+    }
     
     return NextResponse.json({ 
-      success: true,
-      message: "Processing started",
-      documentId
+      success: result.success,
+      message: result.success ? "Processing complete" : result.error,
+      documentId,
+      status: result.status
     });
     
   } catch (error: any) {
     console.error("Process document error:", error);
     return NextResponse.json(
-      { error: error.message || "Failed to start processing" },
+      { error: error.message || "Failed to process document" },
       { status: 500 }
     );
   }

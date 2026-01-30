@@ -1,5 +1,8 @@
 import { createServiceRoleClient } from "@/lib/supabase";
 import { NextResponse } from "next/server";
+import { processDocument } from "@/lib/process-document";
+
+export const maxDuration = 300; // 5 minutes max for batch processing
 
 export async function POST(req: Request) {
   try {
@@ -56,50 +59,41 @@ export async function POST(req: Request) {
     
     console.log(`✓ ${validIds.length} documents marked as 'processing'`);
     
-    // Trigger processing in background (sequential with delay)
-    // Use VERCEL_URL for Vercel deployments, otherwise fall back to configured URL
-    const baseUrl = process.env.VERCEL_URL 
-      ? `https://${process.env.VERCEL_URL}`
-      : process.env.NEXT_PUBLIC_BASE_URL || process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
+    // Process documents directly (no HTTP calls needed!)
+    // This runs synchronously to avoid Vercel auth issues with internal HTTP calls
+    console.log(`🚀 Starting direct processing...`);
     
-    console.log(`   Using base URL: ${baseUrl}`);
-    
-    // Process each document sequentially (with small delay)
-    // 🔧 FIX: Pass document ID to /api/process
-    (async () => {
-      for (let i = 0; i < validIds.length; i++) {
-        const docId = validIds[i];
-        console.log(`📊 Triggering processing ${i + 1}/${validIds.length} (${docId})`);
-        
-        // Build URL with optional parameters
-        const processUrl = new URL(`${baseUrl}/api/process`);
-        processUrl.searchParams.set('id', docId);
-        if (modelId) processUrl.searchParams.set('modelId', modelId);
-        
-        // ✅ FIXED: Added ?id=${docId} to pass document ID!
-        // Custom instructions sent via POST body if present
-        await fetch(processUrl.toString(), {
-          method: customInstructions ? "POST" : "GET",
-          headers: {
-            "Content-Type": "application/json"
-          },
-          body: customInstructions ? JSON.stringify({ customInstructions }) : undefined
-        }).catch(err => console.error(`Failed to trigger process ${i + 1}:`, err));
-        
-        // Small delay between documents (1 second)
-        if (i < validIds.length - 1) {
-          await new Promise(resolve => setTimeout(resolve, 1000));
-        }
-      }
+    const results: any[] = [];
+    for (let i = 0; i < validIds.length; i++) {
+      const docId = validIds[i];
+      console.log(`📊 Processing ${i + 1}/${validIds.length} (${docId})`);
       
-      console.log(`✓ Batch processing triggers sent for all ${validIds.length} documents`);
-    })();
+      try {
+        const result = await processDocument(docId);
+        results.push(result);
+        console.log(`   ✅ ${result.status}`);
+      } catch (err: any) {
+        console.error(`   ❌ Error: ${err.message}`);
+        results.push({
+          success: false,
+          documentId: docId,
+          status: "error",
+          error: err.message
+        });
+      }
+    }
+    
+    const successCount = results.filter(r => r.success).length;
+    const failCount = results.filter(r => !r.success).length;
+    
+    console.log(`\n✅ Batch complete: ${successCount} succeeded, ${failCount} failed`);
     
     return NextResponse.json({ 
       success: true,
-      message: `Processing started for ${validIds.length} documents`,
+      message: `Processed ${validIds.length} documents: ${successCount} succeeded, ${failCount} failed`,
       count: validIds.length,
-      documentIds: validIds
+      documentIds: validIds,
+      results
     });
     
   } catch (error: any) {
