@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { createBrowserClient } from "@supabase/ssr";
 import { Mail, Lock, Loader2, AlertCircle } from "lucide-react";
@@ -41,7 +41,7 @@ function MicrosoftIcon() {
   );
 }
 
-export default function LoginPage() {
+function LoginPageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const message = searchParams.get("message");
@@ -297,5 +297,33 @@ export default function LoginPage() {
         </p>
       </div>
     </div>
+  );
+}
+
+// Loading fallback for Suspense
+function LoginPageLoading() {
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-white to-slate-50 flex items-center justify-center p-4">
+      <div className="w-full max-w-md">
+        <div className="text-center mb-8">
+          <div className="inline-flex items-center justify-center w-16 h-16 bg-indigo-600 rounded-2xl mb-4">
+            <span className="text-2xl font-bold text-white">V</span>
+          </div>
+          <h1 className="text-2xl font-bold text-slate-900">Vextra AI</h1>
+          <p className="text-slate-600 mt-1">Intelligent Document Extraction</p>
+        </div>
+        <div className="bg-white rounded-2xl shadow-xl border border-slate-200 p-8 flex items-center justify-center">
+          <Loader2 className="w-8 h-8 animate-spin text-indigo-600" />
+        </div>
+      </div>
+    </div>
+  );
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense fallback={<LoginPageLoading />}>
+      <LoginPageContent />
+    </Suspense>
   );
 }
