@@ -131,6 +131,7 @@ export async function POST() {
             filename: fileInfo.name,
             status: "uploaded",
             storage_path: storagePath,
+            user_id: user.id, // IMPORTANT: Associate with authenticated user
             azure_original_filename: fileInfo.full_path, // Track FULL blob path for safe cleanup (includes folder!)
             source_container: fileInfo.source_folder || (fileInfo.name.endsWith('.pdf') ? 'unsupported-file-format' : 'unable-to-process'), // Track source container
             extracted_data: {

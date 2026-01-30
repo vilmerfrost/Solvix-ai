@@ -13,8 +13,11 @@ const PUBLIC_PATHS = [
   "/api/setup",
   "/api/health",
   "/api/webhooks",
+  "/api/cron",
   "/terms",
   "/privacy",
+  "/pricing",
+  "/health",
   "/_next",
   "/favicon.ico",
 ];
@@ -79,17 +82,26 @@ export async function middleware(request: NextRequest) {
     return NextResponse.redirect(loginUrl);
   }
 
-  // User is authenticated - check if setup is complete
-  const isSetupComplete = await checkSetupStatus(supabase);
+  // User is authenticated - for multi-tenant mode, skip setup check
+  // Setup is only needed for whitelabel/self-hosted deployments
+  const isWhitelabelSetup = process.env.TENANT_NAME || process.env.WHITELABEL_MODE !== "true";
+  
+  // If whitelabel mode requires setup, check it
+  if (process.env.WHITELABEL_MODE === "true" && !process.env.TENANT_NAME) {
+    const isSetupComplete = await checkSetupStatus(supabase);
 
-  if (!isSetupComplete && !pathname.startsWith("/setup")) {
-    // Redirect to setup page if not complete
-    const setupUrl = new URL("/setup", request.url);
-    return NextResponse.redirect(setupUrl);
+    if (!isSetupComplete && !pathname.startsWith("/setup")) {
+      const setupUrl = new URL("/setup", request.url);
+      return NextResponse.redirect(setupUrl);
+    }
+
+    if (isSetupComplete && pathname.startsWith("/setup")) {
+      return NextResponse.redirect(new URL("/dashboard", request.url));
+    }
   }
 
-  // If on setup page but setup is complete, redirect to dashboard
-  if (isSetupComplete && pathname.startsWith("/setup")) {
+  // For SaaS mode, always redirect from /setup to /dashboard
+  if (pathname.startsWith("/setup") && !process.env.WHITELABEL_MODE) {
     return NextResponse.redirect(new URL("/dashboard", request.url));
   }
 
@@ -97,12 +109,13 @@ export async function middleware(request: NextRequest) {
 }
 
 async function checkSetupStatus(supabase: ReturnType<typeof createServerClient>): Promise<boolean> {
-  // First check environment variable (pre-configured deployment)
+  // Check environment variable (pre-configured deployment)
   if (process.env.TENANT_NAME) {
     return true;
   }
 
   try {
+    // For whitelabel mode, check the 'default' user settings
     const { data: settings, error } = await supabase
       .from("settings")
       .select("is_setup_complete")
@@ -115,7 +128,6 @@ async function checkSetupStatus(supabase: ReturnType<typeof createServerClient>)
 
     return settings.is_setup_complete === true;
   } catch {
-    // On error, assume not configured to trigger setup
     return false;
   }
 }

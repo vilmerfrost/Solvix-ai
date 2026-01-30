@@ -1,4 +1,5 @@
 import { createServiceRoleClient } from "@/lib/supabase";
+import { requireAuth } from "@/lib/auth";
 import Link from "next/link";
 import { FileText, CheckCircle2, AlertCircle, Activity, RefreshCw, ArrowLeft, Download, Settings, Home } from "lucide-react";
 import { AutoFetchButton } from "@/components/auto-fetch-button";
@@ -23,6 +24,10 @@ export default async function Dashboard({
 }: {
   searchParams: Promise<{ tab?: string; page?: string; perPage?: string }>;
 }) {
+  // Get authenticated user
+  const user = await requireAuth();
+  const userId = user.id;
+  
   const supabase = createServiceRoleClient();
   const params = await searchParams;
   const activeTab = params.tab || "active";
@@ -35,10 +40,11 @@ export default async function Dashboard({
   const currentPage = Math.max(1, parseInt(params.page || "1", 10));
   const itemsPerPage = Math.min(50, Math.max(10, parseInt(params.perPage || "10", 10)));
 
-  // Fetch documents - filter by tab
+  // Fetch documents - filter by user_id and tab
   let documentsQuery = supabase
     .from("documents")
     .select("*")
+    .eq("user_id", userId)
     .order("created_at", { ascending: false });
 
   // Filter: Active tab shows non-exported, Archive tab shows exported
@@ -58,10 +64,11 @@ export default async function Dashboard({
     const startIndex = (currentPage - 1) * itemsPerPage;
     const endIndex = startIndex + itemsPerPage - 1;
     
-    // Get total count - removed exported_at filter since needs_review shouldn't be exported
+    // Get total count - filter by user_id
     const { count } = await supabase
       .from("documents")
       .select("*", { count: "exact", head: true })
+      .eq("user_id", userId)
       .eq("status", "needs_review");
     
     needsReviewTotal = count || 0;
@@ -72,10 +79,11 @@ export default async function Dashboard({
       needsReviewTotal = needsReviewFromMain.length;
     }
     
-    // Get paginated data - removed exported_at filter
+    // Get paginated data - filter by user_id
     const { data: paginatedNeedsReview } = await supabase
       .from("documents")
       .select("*")
+      .eq("user_id", userId)
       .eq("status", "needs_review")
       .order("created_at", { ascending: true })
       .range(startIndex, endIndex);
