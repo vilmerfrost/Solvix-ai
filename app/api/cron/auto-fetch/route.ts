@@ -186,13 +186,7 @@ export async function GET(request: Request) {
               continue;
             }
 
-            // Enqueue for processing
-            await supabase.from("processing_jobs").insert({
-              document_id: doc.id,
-              status: "queued",
-            });
-
-            console.log(`   ✅ Queued (doc: ${doc.id})`);
+            console.log(`   ✅ Imported (doc: ${doc.id})`);
             totalProcessed++;
             
             allResults.push({

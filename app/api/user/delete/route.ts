@@ -31,11 +31,8 @@ export async function DELETE() {
       .select("id")
       .eq("user_id", user.id);
     
-    if (userDocs && userDocs.length > 0) {
-      const docIds = userDocs.map((d) => d.id);
-      await supabase.from("processing_jobs").delete().in("document_id", docIds);
-    }
-    console.log("   ✓ Processing jobs deleted");
+    // Note: processing_jobs table no longer exists (replaced by processing_sessions)
+    console.log("   ✓ Cleanup step complete");
 
     // 4. Documents
     await supabase.from("documents").delete().eq("user_id", user.id);

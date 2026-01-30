@@ -188,13 +188,6 @@ export async function stopProcessing(sessionId: string): Promise<{
 
   const revertedCount = revertedDocs?.length || 0;
 
-  // Delete any pending processing jobs for these documents
-  await supabase
-    .from("processing_jobs")
-    .delete()
-    .in("document_id", session.document_ids)
-    .eq("status", "queued");
-
   return {
     success: true,
     revertedCount,

@@ -32,16 +32,6 @@ export async function POST(req: Request) {
       throw updateError;
     }
     
-    // Also cancel any queued processing jobs
-    await supabase
-      .from("processing_jobs")
-      .update({ 
-        status: "cancelled",
-        updated_at: new Date().toISOString()
-      })
-      .in("document_id", documentIds)
-      .eq("status", "queued");
-    
     const cancelledCount = updated?.length || 0;
     console.log(`✓ Cancelled ${cancelledCount} document(s)`);
     

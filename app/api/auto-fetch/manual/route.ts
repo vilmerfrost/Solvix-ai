@@ -150,13 +150,7 @@ export async function POST() {
           continue;
         }
 
-        // Enqueue for processing
-        await supabasedbclient.from("processing_jobs").insert({
-          document_id: doc.id,
-          status: "queued",
-        });
-
-        console.log(`✅ Manual auto-fetch: Queued ${fileInfo.name} for processing (doc: ${doc.id})`);
+        console.log(`✅ Manual auto-fetch: Imported ${fileInfo.name} (doc: ${doc.id})`);
 
         results.processed++;
         results.files.push({

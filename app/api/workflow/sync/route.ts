@@ -195,12 +195,6 @@ export async function POST() {
           continue;
         }
 
-        // Enqueue for processing
-        await supabase.from("processing_jobs").insert({
-          document_id: doc.id,
-          status: "queued",
-        });
-
         results.processed++;
         results.files.push({
           filename: fileInfo.name,

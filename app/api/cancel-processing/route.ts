@@ -52,16 +52,6 @@ export async function POST(req: Request) {
       throw updateError;
     }
     
-    // Also cancel any pending processing jobs
-    await supabase
-      .from("processing_jobs")
-      .update({ 
-        status: "cancelled",
-        updated_at: new Date().toISOString()
-      })
-      .eq("document_id", documentId)
-      .eq("status", "queued");
-    
     console.log(`✓ Processing cancelled for document ${documentId}`);
     
     return NextResponse.json({ 

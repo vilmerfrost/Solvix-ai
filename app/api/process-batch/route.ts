@@ -54,22 +54,6 @@ export async function POST(req: Request) {
       throw updateError;
     }
     
-    // Create processing jobs for all documents
-    const jobs = validIds.map(id => ({
-      document_id: id,
-      status: "queued",
-      created_at: new Date().toISOString()
-    }));
-    
-    const { error: jobError } = await supabase
-      .from("processing_jobs")
-      .insert(jobs);
-    
-    if (jobError) {
-      console.error("Failed to create processing jobs:", jobError);
-      // Don't throw - status is already updated
-    }
-    
     console.log(`✓ ${validIds.length} documents marked as 'processing'`);
     
     // Trigger processing in background (sequential with delay)
