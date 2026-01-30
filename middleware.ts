@@ -18,6 +18,7 @@ const PUBLIC_PATHS = [
   "/privacy",
   "/pricing",
   "/health",
+  "/subscription-required",
   "/_next",
   "/favicon.ico",
 ];
@@ -105,6 +106,15 @@ export async function middleware(request: NextRequest) {
     return NextResponse.redirect(new URL("/dashboard", request.url));
   }
 
+  // Check subscription status for SaaS mode
+  if (!process.env.WHITELABEL_MODE) {
+    const isSubscribed = await checkSubscriptionStatus(supabase, user.id);
+    
+    if (!isSubscribed && !pathname.startsWith("/subscription-required") && !pathname.startsWith("/pricing") && !pathname.startsWith("/settings/billing")) {
+      return NextResponse.redirect(new URL("/subscription-required", request.url));
+    }
+  }
+
   return response;
 }
 
@@ -129,6 +139,39 @@ async function checkSetupStatus(supabase: ReturnType<typeof createServerClient>)
     return settings.is_setup_complete === true;
   } catch {
     return false;
+  }
+}
+
+async function checkSubscriptionStatus(supabase: ReturnType<typeof createServerClient>, userId: string): Promise<boolean> {
+  try {
+    const { data: subscription, error } = await supabase
+      .from("subscriptions")
+      .select("status, trial_end, plan")
+      .eq("user_id", userId)
+      .single();
+
+    if (error || !subscription) {
+      // No subscription found - not subscribed
+      return false;
+    }
+
+    // Check if subscription is active
+    if (subscription.status === "active" || subscription.status === "lifetime") {
+      return true;
+    }
+
+    // Check if trial is still valid
+    if (subscription.status === "trialing" && subscription.trial_end) {
+      const trialEnd = new Date(subscription.trial_end);
+      if (trialEnd > new Date()) {
+        return true;
+      }
+    }
+
+    return false;
+  } catch {
+    // If check fails, allow access (fail open for better UX)
+    return true;
   }
 }
 

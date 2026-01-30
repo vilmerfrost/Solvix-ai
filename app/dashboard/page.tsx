@@ -140,9 +140,9 @@ export default async function Dashboard({
     : 0;
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-stone-50">
       {/* Header - Clean and Professional */}
-      <div className="bg-white border-b border-gray-200">
+      <div className="bg-white border-b border-stone-200">
         <div className="max-w-7xl mx-auto px-6 py-6">
           {/* Breadcrumbs */}
           <Breadcrumbs items={getDashboardBreadcrumbs()} className="mb-4" />
@@ -152,7 +152,7 @@ export default async function Dashboard({
             {/* Left: Back button */}
             <Link
               href="/"
-              className="flex items-center gap-2 px-4 py-2 text-sm text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors"
+              className="flex items-center gap-2 px-4 py-2 text-sm text-stone-600 hover:text-stone-900 hover:bg-stone-100 rounded-lg transition-colors"
             >
               <ArrowLeft className="w-4 h-4" />
               <span>{strings.back}</span>
@@ -168,7 +168,7 @@ export default async function Dashboard({
               
               <Link
                 href="/health"
-                className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-all text-sm font-medium"
+                className="flex items-center gap-2 px-4 py-2 bg-white border border-stone-200 text-stone-700 rounded-lg hover:bg-stone-50 hover:border-stone-300 transition-all text-sm font-medium"
               >
                 <Activity className="w-4 h-4" />
                 <span>{strings.health}</span>
@@ -176,7 +176,7 @@ export default async function Dashboard({
 
               <Link
                 href="/settings"
-                className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-all text-sm font-medium"
+                className="flex items-center gap-2 px-4 py-2 bg-white border border-stone-200 text-stone-700 rounded-lg hover:bg-stone-50 hover:border-stone-300 transition-all text-sm font-medium"
               >
                 <Settings className="w-4 h-4" />
                 <span>{strings.settings}</span>
@@ -189,31 +189,31 @@ export default async function Dashboard({
 
           {/* System Status */}
           <div className="flex items-center gap-2 mb-4">
-            <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
-            <span className="text-xs font-medium text-green-600 uppercase tracking-wider">
+            <div className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse" />
+            <span className="text-xs font-medium text-emerald-600 uppercase tracking-wider">
               {strings.systemOnline}
             </span>
           </div>
 
           {/* Title */}
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">
+          <h1 className="text-3xl font-bold text-stone-900 mb-2">
             {config.companyName} {strings.review}
           </h1>
-          <p className="text-lg text-teal-600 italic font-medium mb-2">
+          <p className="text-lg text-indigo-600 font-medium mb-2">
             {strings.dashboard}
           </p>
-          <p className="text-sm text-gray-600">
+          <p className="text-sm text-stone-500">
             {strings.reviewDescription}
           </p>
           
           {/* Tabs */}
-          <div className="flex gap-2 border-b border-gray-200 mt-6">
+          <div className="flex gap-2 border-b border-stone-200 mt-6">
             <a
               href="/dashboard?tab=active"
               className={`px-4 py-2 text-sm font-medium transition-colors ${
                 activeTab === "active" || !activeTab
-                  ? "text-blue-600 border-b-2 border-blue-600"
-                  : "text-gray-600 hover:text-gray-900"
+                  ? "text-indigo-600 border-b-2 border-indigo-600"
+                  : "text-stone-600 hover:text-stone-900"
               }`}
             >
               {strings.active} ({documents?.filter(d => !d.exported_at).length || 0})
@@ -222,8 +222,8 @@ export default async function Dashboard({
               href="/dashboard?tab=archive"
               className={`px-4 py-2 text-sm font-medium transition-colors ${
                 activeTab === "archive"
-                  ? "text-blue-600 border-b-2 border-blue-600"
-                  : "text-gray-600 hover:text-gray-900"
+                  ? "text-indigo-600 border-b-2 border-indigo-600"
+                  : "text-stone-600 hover:text-stone-900"
               }`}
             >
               {strings.archived} ({documents?.filter(d => d.exported_at).length || 0})
@@ -241,31 +241,31 @@ export default async function Dashboard({
         
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
           {/* Total */}
-          <div className="bg-white rounded-lg border border-gray-200 p-6">
+          <div className="bg-white rounded-lg border border-stone-200 p-6">
             <div className="flex items-center justify-between mb-2">
-              <span className="text-sm font-medium text-gray-600 uppercase tracking-wide">
+              <span className="text-sm font-medium text-stone-600 uppercase tracking-wide">
                 {strings.total.toUpperCase()}
               </span>
-              <div className="w-2 h-2 rounded-full bg-gray-400" />
+              <div className="w-2 h-2 rounded-full bg-stone-400" />
             </div>
-            <div className="text-4xl font-bold text-gray-900 mb-1">
+            <div className="text-4xl font-bold text-stone-900 mb-1">
               {stats.total}
             </div>
-            <p className="text-xs text-gray-500">{strings.documents}</p>
+            <p className="text-xs text-stone-500">{strings.documents}</p>
           </div>
 
           {/* Needs Review - Clickable */}
           <a 
             href="#needs-review-section"
-            className="bg-white rounded-lg border border-gray-200 p-6 hover:shadow-md transition-shadow cursor-pointer block"
+            className="bg-white rounded-lg border border-stone-200 p-6 hover:shadow-md transition-shadow cursor-pointer block"
           >
             <div className="flex items-center justify-between mb-2">
-              <span className="text-sm font-medium text-gray-600 uppercase tracking-wide">
+              <span className="text-sm font-medium text-stone-600 uppercase tracking-wide">
                 {strings.needsReview.toUpperCase()}
               </span>
               <div className="w-2 h-2 rounded-full bg-yellow-500" />
             </div>
-            <div className="text-4xl font-bold text-gray-900 mb-1">
+            <div className="text-4xl font-bold text-stone-900 mb-1">
               {stats.needsReview}
             </div>
             <p className="text-xs text-yellow-600 font-medium">
@@ -277,17 +277,17 @@ export default async function Dashboard({
           </a>
 
           {/* Approved */}
-          <div className="bg-white rounded-lg border border-gray-200 p-6">
+          <div className="bg-white rounded-lg border border-stone-200 p-6">
             <div className="flex items-center justify-between mb-2">
-              <span className="text-sm font-medium text-gray-600 uppercase tracking-wide">
+              <span className="text-sm font-medium text-stone-600 uppercase tracking-wide">
                 {strings.approved.toUpperCase()}
               </span>
-              <div className="w-2 h-2 rounded-full bg-green-500" />
+              <div className="w-2 h-2 rounded-full bg-emerald-500" />
             </div>
-            <div className="text-4xl font-bold text-gray-900 mb-1">
+            <div className="text-4xl font-bold text-stone-900 mb-1">
               {stats.approved}
             </div>
-            <p className="text-xs text-gray-500">
+            <p className="text-xs text-stone-500">
               {activeTab === "active" 
                 ? (config.language === 'sv' ? 'Redo för export' : 
                    config.language === 'en' ? 'Ready for export' :
@@ -298,14 +298,14 @@ export default async function Dashboard({
           </div>
 
           {/* Failed */}
-          <div className="bg-white rounded-lg border border-gray-200 p-6">
+          <div className="bg-white rounded-lg border border-stone-200 p-6">
             <div className="flex items-center justify-between mb-2">
-              <span className="text-sm font-medium text-gray-600 uppercase tracking-wide">
+              <span className="text-sm font-medium text-stone-600 uppercase tracking-wide">
                 {strings.error.toUpperCase()}
               </span>
               <div className="w-2 h-2 rounded-full bg-red-500" />
             </div>
-            <div className="text-4xl font-bold text-gray-900 mb-1">
+            <div className="text-4xl font-bold text-stone-900 mb-1">
               {stats.failed}
             </div>
             <p className="text-xs text-red-600 font-medium">
@@ -321,11 +321,11 @@ export default async function Dashboard({
         {activeTab === "active" && (
           <div id="needs-review-section" className="mb-8">
             <div className="flex items-center justify-between mb-4">
-              <h2 className="text-xl font-bold text-gray-900 flex items-center gap-2">
+              <h2 className="text-xl font-bold text-stone-900 flex items-center gap-2">
                 <span className="w-3 h-3 bg-yellow-500 rounded-full animate-pulse"></span>
                 {strings.needsReview}
               </h2>
-              <p className="text-sm text-gray-500">
+              <p className="text-sm text-stone-500">
                 {needsReviewTotal} {strings.documents.toLowerCase()} {config.language === 'sv' ? 'väntar' : config.language === 'en' ? 'waiting' : config.language === 'no' ? 'venter' : 'odottaa'}
               </p>
             </div>
@@ -335,13 +335,13 @@ export default async function Dashboard({
                 <div className="inline-flex items-center justify-center w-16 h-16 bg-yellow-50 rounded-full mb-4">
                   <FileText className="w-8 h-8 text-yellow-600" />
                 </div>
-                <h3 className="text-xl font-semibold text-gray-900 mb-2">
+                <h3 className="text-xl font-semibold text-stone-900 mb-2">
                   {config.language === 'sv' ? 'Inga dokument behöver granskning' : 
                    config.language === 'en' ? 'No documents need review' :
                    config.language === 'no' ? 'Ingen dokumenter trenger gjennomgang' :
                    'Ei tarkistettavia asiakirjoja'}
                 </h3>
-                <p className="text-gray-600">
+                <p className="text-stone-600">
                   {config.language === 'sv' ? 'Alla dokument är granskade eller väntar på bearbetning.' : 
                    config.language === 'en' ? 'All documents are reviewed or awaiting processing.' :
                    config.language === 'no' ? 'Alle dokumenter er gjennomgått eller venter på behandling.' :
@@ -371,12 +371,12 @@ export default async function Dashboard({
                         </div>
                         <div className="flex-1 min-w-0">
                           <h3 
-                            className="font-medium text-gray-900 text-sm truncate mb-1"
+                            className="font-medium text-stone-900 text-sm truncate mb-1"
                             title={doc.filename}
                           >
                             {truncateFilename(doc.filename, 30)}
                           </h3>
-                          <p className="text-xs text-gray-500" title={formatDate(doc.created_at)}>
+                          <p className="text-xs text-stone-500" title={formatDate(doc.created_at)}>
                             <RelativeTime date={doc.created_at} />
                           </p>
                         </div>
@@ -385,31 +385,31 @@ export default async function Dashboard({
 
                     <div className="p-5 space-y-3">
                       <div className="flex items-center justify-between text-sm">
-                        <span className="text-gray-600">{strings.material}:</span>
-                        <span className="font-medium text-gray-900">{materialCount} {config.language === 'sv' ? 'rader' : config.language === 'en' ? 'rows' : config.language === 'no' ? 'rader' : 'riviä'}</span>
+                        <span className="text-stone-600">{strings.material}:</span>
+                        <span className="font-medium text-stone-900">{materialCount} {config.language === 'sv' ? 'rader' : config.language === 'en' ? 'rows' : config.language === 'no' ? 'rader' : 'riviä'}</span>
                       </div>
                       <div className="flex items-center justify-between text-sm">
-                        <span className="text-gray-600">{config.language === 'sv' ? 'Total vikt' : config.language === 'en' ? 'Total weight' : config.language === 'no' ? 'Total vekt' : 'Kokonaispaino'}:</span>
-                        <span className="font-medium text-gray-900">
+                        <span className="text-stone-600">{config.language === 'sv' ? 'Total vikt' : config.language === 'en' ? 'Total weight' : config.language === 'no' ? 'Total vekt' : 'Kokonaispaino'}:</span>
+                        <span className="font-medium text-stone-900">
                           {totalWeight > 0 ? `${(totalWeight / 1000).toFixed(1)} ton` : '0 kg'}
                         </span>
                       </div>
                       
                       <div>
                         <div className="flex items-center justify-between text-xs mb-1">
-                          <span className="text-gray-600">{strings.completeness}:</span>
+                          <span className="text-stone-600">{strings.completeness}:</span>
                           <span className={`font-medium ${
-                            completeness >= 95 ? 'text-green-600' :
+                            completeness >= 95 ? 'text-emerald-600' :
                             completeness >= 80 ? 'text-yellow-600' :
                             'text-red-600'
                           }`}>
                             {completeness.toFixed(0)}%
                           </span>
                         </div>
-                        <div className="w-full h-2 bg-gray-100 rounded-full overflow-hidden">
+                        <div className="w-full h-2 bg-stone-100 rounded-full overflow-hidden">
                           <div
                             className={`h-full transition-all ${
-                              completeness >= 95 ? 'bg-green-500' :
+                              completeness >= 95 ? 'bg-emerald-500' :
                               completeness >= 80 ? 'bg-yellow-500' :
                               'bg-red-500'
                             }`}
@@ -453,13 +453,13 @@ export default async function Dashboard({
         {/* Senaste Dokument Section */}
         <div className="mb-8">
           <div className="flex items-center justify-between mb-4">
-            <h2 className="text-xl font-bold text-gray-900">
+            <h2 className="text-xl font-bold text-stone-900">
               {config.language === 'sv' ? 'Senaste dokument' : 
                config.language === 'en' ? 'Recent documents' :
                config.language === 'no' ? 'Nylige dokumenter' :
                'Viimeisimmät asiakirjat'}
             </h2>
-            <p className="text-sm text-gray-500">
+            <p className="text-sm text-stone-500">
               {config.language === 'sv' ? `Visar ${recentDocs.length} av ${stats.total} dokument` : 
                config.language === 'en' ? `Showing ${recentDocs.length} of ${stats.total} documents` :
                config.language === 'no' ? `Viser ${recentDocs.length} av ${stats.total} dokumenter` :
@@ -468,11 +468,11 @@ export default async function Dashboard({
           </div>
 
           {recentDocs.length === 0 ? (
-            <div className="bg-white rounded-lg border-2 border-dashed border-gray-300 p-16 text-center">
+            <div className="bg-white rounded-lg border-2 border-dashed border-stone-300 p-16 text-center">
               <div className="inline-flex items-center justify-center w-16 h-16 bg-blue-50 rounded-full mb-4">
-                <FileText className="w-8 h-8 text-blue-600" />
+                <FileText className="w-8 h-8 text-indigo-600" />
               </div>
-              <h3 className="text-xl font-semibold text-gray-900 mb-2">
+              <h3 className="text-xl font-semibold text-stone-900 mb-2">
                 {activeTab === "archive" 
                   ? (config.language === 'sv' ? 'Inga arkiverade dokument ännu' : 
                      config.language === 'en' ? 'No archived documents yet' :
@@ -480,7 +480,7 @@ export default async function Dashboard({
                      'Ei arkistoituja asiakirjoja vielä')
                   : strings.noDocuments}
               </h3>
-              <p className="text-gray-600 mb-6">
+              <p className="text-stone-600 mb-6">
                 {activeTab === "archive"
                   ? (config.language === 'sv' ? 'Exporterade dokument visas här' : 
                      config.language === 'en' ? 'Exported documents will appear here' :
@@ -512,23 +512,23 @@ export default async function Dashboard({
                 return (
                   <div
                     key={doc.id}
-                    className="bg-white rounded-lg border border-gray-200 overflow-hidden hover:shadow-md transition-shadow"
+                    className="bg-white rounded-lg border border-stone-200 overflow-hidden hover:shadow-md transition-shadow"
                   >
                     {/* Document Header */}
-                    <div className="p-5 border-b border-gray-100">
+                    <div className="p-5 border-b border-stone-100">
                       <div className="flex items-start justify-between gap-3 mb-3">
                         <div className="flex items-start gap-3 flex-1 min-w-0">
-                          <div className="flex-shrink-0 w-10 h-10 bg-gray-100 rounded-lg flex items-center justify-center">
-                            <FileText className="w-5 h-5 text-gray-600" />
+                          <div className="flex-shrink-0 w-10 h-10 bg-stone-100 rounded-lg flex items-center justify-center">
+                            <FileText className="w-5 h-5 text-stone-600" />
                           </div>
                           <div className="flex-1 min-w-0">
                             <h3 
-                              className="font-medium text-gray-900 text-sm truncate mb-1"
+                              className="font-medium text-stone-900 text-sm truncate mb-1"
                               title={doc.filename}
                             >
                               {truncateFilename(doc.filename, 30)}
                             </h3>
-                            <p className="text-xs text-gray-500" title={formatDate(doc.created_at)}>
+                            <p className="text-xs text-stone-500" title={formatDate(doc.created_at)}>
                               <RelativeTime date={doc.created_at} />
                             </p>
                           </div>
@@ -542,7 +542,7 @@ export default async function Dashboard({
                             doc.status === 'approved' ? 'bg-green-100 text-green-800' :
                             doc.status === 'exported' ? 'bg-purple-100 text-purple-800' :
                             doc.status === 'error' ? 'bg-red-100 text-red-800' :
-                            'bg-gray-100 text-gray-800'
+                            'bg-stone-100 text-stone-800'
                           }`}>
                             {doc.status === 'uploaded' && strings.uploaded}
                             {doc.status === 'processing' && `🔄 ${strings.processing}...`}
@@ -567,14 +567,14 @@ export default async function Dashboard({
                     {/* Document Stats */}
                     <div className="p-5 space-y-3">
                       <div className="flex items-center justify-between text-sm">
-                        <span className="text-gray-600">{strings.material}:</span>
-                        <span className="font-medium text-gray-900">
+                        <span className="text-stone-600">{strings.material}:</span>
+                        <span className="font-medium text-stone-900">
                           {isProcessed ? `${materialCount} ${config.language === 'sv' ? 'rader' : config.language === 'en' ? 'rows' : config.language === 'no' ? 'rader' : 'riviä'}` : (config.language === 'sv' ? 'Ej processad' : config.language === 'en' ? 'Not processed' : config.language === 'no' ? 'Ikke behandlet' : 'Ei käsitelty')}
                         </span>
                       </div>
                       <div className="flex items-center justify-between text-sm">
-                        <span className="text-gray-600">{config.language === 'sv' ? 'Total vikt' : config.language === 'en' ? 'Total weight' : config.language === 'no' ? 'Total vekt' : 'Kokonaispaino'}:</span>
-                        <span className="font-medium text-gray-900">
+                        <span className="text-stone-600">{config.language === 'sv' ? 'Total vikt' : config.language === 'en' ? 'Total weight' : config.language === 'no' ? 'Total vekt' : 'Kokonaispaino'}:</span>
+                        <span className="font-medium text-stone-900">
                           {isProcessed 
                             ? (totalWeight > 0 ? `${(totalWeight / 1000).toFixed(1)} ton` : '0 kg')
                             : '-'
@@ -585,21 +585,21 @@ export default async function Dashboard({
                       {/* Completeness Bar */}
                       <div>
                         <div className="flex items-center justify-between text-xs mb-1">
-                          <span className="text-gray-600">{strings.completeness}:</span>
+                          <span className="text-stone-600">{strings.completeness}:</span>
                           <span className={`font-medium ${
-                            !isProcessed ? 'text-gray-400' :
-                            completeness >= 95 ? 'text-green-600' :
+                            !isProcessed ? 'text-stone-400' :
+                            completeness >= 95 ? 'text-emerald-600' :
                             completeness >= 80 ? 'text-yellow-600' :
                             'text-red-600'
                           }`}>
                             {isProcessed ? `${completeness.toFixed(0)}%` : '-'}
                           </span>
                         </div>
-                        <div className="w-full h-2 bg-gray-100 rounded-full overflow-hidden">
+                        <div className="w-full h-2 bg-stone-100 rounded-full overflow-hidden">
                           <div
                             className={`h-full transition-all ${
-                              !isProcessed ? 'bg-gray-300' :
-                              completeness >= 95 ? 'bg-green-500' :
+                              !isProcessed ? 'bg-stone-300' :
+                              completeness >= 95 ? 'bg-emerald-500' :
                               completeness >= 80 ? 'bg-yellow-500' :
                               'bg-red-500'
                             }`}
@@ -637,7 +637,7 @@ export default async function Dashboard({
                         <GranskaButton documentId={doc.id} filename={doc.filename} />
                       )}
                       {doc.status === 'processing' && (
-                        <div className="px-4 py-2 bg-gray-100 text-gray-600 rounded-lg font-medium flex items-center justify-center gap-2">
+                        <div className="px-4 py-2 bg-stone-100 text-stone-600 rounded-lg font-medium flex items-center justify-center gap-2">
                           <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24">
                             <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
                             <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />

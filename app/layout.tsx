@@ -37,7 +37,7 @@ export default function RootLayout({
   
   return (
     <html lang={htmlLang}>
-      <body className={`${inter.variable} ${playfair.variable} font-sans antialiased bg-white text-slate-900`}>
+      <body className={`${inter.variable} ${playfair.variable} font-sans antialiased bg-stone-50 text-stone-900`}>
         <PostHogProvider>
           <ToastProvider>
             {children}

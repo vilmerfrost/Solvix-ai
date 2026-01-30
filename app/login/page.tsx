@@ -139,26 +139,26 @@ function LoginPageContent() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-white to-slate-50 flex items-center justify-center p-4">
+    <div className="min-h-screen bg-gradient-to-br from-indigo-50/50 via-stone-50 to-stone-100 flex items-center justify-center p-4">
       <div className="w-full max-w-md">
         {/* Logo/Brand */}
         <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-16 h-16 bg-indigo-600 rounded-2xl mb-4">
-            <span className="text-2xl font-bold text-white">V</span>
+          <div className="inline-flex items-center justify-center w-14 h-14 bg-indigo-600 rounded-xl mb-4 shadow-lg shadow-indigo-500/20">
+            <span className="text-xl font-bold text-white">V</span>
           </div>
-          <h1 className="text-2xl font-bold text-slate-900">Vextra AI</h1>
-          <p className="text-slate-600 mt-1">Intelligent Document Extraction</p>
+          <h1 className="text-2xl font-bold text-stone-900">Vextra AI</h1>
+          <p className="text-stone-500 mt-1">Intelligent dokumentextraktion</p>
         </div>
 
         {/* Login Card */}
-        <div className="bg-white rounded-2xl shadow-xl border border-slate-200 p-8">
-          <h2 className="text-xl font-semibold text-slate-900 mb-6 text-center">
+        <div className="bg-white rounded-2xl shadow-xl shadow-stone-200/50 border border-stone-200 p-8">
+          <h2 className="text-xl font-semibold text-stone-900 mb-6 text-center">
             Logga in
           </h2>
 
           {/* Error Message */}
           {error && (
-            <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg flex items-start gap-3">
+            <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-xl flex items-start gap-3">
               <AlertCircle className="w-5 h-5 text-red-600 flex-shrink-0 mt-0.5" />
               <p className="text-sm text-red-700">{error}</p>
             </div>
@@ -169,14 +169,14 @@ function LoginPageContent() {
             <button
               onClick={() => handleOAuthLogin("google")}
               disabled={!!socialLoading}
-              className="w-full flex items-center justify-center gap-3 px-4 py-3 border border-slate-300 rounded-lg hover:bg-slate-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              className="w-full flex items-center justify-center gap-3 px-4 py-3 border border-stone-200 rounded-xl bg-white hover:bg-stone-50 hover:border-stone-300 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {socialLoading === "google" ? (
-                <Loader2 className="w-5 h-5 animate-spin" />
+                <Loader2 className="w-5 h-5 animate-spin text-stone-500" />
               ) : (
                 <GoogleIcon />
               )}
-              <span className="font-medium text-slate-700">
+              <span className="font-medium text-stone-700">
                 Fortsätt med Google
               </span>
             </button>
@@ -184,14 +184,14 @@ function LoginPageContent() {
             <button
               onClick={() => handleOAuthLogin("azure")}
               disabled={!!socialLoading}
-              className="w-full flex items-center justify-center gap-3 px-4 py-3 border border-slate-300 rounded-lg hover:bg-slate-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              className="w-full flex items-center justify-center gap-3 px-4 py-3 border border-stone-200 rounded-xl bg-white hover:bg-stone-50 hover:border-stone-300 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {socialLoading === "azure" ? (
-                <Loader2 className="w-5 h-5 animate-spin" />
+                <Loader2 className="w-5 h-5 animate-spin text-stone-500" />
               ) : (
                 <MicrosoftIcon />
               )}
-              <span className="font-medium text-slate-700">
+              <span className="font-medium text-stone-700">
                 Fortsätt med Microsoft
               </span>
             </button>
@@ -200,53 +200,53 @@ function LoginPageContent() {
           {/* Divider */}
           <div className="relative mb-6">
             <div className="absolute inset-0 flex items-center">
-              <div className="w-full border-t border-slate-200" />
+              <div className="w-full border-t border-stone-200" />
             </div>
             <div className="relative flex justify-center text-sm">
-              <span className="px-4 bg-white text-slate-500">eller</span>
+              <span className="px-4 bg-white text-stone-400">eller</span>
             </div>
           </div>
 
           {/* Email/Password Form */}
           <form onSubmit={handleEmailLogin} className="space-y-4">
             <div>
-              <label className="block text-sm font-medium text-slate-700 mb-2">
+              <label className="block text-sm font-medium text-stone-700 mb-2">
                 E-postadress
               </label>
               <div className="relative">
-                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
+                <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 w-5 h-5 text-stone-400" />
                 <input
                   type="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="namn@foretag.se"
                   required
-                  className="w-full pl-11 pr-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition-all"
+                  className="w-full pl-11 pr-4 py-3 border border-stone-200 rounded-xl bg-white text-stone-900 placeholder:text-stone-400 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition-all"
                 />
               </div>
             </div>
 
             <div>
               <div className="flex items-center justify-between mb-2">
-                <label className="block text-sm font-medium text-slate-700">
+                <label className="block text-sm font-medium text-stone-700">
                   Lösenord
                 </label>
                 <Link
                   href="/forgot-password"
-                  className="text-sm text-indigo-600 hover:text-indigo-700"
+                  className="text-sm text-indigo-600 hover:text-indigo-700 font-medium"
                 >
                   Glömt lösenord?
                 </Link>
               </div>
               <div className="relative">
-                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
+                <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 w-5 h-5 text-stone-400" />
                 <input
                   type="password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="••••••••"
                   required
-                  className="w-full pl-11 pr-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition-all"
+                  className="w-full pl-11 pr-4 py-3 border border-stone-200 rounded-xl bg-white text-stone-900 placeholder:text-stone-400 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition-all"
                 />
               </div>
             </div>
@@ -254,7 +254,7 @@ function LoginPageContent() {
             <button
               type="submit"
               disabled={loading}
-              className="w-full bg-indigo-600 text-white py-3 rounded-lg font-semibold hover:bg-indigo-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+              className="w-full bg-indigo-600 text-white py-3 rounded-xl font-semibold hover:bg-indigo-700 transition-colors shadow-sm disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
             >
               {loading ? (
                 <>
@@ -272,7 +272,7 @@ function LoginPageContent() {
             <button
               onClick={handleMagicLink}
               disabled={!!socialLoading}
-              className="w-full text-sm text-slate-600 hover:text-indigo-600 transition-colors disabled:opacity-50"
+              className="w-full text-sm text-stone-500 hover:text-indigo-600 transition-colors disabled:opacity-50"
             >
               {socialLoading === "magic" ? (
                 <span className="flex items-center justify-center gap-2">
@@ -287,7 +287,7 @@ function LoginPageContent() {
 
           {/* Sign Up Link */}
           <div className="mt-6 text-center">
-            <p className="text-sm text-slate-600">
+            <p className="text-sm text-stone-500">
               Har du inget konto?{" "}
               <Link
                 href="/signup"
@@ -300,13 +300,13 @@ function LoginPageContent() {
         </div>
 
         {/* Footer */}
-        <p className="text-center text-xs text-slate-500 mt-6">
+        <p className="text-center text-xs text-stone-400 mt-6">
           Genom att logga in godkänner du våra{" "}
-          <Link href="/terms" className="underline hover:text-slate-700">
+          <Link href="/terms" className="underline hover:text-stone-600">
             villkor
           </Link>{" "}
           och{" "}
-          <Link href="/privacy" className="underline hover:text-slate-700">
+          <Link href="/privacy" className="underline hover:text-stone-600">
             integritetspolicy
           </Link>
         </p>
@@ -318,16 +318,16 @@ function LoginPageContent() {
 // Loading fallback for Suspense
 function LoginPageLoading() {
   return (
-    <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-white to-slate-50 flex items-center justify-center p-4">
+    <div className="min-h-screen bg-gradient-to-br from-indigo-50/50 via-stone-50 to-stone-100 flex items-center justify-center p-4">
       <div className="w-full max-w-md">
         <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-16 h-16 bg-indigo-600 rounded-2xl mb-4">
-            <span className="text-2xl font-bold text-white">V</span>
+          <div className="inline-flex items-center justify-center w-14 h-14 bg-indigo-600 rounded-xl mb-4 shadow-lg shadow-indigo-500/20">
+            <span className="text-xl font-bold text-white">V</span>
           </div>
-          <h1 className="text-2xl font-bold text-slate-900">Vextra AI</h1>
-          <p className="text-slate-600 mt-1">Intelligent Document Extraction</p>
+          <h1 className="text-2xl font-bold text-stone-900">Vextra AI</h1>
+          <p className="text-stone-500 mt-1">Intelligent dokumentextraktion</p>
         </div>
-        <div className="bg-white rounded-2xl shadow-xl border border-slate-200 p-8 flex items-center justify-center">
+        <div className="bg-white rounded-2xl shadow-xl shadow-stone-200/50 border border-stone-200 p-8 flex items-center justify-center">
           <Loader2 className="w-8 h-8 animate-spin text-indigo-600" />
         </div>
       </div>
