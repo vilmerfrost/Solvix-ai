@@ -142,3 +142,69 @@ export function validateKeyFormat(
 
   return { isValid: true };
 }
+
+// ============================================================
+// AZURE CONNECTION STRING ENCRYPTION
+// ============================================================
+
+/**
+ * Encrypt an Azure connection string for secure storage
+ * Uses the same AES-256-GCM encryption as API keys
+ */
+export function encryptAzureConnectionString(connectionString: string): string {
+  return encryptAPIKey(connectionString);
+}
+
+/**
+ * Decrypt an Azure connection string from secure storage
+ */
+export function decryptAzureConnectionString(encryptedString: string): string {
+  return decryptAPIKey(encryptedString);
+}
+
+/**
+ * Generate a hint for Azure connection string display
+ * Shows AccountName from the connection string
+ */
+export function generateAzureConnectionHint(connectionString: string): string {
+  // Extract AccountName from connection string
+  const accountNameMatch = connectionString.match(/AccountName=([^;]+)/);
+  if (accountNameMatch && accountNameMatch[1]) {
+    return `AccountName=${accountNameMatch[1]}`;
+  }
+  
+  // Fallback: show first 20 chars + last 4
+  if (connectionString.length > 30) {
+    return connectionString.substring(0, 20) + '...' + connectionString.slice(-4);
+  }
+  
+  return '****';
+}
+
+/**
+ * Validate Azure connection string format
+ */
+export function validateAzureConnectionString(connectionString: string): { isValid: boolean; error?: string } {
+  if (!connectionString || connectionString.trim().length === 0) {
+    return { isValid: false, error: 'Connection string is required' };
+  }
+
+  // Check for required components
+  const hasProtocol = connectionString.includes('DefaultEndpointsProtocol=');
+  const hasAccountName = connectionString.includes('AccountName=');
+  const hasAccountKey = connectionString.includes('AccountKey=') || connectionString.includes('SharedAccessSignature=');
+
+  if (!hasProtocol) {
+    return { isValid: false, error: 'Connection string missing DefaultEndpointsProtocol' };
+  }
+
+  if (!hasAccountName) {
+    return { isValid: false, error: 'Connection string missing AccountName' };
+  }
+
+  if (!hasAccountKey) {
+    return { isValid: false, error: 'Connection string missing AccountKey or SharedAccessSignature' };
+  }
+
+  return { isValid: true };
+}

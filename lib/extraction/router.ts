@@ -14,13 +14,13 @@ import { createAnthropicAdapter } from "./adapters/anthropic";
 /**
  * Get the user's preferred model from settings
  */
-export async function getUserPreferredModel(): Promise<string> {
+export async function getUserPreferredModel(userId: string): Promise<string> {
   const supabase = createServiceRoleClient();
   
   const { data: settings } = await supabase
     .from("settings")
     .select("preferred_model")
-    .eq("user_id", "default")
+    .eq("user_id", userId)
     .single();
   
   return settings?.preferred_model || 'gemini-3-flash';
@@ -29,13 +29,13 @@ export async function getUserPreferredModel(): Promise<string> {
 /**
  * Get the user's custom instructions from settings
  */
-export async function getUserCustomInstructions(): Promise<string | undefined> {
+export async function getUserCustomInstructions(userId: string): Promise<string | undefined> {
   const supabase = createServiceRoleClient();
   
   const { data: settings } = await supabase
     .from("settings")
     .select("custom_instructions")
-    .eq("user_id", "default")
+    .eq("user_id", userId)
     .single();
   
   return settings?.custom_instructions || undefined;
@@ -44,13 +44,13 @@ export async function getUserCustomInstructions(): Promise<string | undefined> {
 /**
  * Get the decrypted API key for a provider
  */
-export async function getAPIKeyForProvider(provider: AIProvider): Promise<string | null> {
+export async function getAPIKeyForProvider(provider: AIProvider, userId: string): Promise<string | null> {
   const supabase = createServiceRoleClient();
   
   const { data: keyData } = await supabase
     .from("user_api_keys")
     .select("encrypted_key, is_valid")
-    .eq("user_id", "default")
+    .eq("user_id", userId)
     .eq("provider", provider)
     .single();
   
@@ -68,23 +68,23 @@ export async function getAPIKeyForProvider(provider: AIProvider): Promise<string
 /**
  * Get the API key for a specific model
  */
-export async function getAPIKeyForModel(modelId: string): Promise<string | null> {
+export async function getAPIKeyForModel(modelId: string, userId: string): Promise<string | null> {
   const provider = getProviderByModelId(modelId);
   if (!provider) return null;
   
-  return getAPIKeyForProvider(provider);
+  return getAPIKeyForProvider(provider, userId);
 }
 
 /**
  * Check which providers have valid API keys configured
  */
-export async function getConfiguredProviders(): Promise<AIProvider[]> {
+export async function getConfiguredProviders(userId: string): Promise<AIProvider[]> {
   const supabase = createServiceRoleClient();
   
   const { data: keys } = await supabase
     .from("user_api_keys")
     .select("provider")
-    .eq("user_id", "default")
+    .eq("user_id", userId)
     .eq("is_valid", true);
   
   return (keys || []).map(k => k.provider as AIProvider);
@@ -93,8 +93,8 @@ export async function getConfiguredProviders(): Promise<AIProvider[]> {
 /**
  * Get available models based on configured API keys
  */
-export async function getAvailableModels(): Promise<typeof AVAILABLE_MODELS> {
-  const configuredProviders = await getConfiguredProviders();
+export async function getAvailableModels(userId: string): Promise<typeof AVAILABLE_MODELS> {
+  const configuredProviders = await getConfiguredProviders(userId);
   
   return AVAILABLE_MODELS.map(model => ({
     ...model,
@@ -129,10 +129,11 @@ function createAdapter(modelId: string): ExtractionAdapter {
  */
 export async function extractWithModel(
   request: ExtractionRequest,
+  userId: string,
   modelId?: string
 ): Promise<ExtractionResult> {
   // Get model ID from request or user preferences
-  const actualModelId = modelId || await getUserPreferredModel();
+  const actualModelId = modelId || await getUserPreferredModel(userId);
   
   // Validate the model exists
   const model = getModelById(actualModelId);
@@ -150,7 +151,7 @@ export async function extractWithModel(
   }
   
   // Get API key for this model's provider
-  const apiKey = await getAPIKeyForModel(actualModelId);
+  const apiKey = await getAPIKeyForModel(actualModelId, userId);
   if (!apiKey) {
     return {
       success: false,
@@ -166,7 +167,7 @@ export async function extractWithModel(
   
   // Add custom instructions if not provided
   if (!request.customInstructions) {
-    request.customInstructions = await getUserCustomInstructions();
+    request.customInstructions = await getUserCustomInstructions(userId);
   }
   
   // Create the appropriate adapter and extract
@@ -229,23 +230,23 @@ export async function extractWithAPIKey(
 /**
  * Update user's preferred model
  */
-export async function setPreferredModel(modelId: string): Promise<void> {
+export async function setPreferredModel(modelId: string, userId: string): Promise<void> {
   const supabase = createServiceRoleClient();
   
   await supabase
     .from("settings")
     .update({ preferred_model: modelId })
-    .eq("user_id", "default");
+    .eq("user_id", userId);
 }
 
 /**
  * Update user's custom instructions
  */
-export async function setCustomInstructions(instructions: string | null): Promise<void> {
+export async function setCustomInstructions(instructions: string | null, userId: string): Promise<void> {
   const supabase = createServiceRoleClient();
   
   await supabase
     .from("settings")
     .update({ custom_instructions: instructions })
-    .eq("user_id", "default");
+    .eq("user_id", userId);
 }

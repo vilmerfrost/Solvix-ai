@@ -3,8 +3,10 @@
 
 import { NextRequest, NextResponse } from "next/server";
 import { createServiceRoleClient } from "@/lib/supabase";
+import { getApiUser } from "@/lib/api-auth";
 import ExcelJS from "exceljs";
 import { BlobServiceClient } from "@azure/storage-blob";
+import { getAzureConnection } from "@/lib/azure-connection";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 300; // 5 minutes max
@@ -95,12 +97,14 @@ async function deleteSourceFileFromAzure(
   fallbackFilename?: string,
   fallbackSourceFolder?: string
 ): Promise<{ success: boolean; message: string }> {
-  const connectionString = process.env.AZURE_STORAGE_CONNECTION_STRING;
-  if (!connectionString) {
+  // Get Azure connection (database or env fallback)
+  const azureConnection = await getAzureConnection();
+  if (!azureConnection) {
     const msg = "⚠️ No Azure connection - skipping source file deletion";
     console.warn(msg);
     return { success: false, message: msg };
   }
+  const connectionString = azureConnection.connectionString;
 
   // Use tracked Azure filename if available, otherwise fallback
   const filenameToDelete = azureOriginalFilename || fallbackFilename;
@@ -264,6 +268,9 @@ function getExportFilename(originalFilename: string): string {
 
 export async function POST(request: NextRequest) {
   try {
+    const { user, error: authError } = await getApiUser();
+    if (authError || !user) return authError!;
+    
     const { documentIds } = await request.json();
     
     console.log("📤 EXPORT TO AZURE - ONE FILE PER DOCUMENT");
@@ -301,7 +308,7 @@ export async function POST(request: NextRequest) {
     const { data: settings } = await supabase
       .from("settings")
       .select("azure_output_folder")
-      .eq("user_id", "default")
+      .eq("user_id", user.id)
       .single();
     
     const outputPath = settings?.azure_output_folder || "completed";
@@ -311,14 +318,15 @@ export async function POST(request: NextRequest) {
     
     console.log(`📁 Output destination: ${outputPath}`);
     
-    // Azure setup
-    const connectionString = process.env.AZURE_STORAGE_CONNECTION_STRING;
+    // Azure setup - use database connection or env fallback
+    const azureConnection = await getAzureConnection();
     
-    if (!connectionString) {
-      throw new Error("AZURE_STORAGE_CONNECTION_STRING not configured");
+    if (!azureConnection) {
+      throw new Error("Azure connection not configured. Add a connection in Settings → Azure or set AZURE_STORAGE_CONNECTION_STRING.");
     }
     
-    const blobServiceClient = BlobServiceClient.fromConnectionString(connectionString);
+    console.log(`🔗 Azure connection source: ${azureConnection.source}`);
+    const blobServiceClient = BlobServiceClient.fromConnectionString(azureConnection.connectionString);
     const containerClient = blobServiceClient.getContainerClient(outputContainer);
     
     // Ensure container exists

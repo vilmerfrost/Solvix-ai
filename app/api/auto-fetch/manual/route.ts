@@ -7,22 +7,32 @@
 import { NextResponse } from "next/server";
 import { AzureBlobConnector } from "@/lib/azure-blob-connector";
 import { createServiceRoleClient } from "@/lib/supabase";
+import { getApiUser } from "@/lib/api-auth";
 import { sanitizeFilename } from "@/lib/sanitize-filename";
+import { getAzureConnection } from "@/lib/azure-connection";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 300; // 5 minutes max
 
 export async function POST() {
   try {
-    const connectionString = process.env.AZURE_STORAGE_CONNECTION_STRING;
-    const containerName = process.env.AZURE_CONTAINER_NAME || "arrivalwastedata";
-
-    if (!connectionString) {
+    const { user, error: authError } = await getApiUser();
+    if (authError || !user) return authError!;
+    
+    // Get Azure connection (database or env fallback)
+    const azureConnection = await getAzureConnection(user.id);
+    
+    if (!azureConnection) {
       return NextResponse.json(
-        { error: "Azure connection string not configured" },
+        { error: "Azure connection not configured. Add a connection in Settings → Azure or set AZURE_STORAGE_CONNECTION_STRING." },
         { status: 500 }
       );
     }
+    
+    const { connectionString, defaultContainer, source } = azureConnection;
+    const containerName = defaultContainer || "arrivalwastedata";
+    
+    console.log(`🔗 Azure connection source: ${source}`);
 
     console.log("\n" + "=".repeat(60));
     console.log("🔍 MANUAL SYNC: Starting Azure file fetch...");
@@ -34,7 +44,7 @@ export async function POST() {
     const { data: settings, error: settingsError } = await supabasedbclient
       .from("settings")
       .select("azure_input_folders")
-      .eq("user_id", "default")
+      .eq("user_id", user.id)
       .single();
 
     if (settingsError) {

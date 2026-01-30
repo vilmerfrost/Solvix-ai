@@ -1,6 +1,7 @@
 {
-  "name": "frost-waste-pipeline",
-  "version": "0.1.0",
+  "name": "vextra-ai",
+  "version": "1.0.0",
+  "description": "Vextra AI - Intelligent Document Extraction Platform",
   "private": true,
   "scripts": {
     "dev": "next dev",

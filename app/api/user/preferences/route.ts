@@ -1,16 +1,20 @@
 import { NextResponse } from "next/server";
 import { createServiceRoleClient } from "@/lib/supabase";
+import { getApiUser } from "@/lib/api-auth";
 import { AVAILABLE_MODELS, getModelById } from "@/config/models";
 
 // GET /api/user/preferences - Get user's model preferences
 export async function GET() {
+  const { user, error: authError } = await getApiUser();
+  if (authError || !user) return authError!;
+  
   const supabase = createServiceRoleClient();
   
   try {
     const { data: settings, error } = await supabase
       .from("settings")
       .select("preferred_model, custom_instructions")
-      .eq("user_id", "default")
+      .eq("user_id", user.id)
       .single();
 
     if (error) throw error;
@@ -23,7 +27,7 @@ export async function GET() {
     const { data: keys } = await supabase
       .from("user_api_keys")
       .select("provider, is_valid")
-      .eq("user_id", "default");
+      .eq("user_id", user.id);
 
     const configuredProviders = (keys || [])
       .filter(k => k.is_valid)
@@ -54,6 +58,9 @@ export async function GET() {
 
 // POST /api/user/preferences - Update model preferences
 export async function POST(request: Request) {
+  const { user, error: authError } = await getApiUser();
+  if (authError || !user) return authError!;
+  
   const supabase = createServiceRoleClient();
   
   try {
@@ -74,7 +81,7 @@ export async function POST(request: Request) {
       const { data: keyData } = await supabase
         .from("user_api_keys")
         .select("is_valid")
-        .eq("user_id", "default")
+        .eq("user_id", user.id)
         .eq("provider", model.provider)
         .single();
 
@@ -97,7 +104,7 @@ export async function POST(request: Request) {
     const { error } = await supabase
       .from("settings")
       .update(updateData)
-      .eq("user_id", "default");
+      .eq("user_id", user.id);
 
     if (error) throw error;
 

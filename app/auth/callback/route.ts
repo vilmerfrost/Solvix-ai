@@ -5,7 +5,7 @@ import { NextResponse } from "next/server";
 export async function GET(request: Request) {
   const { searchParams, origin } = new URL(request.url);
   const code = searchParams.get("code");
-  const next = searchParams.get("next") ?? "/";
+  const next = searchParams.get("next") ?? "/dashboard";
 
   if (code) {
     const cookieStore = await cookies();
@@ -25,12 +25,20 @@ export async function GET(request: Request) {
         },
       }
     );
+    
     const { error } = await supabase.auth.exchangeCodeForSession(code);
+    
     if (!error) {
+      // Handle password reset flow
+      if (next === "/reset-password") {
+        return NextResponse.redirect(`${origin}/reset-password`);
+      }
+      
+      // Default redirect to dashboard
       return NextResponse.redirect(`${origin}${next}`);
     }
   }
 
-  // Om något går fel, skicka tillbaka till login
+  // If something goes wrong, redirect back to login
   return NextResponse.redirect(`${origin}/login?message=Kunde inte logga in`);
 }

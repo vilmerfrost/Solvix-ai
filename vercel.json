@@ -1,9 +1,31 @@
 {
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "framework": "nextjs",
+  "regions": ["arn1"],
   "crons": [
     {
       "path": "/api/cron/auto-fetch",
       "schedule": "*/5 * * * *"
     }
-  ]
+  ],
+  "functions": {
+    "app/api/process/route.ts": {
+      "maxDuration": 60
+    },
+    "app/api/process-batch/route.ts": {
+      "maxDuration": 300
+    },
+    "app/api/export-to-azure/route.ts": {
+      "maxDuration": 300
+    },
+    "app/api/auto-fetch/manual/route.ts": {
+      "maxDuration": 300
+    },
+    "app/api/cron/auto-fetch/route.ts": {
+      "maxDuration": 300
+    },
+    "app/api/workflow/sync/route.ts": {
+      "maxDuration": 300
+    }
+  }
 }
-

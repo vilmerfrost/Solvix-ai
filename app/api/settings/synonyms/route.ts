@@ -1,8 +1,12 @@
 import { NextResponse } from "next/server";
 import { createServiceRoleClient } from "@/lib/supabase";
+import { getApiUser } from "@/lib/api-auth";
 
 // POST /api/settings/synonyms - Add or remove synonym
 export async function POST(request: Request) {
+  const { user, error: authError } = await getApiUser();
+  if (authError || !user) return authError!;
+  
   const supabase = createServiceRoleClient();
 
   try {
@@ -29,7 +33,7 @@ export async function POST(request: Request) {
     const { data: settings, error: fetchError } = await supabase
       .from("settings")
       .select("material_synonyms")
-      .eq("user_id", "default")
+      .eq("user_id", user.id)
       .single();
 
     if (fetchError) throw fetchError;
@@ -72,7 +76,7 @@ export async function POST(request: Request) {
     const { data, error: updateError } = await supabase
       .from("settings")
       .update({ material_synonyms: materialSynonyms })
-      .eq("user_id", "default")
+      .eq("user_id", user.id)
       .select()
       .single();
 

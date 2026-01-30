@@ -1,14 +1,20 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
-import { createClient } from "@supabase/supabase-js";
+import { createServerClient } from "@supabase/ssr";
 
-// Paths that don't require setup completion
+// Paths that don't require authentication
 const PUBLIC_PATHS = [
+  "/login",
+  "/signup",
+  "/forgot-password",
+  "/reset-password",
+  "/auth",
   "/setup",
   "/api/setup",
   "/api/health",
-  "/login",
-  "/auth",
+  "/api/webhooks",
+  "/terms",
+  "/privacy",
   "/_next",
   "/favicon.ico",
 ];
@@ -21,7 +27,7 @@ function isPublicPath(pathname: string): boolean {
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
-  // Skip middleware for public paths and static assets
+  // Skip middleware for public paths
   if (isPublicPath(pathname)) {
     return NextResponse.next();
   }
@@ -31,36 +37,72 @@ export async function middleware(request: NextRequest) {
     return NextResponse.next();
   }
 
-  // Check if setup is complete
-  const isSetupComplete = await checkSetupStatus();
+  // Create response that we can modify
+  let response = NextResponse.next({
+    request: {
+      headers: request.headers,
+    },
+  });
 
-  if (!isSetupComplete) {
-    // Redirect to setup page
+  // Create Supabase client with cookie handling
+  const supabase = createServerClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    {
+      cookies: {
+        getAll() {
+          return request.cookies.getAll();
+        },
+        setAll(cookiesToSet) {
+          cookiesToSet.forEach(({ name, value, options }) => {
+            request.cookies.set(name, value);
+            response = NextResponse.next({
+              request: {
+                headers: request.headers,
+              },
+            });
+            response.cookies.set(name, value, options);
+          });
+        },
+      },
+    }
+  );
+
+  // Check for authenticated session
+  const { data: { user }, error } = await supabase.auth.getUser();
+
+  // If no user and not on public path, redirect to login
+  if (error || !user) {
+    const loginUrl = new URL("/login", request.url);
+    // Save the original URL to redirect back after login
+    loginUrl.searchParams.set("next", pathname);
+    return NextResponse.redirect(loginUrl);
+  }
+
+  // User is authenticated - check if setup is complete
+  const isSetupComplete = await checkSetupStatus(supabase);
+
+  if (!isSetupComplete && !pathname.startsWith("/setup")) {
+    // Redirect to setup page if not complete
     const setupUrl = new URL("/setup", request.url);
     return NextResponse.redirect(setupUrl);
   }
 
-  return NextResponse.next();
+  // If on setup page but setup is complete, redirect to dashboard
+  if (isSetupComplete && pathname.startsWith("/setup")) {
+    return NextResponse.redirect(new URL("/dashboard", request.url));
+  }
+
+  return response;
 }
 
-async function checkSetupStatus(): Promise<boolean> {
+async function checkSetupStatus(supabase: ReturnType<typeof createServerClient>): Promise<boolean> {
   // First check environment variable (pre-configured deployment)
   if (process.env.TENANT_NAME) {
     return true;
   }
 
-  // Check database for setup completion
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-
-  if (!supabaseUrl || !supabaseKey) {
-    // Can't check database, assume not configured
-    return false;
-  }
-
   try {
-    const supabase = createClient(supabaseUrl, supabaseKey);
-    
     const { data: settings, error } = await supabase
       .from("settings")
       .select("is_setup_complete")

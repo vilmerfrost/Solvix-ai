@@ -955,8 +955,8 @@ export default function SettingsPage() {
                         <p className="text-sm font-medium">Multi-Model OCR</p>
                       </div>
                       <p className="text-xs text-blue-600">
-                        Välj mellan Google Gemini, OpenAI GPT-4o eller Anthropic Claude för att extrahera data från dina dokument. 
-                        Varje modell har olika styrkor - Gemini rekommenderas för digitala PDFer, GPT-4o för handskrivna dokument.
+                        Välj mellan Google Gemini 3, OpenAI GPT-5.2 eller Anthropic Claude 4.5 för att extrahera data från dina dokument. 
+                        Varje modell har olika styrkor - Gemini rekommenderas för digitala PDFer, GPT-5.2 för handskrivna dokument.
                       </p>
                     </div>
 
@@ -1078,6 +1078,46 @@ export default function SettingsPage() {
             {/* Azure & GUIDs Section */}
             {activeSection === "azure" && (
               <div className="space-y-6">
+                {/* Azure Connection Management */}
+                <div className="bg-white rounded-lg border border-gray-200 p-6">
+                  <div className="flex items-start gap-3 mb-4">
+                    <Cloud className="w-5 h-5 text-blue-600 mt-1" />
+                    <div className="flex-1">
+                      <h2 className="text-xl font-bold text-gray-900 mb-2">
+                        Azure Storage-anslutning
+                      </h2>
+                      <p className="text-sm text-gray-600">
+                        Hantera din Azure Blob Storage-anslutning för dokumentlagring och synkronisering.
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg mb-4">
+                    <div className="flex items-center gap-2 text-blue-700 mb-2">
+                      <Key className="w-4 h-4" />
+                      <p className="text-sm font-medium">Självbetjäning för Azure</p>
+                    </div>
+                    <p className="text-xs text-blue-600">
+                      Konfigurera din egen Azure Blob Storage utan att behöva ändra miljövariabler. 
+                      Connection strings krypteras säkert i databasen.
+                    </p>
+                  </div>
+
+                  <Link
+                    href="/settings/azure"
+                    className="flex items-center justify-between p-4 bg-gray-50 hover:bg-gray-100 border border-gray-200 rounded-lg transition-colors"
+                  >
+                    <div className="flex items-center gap-3">
+                      <Cloud className="w-5 h-5 text-gray-600" />
+                      <div>
+                        <p className="font-medium text-gray-900">Azure-anslutningar</p>
+                        <p className="text-xs text-gray-500">Lägg till eller hantera dina Azure Storage-anslutningar</p>
+                      </div>
+                    </div>
+                    <ExternalLink className="w-4 h-4 text-gray-400" />
+                  </Link>
+                </div>
+
                 {/* Folder Configuration */}
                 <div className="bg-white rounded-lg border border-gray-200 p-6">
                   <div className="flex items-center justify-between mb-4">
@@ -1114,7 +1154,7 @@ export default function SettingsPage() {
                               Begränsad till container: <code className="px-1 py-0.5 bg-blue-100 rounded">{defaultAzureContainer}</code>
                             </p>
                             <p className="text-xs text-blue-700 mt-1">
-                              Konfigurerat via AZURE_CONTAINER_NAME miljövariabel
+                              Konfigurerat via inställningar eller miljövariabel
                             </p>
                           </>
                         ) : (
@@ -1123,7 +1163,7 @@ export default function SettingsPage() {
                               Ingen container begränsning konfigurerad
                             </p>
                             <p className="text-xs text-yellow-700 mt-1">
-                              💡 Sätt <code className="px-1 py-0.5 bg-yellow-100 rounded">AZURE_CONTAINER_NAME</code> i miljövariabler för snabbare sökning
+                              💡 Konfigurera Azure-anslutning ovan eller sätt miljövariabler
                             </p>
                           </>
                         )}

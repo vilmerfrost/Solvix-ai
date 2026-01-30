@@ -2,11 +2,14 @@
  * Browse Azure Blob Storage folders within a specific container
  * Lists folder hierarchy (including empty folders and subfolders)
  * 
- * Container is determined by AZURE_CONTAINER_NAME env variable
+ * Connection is determined by:
+ * 1. Active database connection (azure_connections table)
+ * 2. Fallback to AZURE_STORAGE_CONNECTION_STRING env variable
  */
 
 import { NextResponse } from "next/server";
 import { BlobServiceClient } from "@azure/storage-blob";
+import { getAzureConnection } from "@/lib/azure-connection";
 
 export const dynamic = "force-dynamic";
 
@@ -98,24 +101,30 @@ export async function GET(request: Request) {
   console.log("=".repeat(60));
   
   try {
-    const connectionString = process.env.AZURE_STORAGE_CONNECTION_STRING;
-    const defaultContainer = process.env.AZURE_CONTAINER_NAME;
+    // Get Azure connection (database or env fallback)
+    const azureConnection = await getAzureConnection();
     
-    if (!connectionString) {
-      console.error("❌ AZURE_STORAGE_CONNECTION_STRING not configured");
+    if (!azureConnection) {
+      console.error("❌ No Azure connection configured (database or environment)");
       return NextResponse.json(
-        { success: false, error: "Azure connection string not configured" },
+        { 
+          success: false, 
+          error: "Azure connection not configured. Add a connection in Settings → Azure or set AZURE_STORAGE_CONNECTION_STRING environment variable." 
+        },
         { status: 500 }
       );
     }
 
+    const { connectionString, defaultContainer: dbDefaultContainer, source } = azureConnection;
+    console.log(`🔗 Connection source: ${source}`);
+
     // Check for query params to browse a specific path
     const { searchParams } = new URL(request.url);
-    const targetContainer = searchParams.get("container") || defaultContainer;
+    const targetContainer = searchParams.get("container") || dbDefaultContainer || process.env.AZURE_CONTAINER_NAME;
     const targetPrefix = searchParams.get("prefix") || "";
     const maxDepth = parseInt(searchParams.get("maxDepth") || "4");
 
-    console.log(`📦 Container: ${targetContainer || "(all containers - no AZURE_CONTAINER_NAME set)"}`);
+    console.log(`📦 Container: ${targetContainer || "(all containers)"}`);
     console.log(`📂 Prefix filter: ${targetPrefix || "(root)"}`);
     console.log(`🔢 Max depth: ${maxDepth}`);
 
@@ -199,7 +208,8 @@ export async function GET(request: Request) {
     return NextResponse.json({
       success: true,
       containers,
-      defaultContainer: defaultContainer || null,
+      defaultContainer: targetContainer || null,
+      connectionSource: source,
       timestamp: new Date().toISOString(),
       scanDuration: duration,
     });

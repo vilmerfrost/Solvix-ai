@@ -1,10 +1,14 @@
 import { NextResponse } from "next/server";
 import { createServiceRoleClient } from "@/lib/supabase";
+import { getApiUser } from "@/lib/api-auth";
 import { decryptAPIKey } from "@/lib/encryption";
 import { AIProvider, PROVIDERS } from "@/config/models";
 
 // POST /api/user/api-keys/validate - Test if an API key works
 export async function POST(request: Request) {
+  const { user, error: authError } = await getApiUser();
+  if (authError || !user) return authError!;
+  
   const supabase = createServiceRoleClient();
   
   try {
@@ -22,7 +26,7 @@ export async function POST(request: Request) {
     const { data: keyData, error: fetchError } = await supabase
       .from("user_api_keys")
       .select("encrypted_key")
-      .eq("user_id", "default")
+      .eq("user_id", user.id)
       .eq("provider", provider)
       .single();
 
@@ -60,7 +64,7 @@ export async function POST(request: Request) {
     await supabase
       .from("user_api_keys")
       .update({ is_valid: isValid })
-      .eq("user_id", "default")
+      .eq("user_id", user.id)
       .eq("provider", provider);
 
     if (isValid) {

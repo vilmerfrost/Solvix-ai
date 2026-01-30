@@ -1,43 +1,55 @@
-# Document Pipeline AI
+# Vextra AI
 
-**White-label document processing system for waste management data extraction**
+**Intelligent Document Extraction Platform**
+
+Extract, verify, and export structured data from complex documents using AI.
 
 ---
 
 ## Overview
 
-Document Pipeline AI automates the extraction, validation, and export of waste management data from unstructured documents (PDFs and Excel files). It serves as an intelligent document processor that uses AI to extract structured data from complex waste management documents.
+Vextra AI automates the extraction, validation, and export of data from unstructured documents (PDFs and Excel files). Using advanced AI models (Google Gemini, OpenAI GPT, Anthropic Claude), it transforms complex documents into structured, actionable data.
 
 ### System Flow
 
 ```
 Document Upload → AI Extraction → Human Review → Export
        ↓              ↓              ↓           ↓
-  Azure Blob    Claude AI     Dashboard    Excel/Azure
+  Azure Blob    Multi-Model AI   Dashboard    Excel/Azure
 ```
 
 ---
 
 ## Features
 
-- **Automated AI Extraction**: Claude Sonnet processes invoices with 90%+ accuracy
+### Core Capabilities
+- **Multi-Model AI Extraction**: Choose between Gemini 3, GPT-5.2, or Claude 4.5 for optimal accuracy
+- **BYOK (Bring Your Own Key)**: Use your own API keys - securely encrypted with AES-256
+- **Self-Service Azure**: Configure Azure Blob Storage through the UI - no code changes needed
 - **Multi-language Support**: Swedish, Finnish, Norwegian, English documents
 - **Human-in-the-Loop Review**: Dashboard for edge case verification
-- **Azure Integration**: Automatic sync from/to Azure Blob Storage
-- **Batch Processing**: Process multiple documents simultaneously
-- **Export to Excel**: Generates Simplitics-compatible XLSX files
+
+### Integrations
+- **Azure Blob Storage**: Automatic sync from/to your storage containers
+- **Export to Excel**: Generates formatted XLSX files
 - **Real-time Monitoring**: Health dashboard with system status
-- **White-Label Ready**: Customizable branding via setup wizard or environment variables
+
+### Enterprise Ready
+- **White-Label Ready**: Customizable branding via setup wizard
+- **Batch Processing**: Process multiple documents simultaneously
+- **Secure by Design**: All credentials encrypted at rest
 
 ---
 
 ## Tech Stack
 
-- **Frontend**: Next.js 16 (App Router), React 19, TypeScript, Tailwind CSS
-- **Database**: Supabase (PostgreSQL)
-- **Storage**: Azure Blob Storage
-- **AI**: Anthropic Claude API
-- **Deployment**: Docker Compose
+| Layer | Technology |
+|-------|------------|
+| Frontend | Next.js 16, React 19, TypeScript, Tailwind CSS |
+| Database | Supabase (PostgreSQL) |
+| Storage | Azure Blob Storage |
+| AI | Google Gemini, OpenAI GPT, Anthropic Claude |
+| Deployment | Docker Compose |
 
 ---
 
@@ -46,97 +58,69 @@ Document Upload → AI Extraction → Human Review → Export
 ### Prerequisites
 
 - Node.js 18+ and npm
-- Docker and Docker Compose (for production)
-- Azure Storage Account
 - Supabase project
-- Anthropic API key
+- AI provider API key (Google, OpenAI, or Anthropic)
+- Azure Storage Account (optional - can configure later)
 
 ### Installation
 
-1. **Clone the repository**
+1. **Clone and install**
 ```bash
 git clone <repository-url>
-cd document-pipeline
-```
-
-2. **Install dependencies**
-```bash
+cd vextra-ai
 npm install
 ```
 
-3. **Configure environment**
+2. **Configure environment**
 ```bash
 cp env.example .env.local
-# Edit .env.local with your credentials
+# Edit .env.local with your Supabase credentials
 ```
 
-4. **Run database migrations**
+3. **Run database migrations**
 ```bash
-# Apply migrations to your Supabase project
-# See supabase/migrations/ for SQL files
+# Run supabase/migrations/000-complete-setup.sql in Supabase SQL Editor
 ```
 
-5. **Start development server**
+4. **Start development server**
 ```bash
 npm run dev
 ```
 
-6. **Complete setup wizard**
+5. **Complete setup wizard**
 
-Visit `http://localhost:3000/setup` to configure your system.
+Visit `http://localhost:3000` - the setup wizard will guide you through configuration.
 
 ---
 
 ## Configuration
 
-### Environment Variables
-
-See `env.example` for all available options. Key variables:
+### Required Environment Variables
 
 ```bash
-# Required
+# Supabase (required)
 NEXT_PUBLIC_SUPABASE_URL=https://your-project.supabase.co
 NEXT_PUBLIC_SUPABASE_ANON_KEY=your-anon-key
 SUPABASE_SERVICE_ROLE_KEY=your-service-role-key
-AZURE_STORAGE_CONNECTION_STRING=...
-ANTHROPIC_API_KEY=sk-ant-...
 
-# Optional - Pre-configure tenant (skip setup wizard)
-TENANT_NAME=Your Company Name
-TENANT_SLUG=your-company
-TENANT_PRIMARY_COLOR=#3B82F6
-TENANT_LANGUAGE=sv
+# Encryption (required for API key storage)
+API_KEY_ENCRYPTION_SECRET=your-32-char-secret  # Generate: openssl rand -base64 32
 ```
 
-### Setup Wizard
+### Optional Configuration
 
-If `TENANT_NAME` is not set, the system will redirect to `/setup` on first access. The wizard allows you to configure:
-
-- Company name and branding
-- Primary color theme
-- Language (Swedish, English, Norwegian, Finnish)
+AI keys and Azure connections can be configured through the Settings UI after installation - no environment variables needed!
 
 ---
 
 ## Docker Deployment
 
-### Build and run
-
 ```bash
+# Build and run
 docker compose up -d --build
-```
 
-### Environment for Docker
-
-Create a `.env` file with production values:
-
-```bash
-NEXT_PUBLIC_SUPABASE_URL=...
-NEXT_PUBLIC_SUPABASE_ANON_KEY=...
-SUPABASE_SERVICE_ROLE_KEY=...
-AZURE_STORAGE_CONNECTION_STRING=...
-ANTHROPIC_API_KEY=...
-TENANT_NAME=Your Company Name
+# View logs
+docker compose logs -f
 ```
 
 ---
@@ -145,53 +129,53 @@ TENANT_NAME=Your Company Name
 
 ```
 ├── app/                    # Next.js App Router pages
-│   ├── dashboard/         # Main dashboard
-│   ├── review/            # Document review
-│   ├── settings/          # System settings
-│   ├── setup/             # First-time setup wizard
-│   └── api/               # API routes
-├── components/            # React components
-├── config/               
-│   └── tenant.ts         # Tenant configuration
-├── lib/                   # Utilities and libraries
-│   ├── adaptive-extraction.ts
-│   ├── azure-blob-connector.ts
-│   └── supabase.ts
-├── supabase/
-│   └── migrations/       # Database migrations
-└── docker-compose.yml
+│   ├── dashboard/         # Main review dashboard
+│   ├── settings/          # Settings (AI, Azure, Materials)
+│   │   ├── api-keys/     # AI provider key management
+│   │   └── azure/        # Azure connection management
+│   ├── setup/            # First-time setup wizard
+│   └── api/              # API routes
+├── components/           # React components
+├── config/              
+│   ├── tenant.ts        # Tenant configuration
+│   └── models.ts        # AI model registry
+├── lib/                  
+│   ├── extraction/      # AI extraction adapters
+│   ├── azure-connection.ts
+│   └── encryption.ts    # AES-256 encryption
+└── supabase/
+    └── migrations/      # Database migrations
 ```
-
----
-
-## Database Migrations
-
-Run these migrations on your Supabase project:
-
-1. `settings-migration.sql` - Creates settings table
-2. `azure-folder-settings.sql` - Azure folder configuration
-3. `tenant-branding.sql` - Tenant branding fields
 
 ---
 
 ## API Routes
 
-- `POST /api/process-document` - Process single document
-- `POST /api/process-batch` - Batch process documents
-- `GET /api/azure/browse` - Browse Azure blob storage
-- `POST /api/export-to-azure` - Export to Azure
-- `GET /api/settings` - Get system settings
-- `POST /api/setup` - Complete initial setup
-- `GET /api/health` - System health check
+| Route | Method | Description |
+|-------|--------|-------------|
+| `/api/process-document` | POST | Process single document |
+| `/api/process-batch` | POST | Batch process documents |
+| `/api/azure/browse` | GET | Browse Azure storage |
+| `/api/azure/connections` | GET/POST | Manage Azure connections |
+| `/api/user/api-keys` | GET/POST | Manage AI provider keys |
+| `/api/export-to-azure` | POST | Export to Azure |
+| `/api/health` | GET | System health check |
 
 ---
 
-## Customer Deployment Guide
+## Security
 
-See [INSTALLATION.md](INSTALLATION.md) for detailed customer deployment instructions.
+- **API Keys**: Encrypted with AES-256-GCM before database storage
+- **Azure Connections**: Connection strings encrypted at rest
+- **No Client Exposure**: Sensitive data never sent to browser
+- **BYOK Model**: You control your AI provider relationships
 
 ---
 
 ## License
 
 Proprietary - All rights reserved
+
+---
+
+**Vextra AI** - *Verify + Extract = Vextra*

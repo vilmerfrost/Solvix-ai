@@ -1,6 +1,6 @@
-# Customer Installation Guide
+# Vextra AI - Customer Installation Guide
 
-This guide covers deploying the Document Pipeline for a new customer.
+This guide covers deploying Vextra AI for a new customer.
 
 ---
 
@@ -16,8 +16,8 @@ Before starting, ensure you have:
 
 2. **External Services**
    - Supabase project (database)
-   - Azure Storage Account
-   - Anthropic API key
+   - AI provider API key (Google Gemini, OpenAI, or Anthropic)
+   - Azure Storage Account (optional - can configure in UI)
 
 ---
 
@@ -33,72 +33,54 @@ Before starting, ensure you have:
 
 ### Run database migrations
 
-Execute these SQL files in Supabase SQL Editor (in order):
+Execute the complete setup SQL file in Supabase SQL Editor:
 
 ```sql
--- 1. settings-migration.sql
--- 2. azure-folder-settings.sql  
--- 3. add-azure-filename-tracking.sql
--- 4. tenant-branding.sql
+-- Run: supabase/migrations/000-complete-setup.sql
 ```
+
+This single file creates all required tables:
+- `settings` - Application configuration
+- `documents` - Document storage and status
+- `user_api_keys` - Encrypted AI provider keys
+- `azure_connections` - Encrypted Azure credentials
 
 ---
 
-## Step 2: Azure Storage Setup
+## Step 2: Environment Configuration
 
-### Create storage account
-
-1. Create an Azure Storage Account
-2. Create containers:
-   - `arrivalwastedata` (or your preferred name)
-
-### Get connection string
-
-In Azure Portal: Storage Account → Access keys → Connection string
-
----
-
-## Step 3: Server Setup
-
-### Clone the repository
+### Create .env.local
 
 ```bash
-git clone <repository-url> /opt/document-pipeline
-cd /opt/document-pipeline
+cp env.example .env.local
 ```
 
-### Create environment file
+### Configure required variables
 
 ```bash
-cp env.example .env
-nano .env
-```
-
-Fill in your values:
-
-```bash
-# Supabase
+# Supabase (required)
 NEXT_PUBLIC_SUPABASE_URL=https://your-project.supabase.co
 NEXT_PUBLIC_SUPABASE_ANON_KEY=your-anon-key
 SUPABASE_SERVICE_ROLE_KEY=your-service-role-key
 
-# Azure
-AZURE_STORAGE_CONNECTION_STRING=DefaultEndpointsProtocol=https;AccountName=...
-AZURE_CONTAINER_NAME=arrivalwastedata
+# Encryption (required)
+API_KEY_ENCRYPTION_SECRET=your-32-char-secret  # openssl rand -base64 32
+```
 
-# Anthropic
-ANTHROPIC_API_KEY=sk-ant-...
+### Optional pre-configuration
 
-# Pre-configure tenant (optional - or use setup wizard)
-TENANT_NAME=Customer Name AB
-TENANT_SLUG=customer-name
-TENANT_PRIMARY_COLOR=#3B82F6
+Skip the setup wizard by setting tenant variables:
+
+```bash
+TENANT_NAME=Customer Company Name
+TENANT_SLUG=customer-company
+TENANT_PRIMARY_COLOR=#6366F1
 TENANT_LANGUAGE=sv
 ```
 
 ---
 
-## Step 4: Deploy with Docker
+## Step 3: Docker Deployment
 
 ### Build and start
 
@@ -106,90 +88,75 @@ TENANT_LANGUAGE=sv
 docker compose up -d --build
 ```
 
-### Check status
+### Verify deployment
 
 ```bash
+# Check status
 docker compose ps
+
+# View logs
 docker compose logs -f
-```
 
-### Access the application
-
-- Without TENANT_NAME: Visit `/setup` to complete configuration
-- With TENANT_NAME: Visit `/dashboard` directly
-
----
-
-## Step 5: Configure HTTPS (Recommended)
-
-### Using Nginx reverse proxy
-
-```nginx
-server {
-    listen 80;
-    server_name your-domain.com;
-    return 301 https://$server_name$request_uri;
-}
-
-server {
-    listen 443 ssl http2;
-    server_name your-domain.com;
-
-    ssl_certificate /etc/letsencrypt/live/your-domain.com/fullchain.pem;
-    ssl_certificate_key /etc/letsencrypt/live/your-domain.com/privkey.pem;
-
-    location / {
-        proxy_pass http://localhost:3000;
-        proxy_http_version 1.1;
-        proxy_set_header Upgrade $http_upgrade;
-        proxy_set_header Connection 'upgrade';
-        proxy_set_header Host $host;
-        proxy_cache_bypass $http_upgrade;
-    }
-}
-```
-
-### Get SSL certificate
-
-```bash
-sudo certbot --nginx -d your-domain.com
+# Test health endpoint
+curl http://localhost:3000/api/health
 ```
 
 ---
 
-## Step 6: Configure Azure Folders
+## Step 4: Initial Setup
 
-After deployment, go to Settings in the application to configure:
+### Option A: Setup Wizard (Recommended)
 
-1. **Input folders**: Azure blob folders to monitor for new documents
-2. **Output folder**: Where to export processed documents
+1. Navigate to `http://your-domain:3000`
+2. Complete the 3-step wizard:
+   - Company information
+   - Branding colors
+   - Language selection
+
+### Option B: Pre-configured
+
+If `TENANT_NAME` is set in environment, the system skips the wizard and redirects to dashboard.
+
+---
+
+## Step 5: Configure Integrations
+
+### AI Provider (In-App)
+
+1. Go to Settings → AI & Automation → API-nycklar
+2. Add your AI provider API key (Google, OpenAI, or Anthropic)
+3. Keys are encrypted with AES-256 before storage
+
+### Azure Storage (In-App)
+
+1. Go to Settings → Azure & GUIDs → Azure-anslutningar
+2. Add your Azure Storage connection string
+3. Configure input/output folders
 
 ---
 
 ## Maintenance
 
-### View logs
+### Updating
 
 ```bash
-docker compose logs -f
-```
-
-### Restart services
-
-```bash
-docker compose restart
-```
-
-### Update application
-
-```bash
-git pull origin main
+git pull
 docker compose up -d --build
 ```
 
-### Backup database
+### Logs
 
-Use Supabase dashboard or pg_dump for database backups.
+```bash
+docker compose logs -f --tail=100 web
+```
+
+### Backup
+
+Database backups are handled by Supabase. For local backup:
+
+```bash
+# Export from Supabase dashboard or CLI
+```
 
 ---
 
@@ -197,51 +164,28 @@ Use Supabase dashboard or pg_dump for database backups.
 
 ### Container won't start
 
-Check logs:
 ```bash
-docker compose logs frost-waste-pipeline
+docker compose logs web
 ```
 
-Common issues:
-- Missing environment variables
-- Invalid API keys
-- Database connection failed
+### Database connection issues
 
-### Setup wizard won't load
+1. Verify Supabase credentials in `.env.local`
+2. Check Supabase project is active
+3. Ensure service role key has correct permissions
 
-Ensure:
-1. TENANT_NAME is NOT set in .env (or setup is not complete in database)
-2. Database migrations are applied
-3. `is_setup_complete` is `false` in settings table
+### AI extraction failing
 
-### Documents not processing
-
-Check:
-1. Anthropic API key is valid
-2. Document format is supported (PDF, Excel)
-3. View processing logs in /health page
+1. Verify API key in Settings → API-nycklar
+2. Check key status shows "Valid"
+3. Ensure sufficient API credits
 
 ---
 
 ## Support
 
-For technical support, contact the system administrator.
+For technical support, contact your Vextra AI representative.
 
 ---
 
-## Customer-Specific Branch (Optional)
-
-For customers requiring custom modifications:
-
-```bash
-# Create customer branch
-git checkout -b customer/customer-name
-
-# Make customizations
-# ...
-
-# Commit changes
-git commit -m "Customer-specific customizations for Customer Name"
-```
-
-Keep the main branch clean for the white-label template.
+**Vextra AI** - *Intelligent Document Extraction*

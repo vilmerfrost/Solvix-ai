@@ -1,17 +1,21 @@
 import { NextResponse } from "next/server";
 import { createServiceRoleClient } from "@/lib/supabase";
+import { getApiUser } from "@/lib/api-auth";
 import { encryptAPIKey, decryptAPIKey, generateKeyHint, validateKeyFormat } from "@/lib/encryption";
 import { PROVIDERS, AIProvider } from "@/config/models";
 
 // GET /api/user/api-keys - List saved keys (hints only)
 export async function GET() {
+  const { user, error: authError } = await getApiUser();
+  if (authError || !user) return authError!;
+  
   const supabase = createServiceRoleClient();
   
   try {
     const { data: keys, error } = await supabase
       .from("user_api_keys")
       .select("id, provider, key_hint, is_valid, created_at, updated_at")
-      .eq("user_id", "default")
+      .eq("user_id", user.id)
       .order("provider");
 
     if (error) throw error;
@@ -47,6 +51,9 @@ export async function GET() {
 
 // POST /api/user/api-keys - Save a new API key
 export async function POST(request: Request) {
+  const { user, error: authError } = await getApiUser();
+  if (authError || !user) return authError!;
+  
   const supabase = createServiceRoleClient();
   
   try {
@@ -78,7 +85,7 @@ export async function POST(request: Request) {
     const { data, error } = await supabase
       .from("user_api_keys")
       .upsert({
-        user_id: "default",
+        user_id: user.id,
         provider,
         encrypted_key: encryptedKey,
         key_hint: keyHint,
@@ -108,6 +115,9 @@ export async function POST(request: Request) {
 
 // DELETE /api/user/api-keys - Delete an API key
 export async function DELETE(request: Request) {
+  const { user, error: authError } = await getApiUser();
+  if (authError || !user) return authError!;
+  
   const supabase = createServiceRoleClient();
   
   try {
@@ -124,7 +134,7 @@ export async function DELETE(request: Request) {
     const { error } = await supabase
       .from("user_api_keys")
       .delete()
-      .eq("user_id", "default")
+      .eq("user_id", user.id)
       .eq("provider", provider);
 
     if (error) throw error;

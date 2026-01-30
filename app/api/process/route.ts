@@ -162,12 +162,12 @@ const anthropic = new Anthropic({
 // ============================================================================
 // SETTINGS
 // ============================================================================
-async function getSettings() {
+async function getSettings(userId: string) {
   const supabase = createServiceRoleClient();
   const { data } = await supabase
     .from("settings")
     .select("*")
-    .eq("user_id", "default")
+    .eq("user_id", userId)
     .single();
   
   return data || {
@@ -818,7 +818,6 @@ export async function GET(req: Request) {
   
   try {
     const supabase = createServiceRoleClient();
-    const settings = await getSettings();
     
     // Check if document ID is provided in query params (for batch processing)
     const { searchParams } = new URL(req.url);
@@ -871,6 +870,9 @@ export async function GET(req: Request) {
       doc = fetchedDoc;
       docId = doc.id;
     }
+    
+    // Get settings for this document's owner
+    const settings = await getSettings(doc.user_id);
     
     console.log(`\n🔄 Processing: ${doc.filename}`);
     

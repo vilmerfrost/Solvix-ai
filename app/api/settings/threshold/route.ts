@@ -1,8 +1,12 @@
 import { NextResponse } from "next/server";
 import { createServiceRoleClient } from "@/lib/supabase";
+import { getApiUser } from "@/lib/api-auth";
 
 // POST /api/settings/threshold - Update auto-approve threshold
 export async function POST(request: Request) {
+  const { user, error: authError } = await getApiUser();
+  if (authError || !user) return authError!;
+  
   const supabase = createServiceRoleClient();
 
   try {
@@ -21,7 +25,7 @@ export async function POST(request: Request) {
     const { data, error } = await supabase
       .from("settings")
       .update({ auto_approve_threshold: threshold })
-      .eq("user_id", "default")
+      .eq("user_id", user.id)
       .select()
       .single();
 

@@ -21,7 +21,7 @@ export async function generateMetadata(): Promise<Metadata> {
   };
   
   return {
-    title: `${config.companyName} - Document Pipeline`,
+    title: `${config.companyName} - Intelligent Document Extraction`,
     description: descriptions[config.language] || descriptions.sv,
   };
 }

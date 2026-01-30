@@ -43,10 +43,10 @@ export interface TenantBranding {
 // ============================================================================
 
 export const DEFAULT_TENANT_CONFIG: TenantConfig = {
-  companyName: "Document Pipeline",
-  companySlug: "document-pipeline",
+  companyName: "Vextra AI",
+  companySlug: "vextra-ai",
   companyLogo: undefined,
-  primaryColor: "#3B82F6", // Blue-500
+  primaryColor: "#6366F1", // Indigo-500 - Modern AI look
   language: "sv",
   enableVerification: false,
   autoApproveThreshold: 80,
@@ -303,5 +303,5 @@ export function getPageTitle(config: TenantConfig, pageName?: string): string {
   if (pageName) {
     return `${pageName} | ${config.companyName}`;
   }
-  return `${config.companyName} - Document Pipeline`;
+  return `${config.companyName} - Intelligent Document Extraction`;
 }

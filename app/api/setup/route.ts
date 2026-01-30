@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { createServiceRoleClient } from "@/lib/supabase";
+import { getApiUser } from "@/lib/api-auth";
 
 interface SetupRequest {
   companyName: string;
@@ -11,6 +12,9 @@ interface SetupRequest {
 
 // POST /api/setup - Complete initial setup
 export async function POST(request: Request) {
+  const { user, error: authError } = await getApiUser();
+  if (authError || !user) return authError!;
+  
   const supabase = createServiceRoleClient();
 
   try {
@@ -51,11 +55,11 @@ export async function POST(request: Request) {
       .replace(/[^a-z0-9]+/g, "-")
       .replace(/^-|-$/g, "");
 
-    // Update or insert settings
+    // Update or insert settings for this user
     const { data, error } = await supabase
       .from("settings")
       .upsert({
-        user_id: "default",
+        user_id: user.id,
         company_name: companyName.trim(),
         company_slug: slug,
         company_logo_url: companyLogo?.trim() || null,

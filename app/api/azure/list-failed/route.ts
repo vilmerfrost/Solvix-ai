@@ -1,27 +1,35 @@
 import { NextResponse } from "next/server";
 import { AzureBlobConnector } from "@/lib/azure-blob-connector";
 import { createServiceRoleClient } from "@/lib/supabase";
+import { getApiUser } from "@/lib/api-auth";
+import { getAzureConnection } from "@/lib/azure-connection";
 
 export const dynamic = "force-dynamic";
 
 export async function GET() {
   try {
-    const connectionString = process.env.AZURE_STORAGE_CONNECTION_STRING;
-    const containerName = process.env.AZURE_CONTAINER_NAME || "arrivalwastedata";
-
-    if (!connectionString) {
+    const { user, error: authError } = await getApiUser();
+    if (authError || !user) return authError!;
+    
+    // Get Azure connection (database or env fallback)
+    const azureConnection = await getAzureConnection(user.id);
+    
+    if (!azureConnection) {
       return NextResponse.json(
-        { error: "Azure connection string not configured" },
+        { error: "Azure connection not configured" },
         { status: 500 }
       );
     }
+    
+    const { connectionString, defaultContainer } = azureConnection;
+    const containerName = defaultContainer || "arrivalwastedata";
 
     // Fetch folder settings from database
     const supabase = createServiceRoleClient();
     const { data: settings, error: settingsError } = await supabase
       .from("settings")
       .select("azure_input_folders")
-      .eq("user_id", "default")
+      .eq("user_id", user.id)
       .single();
 
     if (settingsError) {

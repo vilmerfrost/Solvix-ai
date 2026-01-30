@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { createServiceRoleClient } from "@/lib/supabase";
+import { getApiUser } from "@/lib/api-auth";
 
 // Default settings
 const DEFAULT_SETTINGS = {
@@ -22,13 +23,16 @@ const DEFAULT_SETTINGS = {
 
 // GET /api/settings - Fetch current settings
 export async function GET() {
+  const { user, error: authError } = await getApiUser();
+  if (authError || !user) return authError!;
+  
   const supabase = createServiceRoleClient();
 
   try {
     const { data: settings, error } = await supabase
       .from("settings")
       .select("*")
-      .eq("user_id", "default")
+      .eq("user_id", user.id)
       .single();
 
     if (error) throw error;
@@ -55,6 +59,9 @@ export async function GET() {
 
 // POST /api/settings - Update settings
 export async function POST(request: Request) {
+  const { user, error: authError } = await getApiUser();
+  if (authError || !user) return authError!;
+  
   const supabase = createServiceRoleClient();
 
   try {
@@ -111,7 +118,7 @@ export async function POST(request: Request) {
         ...(azure_input_folders !== undefined && { azure_input_folders }),
         ...(azure_output_folder !== undefined && { azure_output_folder })
       })
-      .eq("user_id", "default")
+      .eq("user_id", user.id)
       .select()
       .single();
 
