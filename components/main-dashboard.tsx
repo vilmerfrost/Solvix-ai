@@ -13,11 +13,11 @@ interface Document {
   extracted_data?: any;
 }
 
-interface CollecctDashboardProps {
+interface MainDashboardProps {
   initialDocuments: Document[];
 }
 
-export function CollecctDashboard({ initialDocuments }: CollecctDashboardProps) {
+export function MainDashboard({ initialDocuments }: MainDashboardProps) {
   const [documents, setDocuments] = useState<Document[]>(initialDocuments);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [loading, setLoading] = useState<Record<string, boolean>>({});
@@ -346,3 +346,5 @@ export function CollecctDashboard({ initialDocuments }: CollecctDashboardProps) 
   );
 }
 
+// Backwards compatibility export
+export { MainDashboard as CollecctDashboard };

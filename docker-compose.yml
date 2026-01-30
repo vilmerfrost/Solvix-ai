@@ -5,7 +5,7 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
-    container_name: frost-waste-pipeline
+    container_name: document-pipeline
     restart: unless-stopped
     ports:
       - "3000:3000"
@@ -19,9 +19,22 @@ services:
       - AZURE_STORAGE_CONNECTION_STRING=${AZURE_STORAGE_CONNECTION_STRING}
       - AZURE_STORAGE_ACCOUNT_NAME=${AZURE_STORAGE_ACCOUNT_NAME}
       - AZURE_STORAGE_ACCOUNT_KEY=${AZURE_STORAGE_ACCOUNT_KEY}
+      - AZURE_CONTAINER_NAME=${AZURE_CONTAINER_NAME}
       
       # Anthropic API
       - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}
+      
+      # Tenant Configuration (optional - can use setup wizard instead)
+      - TENANT_NAME=${TENANT_NAME:-}
+      - TENANT_SLUG=${TENANT_SLUG:-}
+      - TENANT_PRIMARY_COLOR=${TENANT_PRIMARY_COLOR:-#3B82F6}
+      - TENANT_LANGUAGE=${TENANT_LANGUAGE:-sv}
+      - TENANT_LOGO_URL=${TENANT_LOGO_URL:-}
+      
+      # Feature Flags
+      - ENABLE_AUTO_APPROVE=${ENABLE_AUTO_APPROVE:-true}
+      - AUTO_APPROVE_THRESHOLD=${AUTO_APPROVE_THRESHOLD:-95}
+      - ENABLE_VERIFICATION=${ENABLE_VERIFICATION:-false}
       
       # Application
       - NEXT_PUBLIC_APP_URL=${NEXT_PUBLIC_APP_URL:-http://localhost:3000}
@@ -32,7 +45,7 @@ services:
       - ./logs:/app/logs
     
     networks:
-      - frost-network
+      - pipeline-network
     
     healthcheck:
       test: ["CMD", "node", "-e", "require('http').get('http://localhost:3000/api/health', (r) => process.exit(r.statusCode === 200 ? 0 : 1))"]
@@ -42,7 +55,7 @@ services:
       start_period: 40s
 
 networks:
-  frost-network:
+  pipeline-network:
     driver: bridge
 
 volumes:

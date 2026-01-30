@@ -1,100 +1,62 @@
-# 🧊 Frost Waste Pipeline AI
+# Document Pipeline AI
 
-**Intelligent document processing system for waste management data extraction**
-
-Built by Frost Solutions for Collecct AB
+**White-label document processing system for waste management data extraction**
 
 ---
 
-## 📋 Overview
+## Overview
 
-Frost Waste Pipeline AI automates the extraction, validation, and export of waste management data from unstructured documents (PDFs and Excel files). It serves as a fallback processor in Collecct's data pipeline, handling documents that fail primary processing systems.
+Document Pipeline AI automates the extraction, validation, and export of waste management data from unstructured documents (PDFs and Excel files). It serves as an intelligent document processor that uses AI to extract structured data from complex waste management documents.
 
 ### System Flow
 
 ```
-Customer Upload → Power BI → Simplitics Program
-                                    ↓ (fails)
-                    Azure Blob: "unsupported-file-format"
-                                    ↓
-                    🧊 FROST AI PROCESSOR
-                    - AI Extraction
-                    - Human Review
-                    - Quality Check
-                                    ↓
-                    Azure Blob: "completed"
-                                    ↓
-                    Simplitics picks up → SUCCESS → Power BI
+Document Upload → AI Extraction → Human Review → Export
+       ↓              ↓              ↓           ↓
+  Azure Blob    Claude AI     Dashboard    Excel/Azure
 ```
 
 ---
 
-## 🚀 Features
+## Features
 
-- **Automated AI Extraction**: Claude Sonnet 4 processes invoices with 90%+ accuracy
-- **Multi-language Support**: Swedish, Finnish, Norwegian documents
+- **Automated AI Extraction**: Claude Sonnet processes invoices with 90%+ accuracy
+- **Multi-language Support**: Swedish, Finnish, Norwegian, English documents
 - **Human-in-the-Loop Review**: Dashboard for edge case verification
 - **Azure Integration**: Automatic sync from/to Azure Blob Storage
 - **Batch Processing**: Process multiple documents simultaneously
 - **Export to Excel**: Generates Simplitics-compatible XLSX files
 - **Real-time Monitoring**: Health dashboard with system status
+- **White-Label Ready**: Customizable branding via setup wizard or environment variables
 
 ---
 
-## 🛠️ Tech Stack
+## Tech Stack
 
-- **Frontend**: Next.js 14 (App Router), React, TypeScript, Tailwind CSS
-- **Backend**: Python FastAPI (optional - currently using Next.js API routes)
+- **Frontend**: Next.js 16 (App Router), React 19, TypeScript, Tailwind CSS
 - **Database**: Supabase (PostgreSQL)
 - **Storage**: Azure Blob Storage
-- **AI**: Anthropic Claude API (Sonnet 4)
+- **AI**: Anthropic Claude API
 - **Deployment**: Docker Compose
 
 ---
 
-## 📦 Prerequisites
+## Quick Start
+
+### Prerequisites
 
 - Node.js 18+ and npm
-- Docker and Docker Compose (for production deployment)
-- Azure Storage Account with containers:
-  - `unsupported-file-format` (input)
-  - `completed` (output)
+- Docker and Docker Compose (for production)
+- Azure Storage Account
 - Supabase project
 - Anthropic API key
 
----
-
-## ⚙️ Environment Variables
-
-Create a `.env.local` file in the project root:
-
-```bash
-# Supabase
-NEXT_PUBLIC_SUPABASE_URL=https://your-project.supabase.co
-NEXT_PUBLIC_SUPABASE_ANON_KEY=your-anon-key
-SUPABASE_SERVICE_ROLE_KEY=your-service-role-key
-
-# Azure Blob Storage
-AZURE_STORAGE_CONNECTION_STRING=DefaultEndpointsProtocol=https;AccountName=...
-AZURE_STORAGE_ACCOUNT_NAME=your-storage-account
-AZURE_STORAGE_ACCOUNT_KEY=your-storage-key
-
-# Anthropic API
-ANTHROPIC_API_KEY=sk-ant-...
-
-# Application
-NEXT_PUBLIC_APP_URL=http://localhost:3000
-NODE_ENV=development
-```
-
----
-
-## 🏃 Local Development
+### Installation
 
 1. **Clone the repository**
 ```bash
 git clone <repository-url>
-cd frost-waste-pipeline
+cd document-pipeline
 ```
 
 2. **Install dependencies**
@@ -102,15 +64,16 @@ cd frost-waste-pipeline
 npm install
 ```
 
-3. **Set up environment variables**
+3. **Configure environment**
 ```bash
-cp .env.example .env.local
+cp env.example .env.local
 # Edit .env.local with your credentials
 ```
 
-4. **Run database migrations** (if needed)
+4. **Run database migrations**
 ```bash
-# Supabase migrations are in /supabase/migrations
+# Apply migrations to your Supabase project
+# See supabase/migrations/ for SQL files
 ```
 
 5. **Start development server**
@@ -118,223 +81,117 @@ cp .env.example .env.local
 npm run dev
 ```
 
-6. **Open browser**
-```
-http://localhost:3000
-```
+6. **Complete setup wizard**
+
+Visit `http://localhost:3000/setup` to configure your system.
 
 ---
 
-## 🐳 Docker Deployment
+## Configuration
 
-### Build and Run
+### Environment Variables
+
+See `env.example` for all available options. Key variables:
 
 ```bash
-# Build the image
-docker-compose build
+# Required
+NEXT_PUBLIC_SUPABASE_URL=https://your-project.supabase.co
+NEXT_PUBLIC_SUPABASE_ANON_KEY=your-anon-key
+SUPABASE_SERVICE_ROLE_KEY=your-service-role-key
+AZURE_STORAGE_CONNECTION_STRING=...
+ANTHROPIC_API_KEY=sk-ant-...
 
-# Start services
-docker-compose up -d
-
-# View logs
-docker-compose logs -f
-
-# Stop services
-docker-compose down
+# Optional - Pre-configure tenant (skip setup wizard)
+TENANT_NAME=Your Company Name
+TENANT_SLUG=your-company
+TENANT_PRIMARY_COLOR=#3B82F6
+TENANT_LANGUAGE=sv
 ```
 
-### Production Deployment
+### Setup Wizard
 
-1. **Update environment variables** in `docker-compose.yml` or use `.env` file
-2. **Build for production**
-```bash
-docker-compose -f docker-compose.prod.yml up -d
-```
+If `TENANT_NAME` is not set, the system will redirect to `/setup` on first access. The wizard allows you to configure:
 
-3. **Monitor health**
-```bash
-curl http://localhost:3000/api/health
-```
+- Company name and branding
+- Primary color theme
+- Language (Swedish, English, Norwegian, Finnish)
 
 ---
 
-## 📊 System Architecture
+## Docker Deployment
 
-### Database Schema (Supabase)
-
-**documents table:**
-```sql
-- id (uuid, primary key)
-- filename (text)
-- original_filename (text)
-- azure_url (text)
-- status (enum: uploaded, processing, needs_review, approved, exported, error)
-- extracted_data (jsonb)
-- created_at (timestamp)
-- updated_at (timestamp)
-```
-
-### API Endpoints
-
-| Endpoint | Method | Description |
-|----------|--------|-------------|
-| `/api/health` | GET | System health check |
-| `/api/sync-azure` | POST | Sync documents from Azure |
-| `/api/process-document` | POST | Process single document |
-| `/api/process-batch` | POST | Batch process documents |
-| `/api/export-to-azure` | POST | Export to Azure "completed" |
-| `/api/documents/[id]` | GET/PATCH | Document CRUD |
-
----
-
-## 🔧 Configuration
-
-### Auto-Sync Settings
-
-The system checks Azure Blob Storage for new files automatically. Configure sync interval in:
-
-```typescript
-// app/api/sync-azure/route.ts
-const SYNC_INTERVAL = 5 * 60 * 1000; // 5 minutes (default)
-```
-
-### AI Processing Settings
-
-```typescript
-// Confidence thresholds
-const AUTO_APPROVE_THRESHOLD = 95; // Auto-approve if quality > 95%
-const NEEDS_REVIEW_THRESHOLD = 80; // Human review if < 80%
-```
-
----
-
-## 📖 User Guide
-
-### How to Use the System
-
-1. **Dashboard** (`/collecct`)
-   - View all documents
-   - Process documents (batch or single)
-   - Filter and search
-   - Export approved documents
-
-2. **Review Documents** (`/review/[id]`)
-   - Verify AI-extracted data
-   - Edit line items
-   - Approve or reject
-   - See confidence scores
-
-3. **Settings** (`/settings`)
-   - Manage material synonyms
-   - Configure thresholds
-   - View system info
-
-4. **Health Monitoring** (`/health`)
-   - Check system status
-   - View processing stats
-   - Monitor Azure connection
-
-### Workflow
-
-```
-1. Documents arrive in Azure "unsupported-file-format"
-2. System auto-syncs every 5 minutes
-3. AI processes and extracts data
-4. If confidence < 95%, human reviews
-5. Approved documents → export to "completed"
-6. Original files deleted from "unsupported-file-format"
-7. Simplitics picks up and processes successfully
-```
-
----
-
-## 🐛 Troubleshooting
-
-### Common Issues
-
-**Problem: Documents not syncing from Azure**
-```bash
-# Check Azure connection in health dashboard
-# Verify AZURE_STORAGE_CONNECTION_STRING in .env
-# Check container names match exactly
-```
-
-**Problem: AI extraction failing**
-```bash
-# Check ANTHROPIC_API_KEY is valid
-# Verify API rate limits not exceeded
-# Check document format is PDF or Excel
-```
-
-**Problem: Export failing**
-```bash
-# Verify Azure "completed" container exists
-# Check write permissions on Azure storage
-# Review logs: docker-compose logs -f
-```
-
----
-
-## 📈 Monitoring & Maintenance
-
-### Health Checks
-
-- Dashboard: `http://localhost:3000/health`
-- API endpoint: `curl http://localhost:3000/api/health`
-
-### Logs
+### Build and run
 
 ```bash
-# View all logs
-docker-compose logs -f
-
-# View specific service
-docker-compose logs -f web
-
-# Last 100 lines
-docker-compose logs --tail=100
+docker compose up -d --build
 ```
 
-### Database Backup
+### Environment for Docker
+
+Create a `.env` file with production values:
 
 ```bash
-# Backup Supabase (use Supabase dashboard or CLI)
-# Or manual PostgreSQL dump if self-hosted
+NEXT_PUBLIC_SUPABASE_URL=...
+NEXT_PUBLIC_SUPABASE_ANON_KEY=...
+SUPABASE_SERVICE_ROLE_KEY=...
+AZURE_STORAGE_CONNECTION_STRING=...
+ANTHROPIC_API_KEY=...
+TENANT_NAME=Your Company Name
 ```
 
 ---
 
-## 🔐 Security Notes
+## Project Structure
 
-- Never commit `.env` files to git
-- Rotate API keys regularly
-- Use Azure SAS tokens for time-limited access
-- Enable CORS only for trusted domains
-- Keep dependencies updated (`npm audit`)
-
----
-
-## 📞 Support
-
-**Developed by:** Frost Solutions  
-**Contact:** [Your contact info]  
-**Client:** Collecct AB  
-**Version:** 1.0.0  
-**Last Updated:** December 30, 2025
-
----
-
-## 🔄 Maintenance Plan
-
-**Included in 2,000 SEK/month:**
-- Bug fixes and security updates
-- Email support (response within 24h)
-- Minor feature adjustments
-- Monthly health check reports
-- Hosting and infrastructure maintenance
+```
+├── app/                    # Next.js App Router pages
+│   ├── dashboard/         # Main dashboard
+│   ├── review/            # Document review
+│   ├── settings/          # System settings
+│   ├── setup/             # First-time setup wizard
+│   └── api/               # API routes
+├── components/            # React components
+├── config/               
+│   └── tenant.ts         # Tenant configuration
+├── lib/                   # Utilities and libraries
+│   ├── adaptive-extraction.ts
+│   ├── azure-blob-connector.ts
+│   └── supabase.ts
+├── supabase/
+│   └── migrations/       # Database migrations
+└── docker-compose.yml
+```
 
 ---
 
-## 📄 License
+## Database Migrations
 
-Proprietary - Frost Solutions © 2025
+Run these migrations on your Supabase project:
+
+1. `settings-migration.sql` - Creates settings table
+2. `azure-folder-settings.sql` - Azure folder configuration
+3. `tenant-branding.sql` - Tenant branding fields
+
+---
+
+## API Routes
+
+- `POST /api/process-document` - Process single document
+- `POST /api/process-batch` - Batch process documents
+- `GET /api/azure/browse` - Browse Azure blob storage
+- `POST /api/export-to-azure` - Export to Azure
+- `GET /api/settings` - Get system settings
+- `POST /api/setup` - Complete initial setup
+- `GET /api/health` - System health check
+
+---
+
+## Customer Deployment Guide
+
+See [INSTALLATION.md](INSTALLATION.md) for detailed customer deployment instructions.
+
+---
+
+## License
+
+Proprietary - All rights reserved

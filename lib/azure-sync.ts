@@ -13,8 +13,7 @@ export async function syncFromAzure() {
 
   console.log("🔄 Checking Azure for new files...");
 
-  // 1. LISTA FILER I 'incoming'
-  // Deras mapp: sacollecctanalytics.blob.core.windows.net/arrivalwastedata/incoming
+  // 1. LIST FILES IN 'incoming' FOLDER
   for await (const blob of containerClient.listBlobsFlat({ prefix: "incoming/" })) {
     
     console.log(`📄 Found file: ${blob.name}`);

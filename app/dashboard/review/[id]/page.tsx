@@ -78,7 +78,7 @@ export default function ReviewDetail({ params }: { params: Promise<{ id: string 
       });
 
       if (response.ok) {
-        router.push('/collecct');
+        router.push('/dashboard');
       } else {
         alert('Kunde inte godkänna filen');
       }
@@ -108,7 +108,7 @@ export default function ReviewDetail({ params }: { params: Promise<{ id: string 
       });
 
       if (response.ok) {
-        router.push('/collecct');
+        router.push('/dashboard');
       } else {
         alert('Kunde inte avvisa filen');
       }

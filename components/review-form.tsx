@@ -312,7 +312,7 @@ export function ReviewForm({
           router.push(`/review/${nextDocId}`);
         } else {
           // No more documents to review, go back to dashboard
-          router.push('/collecct');
+          router.push('/dashboard');
         }
       } else {
         // "Spara" - stay on same page, refresh to show updated data

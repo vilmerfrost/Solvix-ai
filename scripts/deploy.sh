@@ -1,6 +1,6 @@
 #!/bin/bash
 
-echo "🚀 Deploying Collecct System..."
+echo "🚀 Deploying Document Pipeline..."
 
 # 1. Run type check
 echo "📝 Type checking..."
@@ -21,6 +21,6 @@ if [ $? -ne 0 ]; then
 fi
 
 echo "✅ Build successful!"
-echo "🔍 Check health at: https://your-domain.vercel.app/health"
-echo "📊 Review dashboard: https://your-domain.vercel.app/collecct"
+echo "🔍 Check health at: https://your-domain/health"
+echo "📊 Review dashboard: https://your-domain/dashboard"
 

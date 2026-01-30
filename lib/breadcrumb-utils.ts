@@ -8,16 +8,20 @@ export interface BreadcrumbItem {
  * These can be called from server components
  */
 
+import { getTenantConfig } from "@/config/tenant";
+
 export function getDashboardBreadcrumbs(): BreadcrumbItem[] {
+  const config = getTenantConfig();
   return [
-    { label: "Collecct Review", href: "/collecct" },
+    { label: `${config.companyName} Dashboard`, href: "/dashboard" },
   ];
 }
 
 export function getReviewBreadcrumbs(documentId: string, filename?: string): BreadcrumbItem[] {
+  const config = getTenantConfig();
   return [
-    { label: "Collecct Review", href: "/collecct" },
-    { label: filename || `Dokument ${documentId.slice(0, 8)}` },
+    { label: `${config.companyName} Dashboard`, href: "/dashboard" },
+    { label: filename || `Document ${documentId.slice(0, 8)}` },
   ];
 }
 

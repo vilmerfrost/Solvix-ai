@@ -93,8 +93,8 @@ export default async function Home({ searchParams }: { searchParams: Promise<{ q
              Arkiv
            </Link>
            <span className="text-slate-300">|</span>
-           <Link href="/collecct" className="px-4 py-2 text-sm font-medium text-blue-600 hover:text-blue-800 transition-colors">
-             Collecct Review
+           <Link href="/dashboard" className="px-4 py-2 text-sm font-medium text-blue-600 hover:text-blue-800 transition-colors">
+             Dashboard
            </Link>
            
            {/* HÄR ÄR DEN NYA EXPORT-KOMPONENTEN */}

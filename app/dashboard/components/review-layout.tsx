@@ -1,6 +1,7 @@
 "use client";
 
 import { FileText, CheckCircle, AlertCircle, Clock } from "lucide-react";
+import { getTenantConfig, getUIStrings } from "@/config/tenant";
 
 export function ReviewLayout({ children, stats }: { 
   children: React.ReactNode;
@@ -11,6 +12,9 @@ export function ReviewLayout({ children, stats }: {
     failed: number;
   };
 }) {
+  const config = getTenantConfig();
+  const strings = getUIStrings(config);
+
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
@@ -19,10 +23,10 @@ export function ReviewLayout({ children, stats }: {
           <div className="flex items-center justify-between">
             <div>
               <h1 className="text-2xl font-semibold text-gray-900">
-                Collecct Review Dashboard
+                {config.companyName} {strings.review} {strings.dashboard}
               </h1>
               <p className="mt-1 text-sm text-gray-500">
-                Granska och godkänn dokument för Collecct AB
+                {strings.reviewDescription}
               </p>
             </div>
           </div>
@@ -39,7 +43,7 @@ export function ReviewLayout({ children, stats }: {
               </div>
               <div>
                 <div className="text-2xl font-bold text-gray-900">{stats.total}</div>
-                <div className="text-xs text-gray-500">Totalt</div>
+                <div className="text-xs text-gray-500">{strings.total}</div>
               </div>
             </div>
 
@@ -49,7 +53,7 @@ export function ReviewLayout({ children, stats }: {
               </div>
               <div>
                 <div className="text-2xl font-bold text-gray-900">{stats.needsReview}</div>
-                <div className="text-xs text-gray-500">Behöver granskning</div>
+                <div className="text-xs text-gray-500">{strings.needsReview}</div>
               </div>
             </div>
 
@@ -59,7 +63,7 @@ export function ReviewLayout({ children, stats }: {
               </div>
               <div>
                 <div className="text-2xl font-bold text-gray-900">{stats.approved}</div>
-                <div className="text-xs text-gray-500">Godkända</div>
+                <div className="text-xs text-gray-500">{strings.approved}</div>
               </div>
             </div>
 
@@ -69,7 +73,7 @@ export function ReviewLayout({ children, stats }: {
               </div>
               <div>
                 <div className="text-2xl font-bold text-gray-900">{stats.failed}</div>
-                <div className="text-xs text-gray-500">Fel</div>
+                <div className="text-xs text-gray-500">{strings.error}</div>
               </div>
             </div>
           </div>
@@ -83,4 +87,3 @@ export function ReviewLayout({ children, stats }: {
     </div>
   );
 }
-

@@ -1,5 +1,5 @@
 /**
- * Auto-fetcher service for Collecct
+ * Auto-fetcher service for Document Pipeline
  * Checks blob storage for failed files and processes them automatically
  */
 

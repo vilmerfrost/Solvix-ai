@@ -1,6 +1,6 @@
 import { SystemStatus } from '@/components/SystemStatus';
 
-export default function CollecctLayout({
+export default function DashboardLayout({
   children,
 }: {
   children: React.ReactNode;

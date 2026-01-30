@@ -1,6 +1,6 @@
 /**
  * Excel Creator - TypeScript Implementation
- * Matches Collecct/Martin's expected format EXACTLY
+ * Creates waste data exports in Simplitics-compatible format
  * Creates multiple rows per document (one row per material)
  */
 

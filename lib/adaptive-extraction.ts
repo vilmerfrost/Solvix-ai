@@ -3,6 +3,7 @@
 // Includes optional verification step to detect hallucinations
 
 import Anthropic from "@anthropic-ai/sdk";
+import { getTenantConfig, DEFAULT_TENANT_CONFIG } from "@/config/tenant";
 
 const anthropic = new Anthropic({
   apiKey: process.env.ANTHROPIC_API_KEY!,
@@ -259,13 +260,23 @@ async function extractChunkWithFallback(
     .map(row => row.map(cell => String(cell || "")).join('\t'))
     .join('\n');
   
-  // Infer receiver
-  let receiver = "Okänd mottagare";
+  // Infer receiver from filename using configurable known receivers
+  let receiver = "Unknown receiver";
   const fn = filename.toLowerCase();
-  if (fn.includes('ragn-sells') || fn.includes('ragnsells')) receiver = "Ragn-Sells";
-  else if (fn.includes('renova')) receiver = "Renova";
-  else if (fn.includes('nsr')) receiver = "NSR";
-  else if (fn.includes('collecct')) receiver = "Collecct";
+  
+  // Get known receivers from tenant config
+  const config = getTenantConfig();
+  const knownReceivers = config.knownReceivers || DEFAULT_TENANT_CONFIG.knownReceivers;
+  
+  // Try to match filename against known receivers
+  for (const knownReceiver of knownReceivers) {
+    const searchTerm = knownReceiver.toLowerCase().replace(/[-\s]/g, '');
+    const filenameNormalized = fn.replace(/[-\s]/g, '');
+    if (filenameNormalized.includes(searchTerm) || fn.includes(knownReceiver.toLowerCase())) {
+      receiver = knownReceiver;
+      break;
+    }
+  }
   
   // Extract date from filename
   const dateMatch = filename.match(/(\d{4}[-_]\d{2}[-_]\d{2})/);

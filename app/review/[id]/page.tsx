@@ -19,6 +19,7 @@ import { getReviewBreadcrumbs } from "@/lib/breadcrumb-utils";
 import { truncateFilename } from "@/lib/filename-utils";
 import { DeleteDocumentButton } from "@/components/delete-document-button";
 import { ProcessingLogViewer } from "@/components/processing-log-viewer";
+import { getTenantConfigFromDB, getUIStrings } from "@/config/tenant";
 
 export const dynamic = "force-dynamic";
 
@@ -29,6 +30,10 @@ export default async function ReviewPage({
 }) {
   const supabase = createServiceRoleClient();
   const { id } = await params;
+  
+  // Get tenant configuration
+  const config = await getTenantConfigFromDB();
+  const strings = getUIStrings(config);
 
   // Fetch document
   const { data: doc } = await supabase
@@ -276,7 +281,7 @@ export default async function ReviewPage({
           
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4">
             <Link
-              href="/collecct"
+              href="/dashboard"
               className="flex items-center gap-2 px-4 py-2 text-sm text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors"
             >
               <ArrowLeft className="w-4 h-4" />
@@ -289,7 +294,7 @@ export default async function ReviewPage({
                   documentId={doc.id}
                   storagePath={doc.storage_path}
                   filename={doc.filename}
-                  redirectAfter="/collecct"
+                  redirectAfter="/dashboard"
                   variant="button"
                 />
               )}
@@ -329,7 +334,7 @@ export default async function ReviewPage({
             {truncateFilename(doc.filename, 60)}
           </h1>
           <p className="text-sm text-gray-600">
-            Granska och godkänn dokument för Collecct AB.
+            {strings.reviewDescription}
           </p>
         </div>
       </div>

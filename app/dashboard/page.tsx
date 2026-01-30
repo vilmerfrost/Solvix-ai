@@ -14,10 +14,11 @@ import { RelativeTime } from "@/components/relative-time";
 import { truncateFilename } from "@/lib/filename-utils";
 import { DeleteDocumentButton } from "@/components/delete-document-button";
 import { Pagination } from "@/components/pagination";
+import { getTenantConfigFromDB, getUIStrings } from "@/config/tenant";
 
 export const dynamic = "force-dynamic";
 
-export default async function CollecctDashboard({
+export default async function Dashboard({
   searchParams,
 }: {
   searchParams: Promise<{ tab?: string; page?: string; perPage?: string }>;
@@ -25,6 +26,10 @@ export default async function CollecctDashboard({
   const supabase = createServiceRoleClient();
   const params = await searchParams;
   const activeTab = params.tab || "active";
+  
+  // Get tenant configuration
+  const config = await getTenantConfigFromDB();
+  const strings = getUIStrings(config);
   
   // Pagination params
   const currentPage = Math.max(1, parseInt(params.page || "1", 10));
@@ -141,7 +146,7 @@ export default async function CollecctDashboard({
               className="flex items-center gap-2 px-4 py-2 text-sm text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors"
             >
               <ArrowLeft className="w-4 h-4" />
-              <span>Tillbaka</span>
+              <span>{strings.back}</span>
             </Link>
 
             {/* Right: Action buttons */}
@@ -157,7 +162,7 @@ export default async function CollecctDashboard({
                 className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-all text-sm font-medium"
               >
                 <Activity className="w-4 h-4" />
-                <span>Health</span>
+                <span>{strings.health}</span>
               </Link>
 
               <Link
@@ -165,7 +170,7 @@ export default async function CollecctDashboard({
                 className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-all text-sm font-medium"
               >
                 <Settings className="w-4 h-4" />
-                <span>Inställningar</span>
+                <span>{strings.settings}</span>
               </Link>
 
               <AutoFetchButton />
@@ -176,42 +181,42 @@ export default async function CollecctDashboard({
           <div className="flex items-center gap-2 mb-4">
             <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
             <span className="text-xs font-medium text-green-600 uppercase tracking-wider">
-              SYSTEM ONLINE
+              {strings.systemOnline}
             </span>
           </div>
 
           {/* Title */}
           <h1 className="text-3xl font-bold text-gray-900 mb-2">
-            Collecct Review
+            {config.companyName} {strings.review}
           </h1>
           <p className="text-lg text-teal-600 italic font-medium mb-2">
-            Dashboard
+            {strings.dashboard}
           </p>
           <p className="text-sm text-gray-600">
-            Granska och godkänn dokument för Collecct AB.
+            {strings.reviewDescription}
           </p>
           
           {/* Tabs */}
           <div className="flex gap-2 border-b border-gray-200 mt-6">
             <a
-              href="/collecct?tab=active"
+              href="/dashboard?tab=active"
               className={`px-4 py-2 text-sm font-medium transition-colors ${
                 activeTab === "active" || !activeTab
                   ? "text-blue-600 border-b-2 border-blue-600"
                   : "text-gray-600 hover:text-gray-900"
               }`}
             >
-              Aktiva ({documents?.filter(d => !d.exported_at).length || 0})
+              {strings.active} ({documents?.filter(d => !d.exported_at).length || 0})
             </a>
             <a
-              href="/collecct?tab=archive"
+              href="/dashboard?tab=archive"
               className={`px-4 py-2 text-sm font-medium transition-colors ${
                 activeTab === "archive"
                   ? "text-blue-600 border-b-2 border-blue-600"
                   : "text-gray-600 hover:text-gray-900"
               }`}
             >
-              Arkiverade ({documents?.filter(d => d.exported_at).length || 0})
+              {strings.archived} ({documents?.filter(d => d.exported_at).length || 0})
             </a>
           </div>
         </div>
@@ -229,14 +234,14 @@ export default async function CollecctDashboard({
           <div className="bg-white rounded-lg border border-gray-200 p-6">
             <div className="flex items-center justify-between mb-2">
               <span className="text-sm font-medium text-gray-600 uppercase tracking-wide">
-                TOTALT
+                {strings.total.toUpperCase()}
               </span>
               <div className="w-2 h-2 rounded-full bg-gray-400" />
             </div>
             <div className="text-4xl font-bold text-gray-900 mb-1">
               {stats.total}
             </div>
-            <p className="text-xs text-gray-500">Dokument</p>
+            <p className="text-xs text-gray-500">{strings.documents}</p>
           </div>
 
           {/* Needs Review - Clickable */}
@@ -246,21 +251,26 @@ export default async function CollecctDashboard({
           >
             <div className="flex items-center justify-between mb-2">
               <span className="text-sm font-medium text-gray-600 uppercase tracking-wide">
-                BEHÖVER GRANSKNING
+                {strings.needsReview.toUpperCase()}
               </span>
               <div className="w-2 h-2 rounded-full bg-yellow-500" />
             </div>
             <div className="text-4xl font-bold text-gray-900 mb-1">
               {stats.needsReview}
             </div>
-            <p className="text-xs text-yellow-600 font-medium">Väntar - Klicka för att visa</p>
+            <p className="text-xs text-yellow-600 font-medium">
+              {config.language === 'sv' ? 'Väntar - Klicka för att visa' : 
+               config.language === 'en' ? 'Waiting - Click to view' :
+               config.language === 'no' ? 'Venter - Klikk for å vise' :
+               'Odottaa - Klikkaa nähdäksesi'}
+            </p>
           </a>
 
           {/* Approved */}
           <div className="bg-white rounded-lg border border-gray-200 p-6">
             <div className="flex items-center justify-between mb-2">
               <span className="text-sm font-medium text-gray-600 uppercase tracking-wide">
-                GODKÄNDA
+                {strings.approved.toUpperCase()}
               </span>
               <div className="w-2 h-2 rounded-full bg-green-500" />
             </div>
@@ -268,7 +278,12 @@ export default async function CollecctDashboard({
               {stats.approved}
             </div>
             <p className="text-xs text-gray-500">
-              {activeTab === "active" ? "Redo för export" : "Exporterade"}
+              {activeTab === "active" 
+                ? (config.language === 'sv' ? 'Redo för export' : 
+                   config.language === 'en' ? 'Ready for export' :
+                   config.language === 'no' ? 'Klar for eksport' :
+                   'Valmis vientiin')
+                : strings.exported}
             </p>
           </div>
 
@@ -276,14 +291,19 @@ export default async function CollecctDashboard({
           <div className="bg-white rounded-lg border border-gray-200 p-6">
             <div className="flex items-center justify-between mb-2">
               <span className="text-sm font-medium text-gray-600 uppercase tracking-wide">
-                FEL
+                {strings.error.toUpperCase()}
               </span>
               <div className="w-2 h-2 rounded-full bg-red-500" />
             </div>
             <div className="text-4xl font-bold text-gray-900 mb-1">
               {stats.failed}
             </div>
-            <p className="text-xs text-red-600 font-medium">Kräver åtgärd</p>
+            <p className="text-xs text-red-600 font-medium">
+              {config.language === 'sv' ? 'Kräver åtgärd' : 
+               config.language === 'en' ? 'Requires action' :
+               config.language === 'no' ? 'Krever handling' :
+               'Vaatii toimenpiteitä'}
+            </p>
           </div>
         </div>
 
@@ -293,10 +313,10 @@ export default async function CollecctDashboard({
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-xl font-bold text-gray-900 flex items-center gap-2">
                 <span className="w-3 h-3 bg-yellow-500 rounded-full animate-pulse"></span>
-                Behöver granskning
+                {strings.needsReview}
               </h2>
               <p className="text-sm text-gray-500">
-                {needsReviewTotal} dokument väntar
+                {needsReviewTotal} {strings.documents.toLowerCase()} {config.language === 'sv' ? 'väntar' : config.language === 'en' ? 'waiting' : config.language === 'no' ? 'venter' : 'odottaa'}
               </p>
             </div>
 
@@ -306,10 +326,16 @@ export default async function CollecctDashboard({
                   <FileText className="w-8 h-8 text-yellow-600" />
                 </div>
                 <h3 className="text-xl font-semibold text-gray-900 mb-2">
-                  Inga dokument behöver granskning
+                  {config.language === 'sv' ? 'Inga dokument behöver granskning' : 
+                   config.language === 'en' ? 'No documents need review' :
+                   config.language === 'no' ? 'Ingen dokumenter trenger gjennomgang' :
+                   'Ei tarkistettavia asiakirjoja'}
                 </h3>
                 <p className="text-gray-600">
-                  Alla dokument är granskade eller väntar på bearbetning.
+                  {config.language === 'sv' ? 'Alla dokument är granskade eller väntar på bearbetning.' : 
+                   config.language === 'en' ? 'All documents are reviewed or awaiting processing.' :
+                   config.language === 'no' ? 'Alle dokumenter er gjennomgått eller venter på behandling.' :
+                   'Kaikki asiakirjat on tarkistettu tai odottavat käsittelyä.'}
                 </p>
               </div>
             ) : (
@@ -349,11 +375,11 @@ export default async function CollecctDashboard({
 
                     <div className="p-5 space-y-3">
                       <div className="flex items-center justify-between text-sm">
-                        <span className="text-gray-600">Material:</span>
-                        <span className="font-medium text-gray-900">{materialCount} rader</span>
+                        <span className="text-gray-600">{strings.material}:</span>
+                        <span className="font-medium text-gray-900">{materialCount} {config.language === 'sv' ? 'rader' : config.language === 'en' ? 'rows' : config.language === 'no' ? 'rader' : 'riviä'}</span>
                       </div>
                       <div className="flex items-center justify-between text-sm">
-                        <span className="text-gray-600">Total vikt:</span>
+                        <span className="text-gray-600">{config.language === 'sv' ? 'Total vikt' : config.language === 'en' ? 'Total weight' : config.language === 'no' ? 'Total vekt' : 'Kokonaispaino'}:</span>
                         <span className="font-medium text-gray-900">
                           {totalWeight > 0 ? `${(totalWeight / 1000).toFixed(1)} ton` : '0 kg'}
                         </span>
@@ -361,7 +387,7 @@ export default async function CollecctDashboard({
                       
                       <div>
                         <div className="flex items-center justify-between text-xs mb-1">
-                          <span className="text-gray-600">Fullständighet:</span>
+                          <span className="text-gray-600">{strings.completeness}:</span>
                           <span className={`font-medium ${
                             completeness >= 95 ? 'text-green-600' :
                             completeness >= 80 ? 'text-yellow-600' :
@@ -388,7 +414,10 @@ export default async function CollecctDashboard({
                         href={`/review/${doc.id}`}
                         className="block w-full py-2.5 px-4 bg-orange-600 hover:bg-orange-700 text-white text-sm font-medium rounded-lg transition-colors text-center"
                       >
-                        Granska nu
+                        {config.language === 'sv' ? 'Granska nu' : 
+                         config.language === 'en' ? 'Review now' :
+                         config.language === 'no' ? 'Gjennomgå nå' :
+                         'Tarkista nyt'}
                       </Link>
                     </div>
                   </div>
@@ -415,10 +444,16 @@ export default async function CollecctDashboard({
         <div className="mb-8">
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-xl font-bold text-gray-900">
-              Senaste dokument
+              {config.language === 'sv' ? 'Senaste dokument' : 
+               config.language === 'en' ? 'Recent documents' :
+               config.language === 'no' ? 'Nylige dokumenter' :
+               'Viimeisimmät asiakirjat'}
             </h2>
             <p className="text-sm text-gray-500">
-              Visar {recentDocs.length} av {stats.total} dokument
+              {config.language === 'sv' ? `Visar ${recentDocs.length} av ${stats.total} dokument` : 
+               config.language === 'en' ? `Showing ${recentDocs.length} of ${stats.total} documents` :
+               config.language === 'no' ? `Viser ${recentDocs.length} av ${stats.total} dokumenter` :
+               `Näytetään ${recentDocs.length} / ${stats.total} asiakirjaa`}
             </p>
           </div>
 
@@ -429,13 +464,22 @@ export default async function CollecctDashboard({
               </div>
               <h3 className="text-xl font-semibold text-gray-900 mb-2">
                 {activeTab === "archive" 
-                  ? "Inga arkiverade dokument ännu"
-                  : "Inga dokument ännu"}
+                  ? (config.language === 'sv' ? 'Inga arkiverade dokument ännu' : 
+                     config.language === 'en' ? 'No archived documents yet' :
+                     config.language === 'no' ? 'Ingen arkiverte dokumenter ennå' :
+                     'Ei arkistoituja asiakirjoja vielä')
+                  : strings.noDocuments}
               </h3>
               <p className="text-gray-600 mb-6">
                 {activeTab === "archive"
-                  ? "Exporterade dokument visas här"
-                  : "Börja med att synka dokument från Azure"}
+                  ? (config.language === 'sv' ? 'Exporterade dokument visas här' : 
+                     config.language === 'en' ? 'Exported documents will appear here' :
+                     config.language === 'no' ? 'Eksporterte dokumenter vises her' :
+                     'Viedyt asiakirjat näkyvät täällä')
+                  : (config.language === 'sv' ? 'Börja med att synka dokument från Azure' : 
+                     config.language === 'en' ? 'Start by syncing documents from Azure' :
+                     config.language === 'no' ? 'Start med å synkronisere dokumenter fra Azure' :
+                     'Aloita synkronoimalla asiakirjat Azuresta')}
               </p>
               {activeTab === "active" && <AutoFetchButton />}
             </div>
@@ -485,12 +529,12 @@ export default async function CollecctDashboard({
                             doc.status === 'error' ? 'bg-red-100 text-red-800' :
                             'bg-gray-100 text-gray-800'
                           }`}>
-                            {doc.status === 'uploaded' && 'Uppladdad'}
-                            {doc.status === 'processing' && '🔄 Behandlar...'}
-                            {doc.status === 'needs_review' && 'Behöver granskning'}
-                            {doc.status === 'approved' && '✅ Godkänd'}
-                            {doc.status === 'exported' && '📤 Exporterad'}
-                            {doc.status === 'error' && '❌ Fel'}
+                            {doc.status === 'uploaded' && strings.uploaded}
+                            {doc.status === 'processing' && `🔄 ${strings.processing}...`}
+                            {doc.status === 'needs_review' && strings.needsReview}
+                            {doc.status === 'approved' && `✅ ${strings.approved}`}
+                            {doc.status === 'exported' && `📤 ${strings.exported}`}
+                            {doc.status === 'error' && `❌ ${strings.error}`}
                           </div>
                           {/* Delete Button - only show for non-exported documents */}
                           {doc.status !== 'exported' && (
@@ -508,13 +552,13 @@ export default async function CollecctDashboard({
                     {/* Document Stats */}
                     <div className="p-5 space-y-3">
                       <div className="flex items-center justify-between text-sm">
-                        <span className="text-gray-600">Material:</span>
+                        <span className="text-gray-600">{strings.material}:</span>
                         <span className="font-medium text-gray-900">
-                          {isProcessed ? `${materialCount} rader` : 'Ej processad'}
+                          {isProcessed ? `${materialCount} ${config.language === 'sv' ? 'rader' : config.language === 'en' ? 'rows' : config.language === 'no' ? 'rader' : 'riviä'}` : (config.language === 'sv' ? 'Ej processad' : config.language === 'en' ? 'Not processed' : config.language === 'no' ? 'Ikke behandlet' : 'Ei käsitelty')}
                         </span>
                       </div>
                       <div className="flex items-center justify-between text-sm">
-                        <span className="text-gray-600">Total vikt:</span>
+                        <span className="text-gray-600">{config.language === 'sv' ? 'Total vikt' : config.language === 'en' ? 'Total weight' : config.language === 'no' ? 'Total vekt' : 'Kokonaispaino'}:</span>
                         <span className="font-medium text-gray-900">
                           {isProcessed 
                             ? (totalWeight > 0 ? `${(totalWeight / 1000).toFixed(1)} ton` : '0 kg')
@@ -526,7 +570,7 @@ export default async function CollecctDashboard({
                       {/* Completeness Bar */}
                       <div>
                         <div className="flex items-center justify-between text-xs mb-1">
-                          <span className="text-gray-600">Fullständighet:</span>
+                          <span className="text-gray-600">{strings.completeness}:</span>
                           <span className={`font-medium ${
                             !isProcessed ? 'text-gray-400' :
                             completeness >= 95 ? 'text-green-600' :
@@ -556,7 +600,10 @@ export default async function CollecctDashboard({
                             <AlertCircle className="w-4 h-4 text-yellow-600 flex-shrink-0 mt-0.5" />
                             <div>
                               <p className="text-xs font-medium text-yellow-800 mb-1">
-                                Varningar:
+                                {config.language === 'sv' ? 'Varningar' : 
+                                 config.language === 'en' ? 'Warnings' :
+                                 config.language === 'no' ? 'Advarsler' :
+                                 'Varoitukset'}:
                               </p>
                               <ul className="text-xs text-yellow-700 space-y-1">
                                 {validation.issues.slice(0, 2).map((issue: string, idx: number) => (
@@ -580,7 +627,7 @@ export default async function CollecctDashboard({
                             <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
                             <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
                           </svg>
-                          Behandlar...
+                          {strings.processing}...
                         </div>
                       )}
                       {doc.status === 'needs_review' && (
@@ -588,7 +635,10 @@ export default async function CollecctDashboard({
                           href={`/review/${doc.id}`}
                           className="block w-full py-2.5 px-4 bg-orange-600 hover:bg-orange-700 text-white text-sm font-medium rounded-lg transition-colors text-center"
                         >
-                          Granska nu
+                          {config.language === 'sv' ? 'Granska nu' : 
+                           config.language === 'en' ? 'Review now' :
+                           config.language === 'no' ? 'Gjennomgå nå' :
+                           'Tarkista nyt'}
                         </Link>
                       )}
                       {doc.status === 'approved' && (
@@ -596,13 +646,16 @@ export default async function CollecctDashboard({
                           href={`/review/${doc.id}`}
                           className="block w-full py-2.5 px-4 bg-green-600 hover:bg-green-700 text-white text-sm font-medium rounded-lg transition-colors text-center"
                         >
-                          Se detaljer
+                          {config.language === 'sv' ? 'Se detaljer' : 
+                           config.language === 'en' ? 'View details' :
+                           config.language === 'no' ? 'Se detaljer' :
+                           'Näytä tiedot'}
                         </Link>
                       )}
                       {doc.status === 'exported' && (
                         <div className="space-y-2">
                           <div className="px-4 py-2 bg-purple-50 border border-purple-200 rounded-lg text-center">
-                            <p className="text-xs text-purple-700 font-medium">📤 Exporterad</p>
+                            <p className="text-xs text-purple-700 font-medium">📤 {strings.exported}</p>
                             {doc.exported_at && (
                               <p className="text-xs text-purple-600 mt-1" title={formatDateTime(doc.exported_at)}>
                                 <RelativeTime date={doc.exported_at} />
@@ -617,7 +670,10 @@ export default async function CollecctDashboard({
                                 rel="noopener noreferrer"
                                 className="flex-1 py-2 px-4 bg-purple-600 hover:bg-purple-700 text-white text-sm font-medium rounded-lg transition-colors text-center"
                               >
-                                Öppna i Azure
+                                {config.language === 'sv' ? 'Öppna i Azure' : 
+                                 config.language === 'en' ? 'Open in Azure' :
+                                 config.language === 'no' ? 'Åpne i Azure' :
+                                 'Avaa Azuressa'}
                               </a>
                             )}
                             <UndoExportButton 
@@ -633,7 +689,10 @@ export default async function CollecctDashboard({
                           href={`/review/${doc.id}`}
                           className="block w-full py-2.5 px-4 bg-red-600 hover:bg-red-700 text-white text-sm font-medium rounded-lg transition-colors text-center"
                         >
-                          Visa fel
+                          {config.language === 'sv' ? 'Visa fel' : 
+                           config.language === 'en' ? 'View error' :
+                           config.language === 'no' ? 'Vis feil' :
+                           'Näytä virhe'}
                         </Link>
                       )}
                     </div>

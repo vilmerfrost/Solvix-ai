@@ -539,7 +539,7 @@ export default function SettingsPage() {
         <div className="max-w-7xl mx-auto px-6 py-6">
           <div className="flex items-center justify-between mb-6">
             <Link
-              href="/collecct"
+              href="/dashboard"
               className="flex items-center gap-2 px-4 py-2 text-sm text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors"
             >
               <ArrowLeft className="w-4 h-4" />
@@ -547,7 +547,7 @@ export default function SettingsPage() {
             </Link>
             
             <button
-              onClick={() => window.location.href = "/collecct"}
+              onClick={() => window.location.href = "/dashboard"}
               className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg text-sm font-medium transition-colors"
             >
               <Save className="w-4 h-4 inline mr-2" />

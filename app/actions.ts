@@ -232,7 +232,7 @@ export async function uploadAndEnqueueDocument(formData: FormData) {
     }
     
     revalidatePath("/");
-    revalidatePath("/collecct");
+    revalidatePath("/dashboard");
     return { message: "Uppladdat!", documentId: document.id };
 }
 
@@ -768,7 +768,7 @@ export async function saveDocument(formData: FormData) {
     })
     .eq("id", id);
   
-  revalidatePath("/collecct");
+  revalidatePath("/dashboard");
   revalidatePath(`/review/${id}`);
   
   // Return success - let the client handle navigation
@@ -783,7 +783,7 @@ export async function deleteDocument(formData: FormData) {
     await supabase.from("documents").delete().eq("id", id);
     revalidatePath("/");
     revalidatePath("/archive");
-    revalidatePath("/collecct");
+    revalidatePath("/dashboard");
   }
 export async function toggleArchive(formData: FormData) {
     const supabase = createServiceRoleClient();
@@ -883,7 +883,7 @@ export async function verifyAllDocuments() {
 }
 
 /**
- * REJECT DOCUMENT (Collecct workflow)
+ * REJECT DOCUMENT (Review workflow)
  * Rejects a document for manual processing
  */
 export async function rejectDocument(formData: FormData) {
@@ -911,6 +911,6 @@ export async function rejectDocument(formData: FormData) {
     })
     .eq("id", id);
 
-  revalidatePath("/collecct");
+  revalidatePath("/dashboard");
   revalidatePath("/");
 }
