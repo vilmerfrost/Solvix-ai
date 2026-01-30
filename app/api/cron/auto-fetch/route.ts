@@ -100,14 +100,17 @@ export async function GET(request: Request) {
         // ============================================
         // DUPLICATE PROTECTION - Check existing files
         // ============================================
+        // Check ALL documents for this user (not just those with azure_original_filename)
+        // This ensures old documents imported before migration are also detected
         const { data: existingDocs } = await supabase
           .from("documents")
           .select("azure_original_filename, filename")
-          .eq("user_id", userId)
-          .not("azure_original_filename", "is", null);
+          .eq("user_id", userId);
         
         const existingPaths = new Set(
-          (existingDocs || []).map(d => d.azure_original_filename)
+          (existingDocs || [])
+            .filter(d => d.azure_original_filename)
+            .map(d => d.azure_original_filename)
         );
         const existingFilenames = new Set(
           (existingDocs || []).map(d => d.filename)

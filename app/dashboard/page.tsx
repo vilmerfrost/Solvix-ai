@@ -3,6 +3,7 @@ import { requireAuth } from "@/lib/auth";
 import Link from "next/link";
 import { FileText, CheckCircle2, AlertCircle, Activity, RefreshCw, ArrowLeft, Download, Settings, Home } from "lucide-react";
 import { AutoFetchButton } from "@/components/auto-fetch-button";
+import { ResetDocumentsButton } from "@/components/reset-documents-button";
 import { BatchProcessButton } from "@/components/batch-process-button";
 import { GranskaButton } from "@/components/granska-button";
 import { ExportToAzureButton } from "@/components/export-to-azure-button";
@@ -181,6 +182,7 @@ export default async function Dashboard({
                 <span>{strings.settings}</span>
               </Link>
 
+              <ResetDocumentsButton />
               <AutoFetchButton />
             </div>
           </div>
@@ -489,7 +491,12 @@ export default async function Dashboard({
                      config.language === 'no' ? 'Start med å synkronisere dokumenter fra Azure' :
                      'Aloita synkronoimalla asiakirjat Azuresta')}
               </p>
-              {activeTab === "active" && <AutoFetchButton />}
+              {activeTab === "active" && (
+                <div className="flex gap-2 mt-4">
+                  <AutoFetchButton />
+                  <ResetDocumentsButton />
+                </div>
+              )}
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">

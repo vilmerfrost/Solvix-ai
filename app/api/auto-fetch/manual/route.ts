@@ -85,23 +85,71 @@ export async function POST() {
       });
     }
 
-    console.log(`\n📦 Found ${failedFiles.length} file(s) to process:`);
-    failedFiles.slice(0, 10).forEach((f, i) => {
+    console.log(`\n📦 Found ${failedFiles.length} file(s) in Azure`);
+
+    // ============================================
+    // DUPLICATE PROTECTION - Check existing files
+    // ============================================
+    const { data: existingDocs } = await supabasedbclient
+      .from("documents")
+      .select("azure_original_filename, filename")
+      .eq("user_id", user.id);
+    
+    const existingPaths = new Set(
+      (existingDocs || [])
+        .filter(d => d.azure_original_filename)
+        .map(d => d.azure_original_filename)
+    );
+    const existingFilenames = new Set(
+      (existingDocs || []).map(d => d.filename)
+    );
+    
+    // Filter out duplicates
+    const newFiles = failedFiles.filter(f => {
+      const isDuplicatePath = existingPaths.has(f.full_path);
+      const isDuplicateName = existingFilenames.has(f.name);
+      
+      if (isDuplicatePath || isDuplicateName) {
+        return false; // Skip duplicates
+      }
+      return true;
+    });
+    
+    const skippedCount = failedFiles.length - newFiles.length;
+    if (skippedCount > 0) {
+      console.log(`🔒 Skipped ${skippedCount} duplicate(s) (already imported)`);
+    }
+    
+    if (newFiles.length === 0) {
+      console.log("\n" + "=".repeat(60));
+      console.log("✅ MANUAL SYNC: Complete - All files already imported");
+      console.log("=".repeat(60) + "\n");
+      return NextResponse.json({
+        success: true,
+        message: "All files already imported - nothing new to fetch",
+        processed: 0,
+        skipped: skippedCount,
+      });
+    }
+
+    console.log(`📥 Importing ${newFiles.length} new file(s):`);
+    newFiles.slice(0, 10).forEach((f, i) => {
       console.log(`   ${i + 1}. ${f.name} (${(f.size / 1024).toFixed(1)} KB)`);
     });
-    if (failedFiles.length > 10) {
-      console.log(`   ... and ${failedFiles.length - 10} more`);
+    if (newFiles.length > 10) {
+      console.log(`   ... and ${newFiles.length - 10} more`);
     }
     console.log("");
     const results = {
       total: failedFiles.length,
       processed: 0,
+      skipped: skippedCount,
       errors: 0,
       files: [] as any[],
     };    
 
-    // Process each file
-    for (const fileInfo of failedFiles) {
+    // Process each NEW file only
+    for (const fileInfo of newFiles) {
       try {
         console.log(`📄 Manual auto-fetch: Processing ${fileInfo.name}`);
 
@@ -171,14 +219,15 @@ export async function POST() {
 
     console.log("\n" + "=".repeat(60));
     console.log(`✅ MANUAL SYNC: Complete`);
-    console.log(`   📊 Total files: ${results.total}`);
-    console.log(`   ✅ Processed: ${results.processed}`);
+    console.log(`   📊 Total in Azure: ${results.total}`);
+    console.log(`   ⏭️ Skipped (duplicates): ${results.skipped}`);
+    console.log(`   ✅ Imported: ${results.processed}`);
     console.log(`   ❌ Errors: ${results.errors}`);
     console.log("=".repeat(60) + "\n");
 
     return NextResponse.json({
       success: true,
-      message: `Processed ${results.processed} of ${results.total} files`,
+      message: `Imported ${results.processed} new file(s)${results.skipped > 0 ? `, skipped ${results.skipped} duplicate(s)` : ''}`,
       ...results,
     });
   } catch (error: any) {
