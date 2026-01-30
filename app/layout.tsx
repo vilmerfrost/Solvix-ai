@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Inter, Playfair_Display } from "next/font/google";
 import "./globals.css";
 import { ToastProvider } from "@/components/toast";
+import { PostHogProvider } from "@/components/posthog-provider";
 import { getTenantConfig, getHtmlLang } from "@/config/tenant";
 
 const inter = Inter({ subsets: ["latin"], variable: "--font-inter" });
@@ -37,9 +38,11 @@ export default function RootLayout({
   return (
     <html lang={htmlLang}>
       <body className={`${inter.variable} ${playfair.variable} font-sans antialiased bg-white text-slate-900`}>
-        <ToastProvider>
-          {children}
-        </ToastProvider>
+        <PostHogProvider>
+          <ToastProvider>
+            {children}
+          </ToastProvider>
+        </PostHogProvider>
       </body>
     </html>
   );

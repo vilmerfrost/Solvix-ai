@@ -7,13 +7,27 @@ import * as Sentry from "@sentry/nextjs";
 Sentry.init({
   dsn: process.env.NEXT_PUBLIC_SENTRY_DSN,
 
-  // Adjust this value in production, or use tracesSampler for greater control
+  // Performance monitoring - 10% sample rate to stay within free tier
   tracesSampleRate: 0.1,
 
   // Setting this option to true will print useful information to the console while you're setting up Sentry.
   debug: false,
 
-  // Replay is disabled by default
-  replaysOnErrorSampleRate: 0,
-  replaysSessionSampleRate: 0,
+  // Session Replay configuration (optimized for free tier)
+  // Disable random session recordings to save quota
+  replaysSessionSampleRate: 0.0,
+  // Only record replays when an error occurs (captures context for debugging)
+  replaysOnErrorSampleRate: 1.0,
+
+  // Only initialize replay integration if DSN is configured
+  integrations: process.env.NEXT_PUBLIC_SENTRY_DSN
+    ? [
+        Sentry.replayIntegration({
+          // Mask all text for privacy
+          maskAllText: true,
+          // Block all media for smaller payloads
+          blockAllMedia: true,
+        }),
+      ]
+    : [],
 });

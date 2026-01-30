@@ -55,6 +55,10 @@ function formatMessage(level: LogLevel, message: string, context?: LogContext): 
 
 /**
  * Log a message with optional context
+ * 
+ * IMPORTANT: To stay within Better Stack free tier (1GB/month),
+ * only warn and error logs are sent to Logtail in production.
+ * Debug and info logs only go to console.
  */
 export function log(
   level: LogLevel,
@@ -68,7 +72,7 @@ export function log(
     app: "vextra-ai",
   };
 
-  // Console logging
+  // Console logging (always)
   const formattedMessage = formatMessage(level, message, context);
   switch (level) {
     case "debug":
@@ -85,8 +89,9 @@ export function log(
       break;
   }
 
-  // Better Stack logging
-  if (logtail) {
+  // Better Stack logging - ONLY warn and error to stay within free tier
+  // This prevents info/debug logs from consuming the 1GB/month quota
+  if (logtail && (level === "warn" || level === "error")) {
     logtail[level](message, enrichedContext);
   }
 }

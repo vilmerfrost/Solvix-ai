@@ -184,6 +184,14 @@ export async function GET(request: Request) {
     console.log(`   ❌ Errors: ${totalErrors}`);
     console.log("=".repeat(60) + "\n");
 
+    // Send heartbeat on success (fire and forget - non-blocking)
+    const heartbeatUrl = process.env.CRON_HEARTBEAT_URL;
+    if (heartbeatUrl) {
+      fetch(heartbeatUrl).catch(() => {
+        // Silently ignore heartbeat errors
+      });
+    }
+
     return NextResponse.json({
       success: true,
       message: `Processed ${totalProcessed} files with ${totalErrors} errors`,

@@ -45,20 +45,42 @@ export async function POST(request: NextRequest) {
         const planId = session.metadata?.planId;
         const customerId = session.customer;
         const subscriptionId = session.subscription;
+        const paymentIntentId = session.payment_intent;
 
         if (userId && customerId) {
-          await supabase
-            .from("subscriptions")
-            .upsert({
-              user_id: userId,
-              stripe_customer_id: customerId,
-              stripe_subscription_id: subscriptionId,
-              plan: planId || "pro",
-              status: "active",
-              updated_at: new Date().toISOString(),
-            }, {
-              onConflict: "user_id",
-            });
+          // Check if this is a one-time payment (Enterprise) or subscription (Pro)
+          const isOneTimePayment = !subscriptionId && paymentIntentId;
+
+          if (isOneTimePayment && planId === "enterprise") {
+            // One-time Enterprise/White-label purchase - lifetime access
+            await supabase
+              .from("subscriptions")
+              .upsert({
+                user_id: userId,
+                stripe_customer_id: customerId,
+                stripe_payment_intent_id: paymentIntentId,
+                plan: "enterprise",
+                status: "lifetime",
+                is_lifetime: true,
+                updated_at: new Date().toISOString(),
+              }, {
+                onConflict: "user_id",
+              });
+          } else {
+            // Regular subscription (Pro plan)
+            await supabase
+              .from("subscriptions")
+              .upsert({
+                user_id: userId,
+                stripe_customer_id: customerId,
+                stripe_subscription_id: subscriptionId,
+                plan: planId || "pro",
+                status: "active",
+                updated_at: new Date().toISOString(),
+              }, {
+                onConflict: "user_id",
+              });
+          }
         }
         break;
       }
@@ -116,6 +138,7 @@ export async function POST(request: NextRequest) {
         const subscription = event.data.object;
         const customerId = subscription.customer;
 
+        // Don't downgrade lifetime Enterprise users
         await supabase
           .from("subscriptions")
           .update({
@@ -126,7 +149,8 @@ export async function POST(request: NextRequest) {
             cancel_at_period_end: false,
             updated_at: new Date().toISOString(),
           })
-          .eq("stripe_customer_id", customerId);
+          .eq("stripe_customer_id", customerId)
+          .eq("is_lifetime", false); // Only cancel non-lifetime subscriptions
         break;
       }
 
