@@ -2,6 +2,8 @@
 
 import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { createBrowserClient } from "@supabase/ssr";
 import { 
   ArrowLeft, 
   Package, 
@@ -21,7 +23,10 @@ import {
   ChevronRight,
   Key,
   Bot,
-  ExternalLink
+  ExternalLink,
+  CreditCard,
+  Shield,
+  LogOut
 } from "lucide-react";
 
 interface AzureInputFolder {
@@ -128,10 +133,28 @@ function FolderTree({
 }
 
 export default function SettingsPage() {
+  const router = useRouter();
   const [settings, setSettings] = useState<Settings | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [loggingOut, setLoggingOut] = useState(false);
   const [message, setMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null);
+
+  const handleLogout = async () => {
+    setLoggingOut(true);
+    try {
+      const supabase = createBrowserClient(
+        process.env.NEXT_PUBLIC_SUPABASE_URL!,
+        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+      );
+      await supabase.auth.signOut();
+      router.push("/login");
+    } catch (error) {
+      console.error("Logout error:", error);
+      setMessage({ type: 'error', text: 'Kunde inte logga ut' });
+      setLoggingOut(false);
+    }
+  };
   
   // Local state for editing
   const [threshold, setThreshold] = useState(80);
@@ -636,6 +659,42 @@ export default function SettingsPage() {
                 >
                   <Cloud className="w-5 h-5" />
                   <span className="font-medium">Azure & GUIDs</span>
+                </button>
+
+                {/* Divider */}
+                <div className="border-t border-gray-200 my-3" />
+
+                {/* Billing Link */}
+                <Link
+                  href="/settings/billing"
+                  className="w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-colors text-left text-gray-700 hover:bg-gray-50"
+                >
+                  <CreditCard className="w-5 h-5" />
+                  <span className="font-medium">Prenumeration & Fakturering</span>
+                </Link>
+
+                {/* Data & Privacy Link */}
+                <Link
+                  href="/settings/data"
+                  className="w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-colors text-left text-gray-700 hover:bg-gray-50"
+                >
+                  <Shield className="w-5 h-5" />
+                  <span className="font-medium">Data & Integritet</span>
+                </Link>
+
+                {/* Divider */}
+                <div className="border-t border-gray-200 my-3" />
+
+                {/* Logout Button */}
+                <button
+                  onClick={handleLogout}
+                  disabled={loggingOut}
+                  className="w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-colors text-left text-red-600 hover:bg-red-50 disabled:opacity-50"
+                >
+                  <LogOut className="w-5 h-5" />
+                  <span className="font-medium">
+                    {loggingOut ? "Loggar ut..." : "Logga ut"}
+                  </span>
                 </button>
               </nav>
             </div>

@@ -29,11 +29,42 @@ export async function GET() {
   const supabase = createServiceRoleClient();
 
   try {
+    // Try to get existing settings
     const { data: settings, error } = await supabase
       .from("settings")
       .select("*")
       .eq("user_id", user.id)
       .single();
+
+    // If no settings exist for this user, create default settings
+    if (error && error.code === "PGRST116") {
+      // No rows found - create settings for this user
+      const { data: newSettings, error: insertError } = await supabase
+        .from("settings")
+        .insert({
+          user_id: user.id,
+          ...DEFAULT_SETTINGS
+        })
+        .select()
+        .single();
+
+      if (insertError) {
+        console.error("Failed to create settings for user:", insertError);
+        throw insertError;
+      }
+
+      const azureContainerName = process.env.AZURE_CONTAINER_NAME || null;
+
+      return NextResponse.json({
+        success: true,
+        settings: {
+          ...DEFAULT_SETTINGS,
+          ...newSettings
+        },
+        azureContainerName,
+        isNewUser: true
+      });
+    }
 
     if (error) throw error;
 
@@ -50,6 +81,7 @@ export async function GET() {
       azureContainerName,
     });
   } catch (error: any) {
+    console.error("Settings API error:", error);
     return NextResponse.json(
       { success: false, error: error.message },
       { status: 500 }
@@ -106,19 +138,27 @@ export async function POST(request: Request) {
       }
     }
 
-    // Update settings
+    // Build update payload
+    const updatePayload = {
+      ...(auto_approve_threshold !== undefined && { auto_approve_threshold }),
+      ...(enterprise_auto_approve !== undefined && { enterprise_auto_approve }),
+      ...(material_synonyms !== undefined && { material_synonyms }),
+      ...(enable_verification !== undefined && { enable_verification }),
+      ...(verification_confidence_threshold !== undefined && { verification_confidence_threshold }),
+      ...(azure_input_folders !== undefined && { azure_input_folders }),
+      ...(azure_output_folder !== undefined && { azure_output_folder })
+    };
+
+    // Use upsert to handle case where settings row doesn't exist yet
     const { data, error } = await supabase
       .from("settings")
-      .update({
-        ...(auto_approve_threshold !== undefined && { auto_approve_threshold }),
-        ...(enterprise_auto_approve !== undefined && { enterprise_auto_approve }),
-        ...(material_synonyms !== undefined && { material_synonyms }),
-        ...(enable_verification !== undefined && { enable_verification }),
-        ...(verification_confidence_threshold !== undefined && { verification_confidence_threshold }),
-        ...(azure_input_folders !== undefined && { azure_input_folders }),
-        ...(azure_output_folder !== undefined && { azure_output_folder })
+      .upsert({
+        user_id: user.id,
+        ...DEFAULT_SETTINGS,
+        ...updatePayload
+      }, {
+        onConflict: "user_id"
       })
-      .eq("user_id", user.id)
       .select()
       .single();
 
@@ -130,6 +170,7 @@ export async function POST(request: Request) {
       message: "Inställningar uppdaterade!"
     });
   } catch (error: any) {
+    console.error("Settings POST error:", error);
     return NextResponse.json(
       { success: false, error: error.message },
       { status: 500 }

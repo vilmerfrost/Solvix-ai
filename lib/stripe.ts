@@ -8,40 +8,33 @@
 import { createServiceRoleClient } from "./supabase";
 
 // Subscription plans
+// Note: Only Pro and Enterprise are available for purchase
+// No free tier - users must subscribe to use the service
 export const PLANS = {
-  free: {
-    id: "free",
-    name: "Free",
-    nameSv: "Gratis",
-    price: 0,
-    priceSek: 0,
-    features: {
-      documentsPerMonth: 10,
-      models: ["gemini-3-flash"],
-      support: "community",
-    },
-  },
   pro: {
     id: "pro",
     name: "Pro",
     nameSv: "Pro",
-    price: 29,
-    priceSek: 299,
+    price: 199, // ~199 USD
+    priceSek: 1990,
     stripePriceId: process.env.STRIPE_PRO_PRICE_ID,
     features: {
-      documentsPerMonth: 500,
+      documentsPerMonth: "unlimited",
       models: ["all"],
       support: "email",
       customInstructions: true,
       priority: true,
+      azureIntegration: true,
+      excelExport: true,
     },
   },
   enterprise: {
     id: "enterprise",
-    name: "Enterprise",
-    nameSv: "Företag",
-    price: 99,
-    priceSek: 999,
+    name: "Enterprise / Whitelabel",
+    nameSv: "Enterprise / Whitelabel",
+    price: 2000, // ~2000 USD one-time
+    priceSek: 20000,
+    isOneTime: true, // One-time fee, not subscription
     stripePriceId: process.env.STRIPE_ENTERPRISE_PRICE_ID,
     features: {
       documentsPerMonth: "unlimited",
@@ -51,11 +44,30 @@ export const PLANS = {
       priority: true,
       sla: true,
       dedicatedSupport: true,
+      whitelabel: true,
+      selfHosted: true,
+      sourceCode: true,
     },
   },
 } as const;
 
-export type PlanId = keyof typeof PLANS;
+export type PlanId = keyof typeof PLANS | "trial";
+
+// Trial plan for new users (not available for purchase)
+export const TRIAL_PLAN = {
+  id: "trial",
+  name: "Trial",
+  nameSv: "Provperiod",
+  price: 0,
+  priceSek: 0,
+  features: {
+    documentsPerMonth: 10,
+    models: ["gemini-3-flash"],
+    support: "email",
+    customInstructions: false,
+    priority: false,
+  },
+};
 
 interface StripeClient {
   customers: {
@@ -228,20 +240,28 @@ export async function getSubscription(userId: string) {
     .single();
 
   if (error || !data) {
-    // Return free plan if no subscription
+    // Return trial plan if no subscription
     return {
-      plan: "free" as PlanId,
+      plan: "trial" as PlanId,
       status: "active",
       currentPeriodEnd: null,
     };
   }
 
   return {
-    plan: (data.plan || "free") as PlanId,
+    plan: (data.plan || "trial") as PlanId,
     status: data.status,
     currentPeriodEnd: data.current_period_end,
     cancelAtPeriodEnd: data.cancel_at_period_end,
   };
+}
+
+/**
+ * Get plan details (handles both paid plans and trial)
+ */
+function getPlanDetails(planId: PlanId) {
+  if (planId === "trial") return TRIAL_PLAN;
+  return PLANS[planId as keyof typeof PLANS] || TRIAL_PLAN;
 }
 
 /**
@@ -252,7 +272,7 @@ export async function hasFeatureAccess(
   feature: string
 ): Promise<boolean> {
   const subscription = await getSubscription(userId);
-  const plan = PLANS[subscription.plan];
+  const plan = getPlanDetails(subscription.plan);
 
   if (!plan) return false;
 
@@ -265,7 +285,7 @@ export async function hasFeatureAccess(
     case "allModels":
       return plan.features.models === "all" || (Array.isArray(plan.features.models) && plan.features.models.includes("all"));
     default:
-      return subscription.plan !== "free";
+      return subscription.plan !== "trial";
   }
 }
 
@@ -280,7 +300,7 @@ export async function canProcessDocument(userId: string): Promise<{
 }> {
   const supabase = createServiceRoleClient();
   const subscription = await getSubscription(userId);
-  const plan = PLANS[subscription.plan];
+  const plan = getPlanDetails(subscription.plan);
 
   if (!plan) {
     return { allowed: false, reason: "Invalid plan" };
@@ -310,7 +330,7 @@ export async function canProcessDocument(userId: string): Promise<{
   if (used >= (limit as number)) {
     return {
       allowed: false,
-      reason: "Monthly document limit reached",
+      reason: "Monthly document limit reached. Upgrade to Pro for unlimited documents.",
       limit,
       used,
     };
