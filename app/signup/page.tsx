@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { createBrowserClient } from "@supabase/ssr";
 import { Mail, Lock, User, Loader2, AlertCircle, CheckCircle2 } from "lucide-react";
@@ -18,13 +18,20 @@ export default function SignupPage() {
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
 
-  const supabase = createBrowserClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-  );
+  // Lazy initialize Supabase client - only when env vars are available
+  const supabase = useMemo(() => {
+    const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+    const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+    if (!url || !key) return null;
+    return createBrowserClient(url, key);
+  }, []);
 
   const handleSignup = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!supabase) {
+      setError("Konfigurationsfel - försök igen senare");
+      return;
+    }
     setLoading(true);
     setError(null);
 

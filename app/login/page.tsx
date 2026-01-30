@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, Suspense } from "react";
+import { useState, Suspense, useMemo } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { createBrowserClient } from "@supabase/ssr";
 import { Mail, Lock, Loader2, AlertCircle } from "lucide-react";
@@ -52,13 +52,20 @@ function LoginPageContent() {
   const [socialLoading, setSocialLoading] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(message);
 
-  const supabase = createBrowserClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-  );
+  // Lazy initialize Supabase client - only when env vars are available
+  const supabase = useMemo(() => {
+    const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+    const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+    if (!url || !key) return null;
+    return createBrowserClient(url, key);
+  }, []);
 
   const handleEmailLogin = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!supabase) {
+      setError("Konfigurationsfel - försök igen senare");
+      return;
+    }
     setLoading(true);
     setError(null);
 
@@ -80,6 +87,10 @@ function LoginPageContent() {
   };
 
   const handleOAuthLogin = async (provider: "google" | "azure") => {
+    if (!supabase) {
+      setError("Konfigurationsfel - försök igen senare");
+      return;
+    }
     setSocialLoading(provider);
     setError(null);
 
@@ -97,6 +108,10 @@ function LoginPageContent() {
   };
 
   const handleMagicLink = async () => {
+    if (!supabase) {
+      setError("Konfigurationsfel - försök igen senare");
+      return;
+    }
     if (!email) {
       setError("Ange din e-postadress först");
       return;
