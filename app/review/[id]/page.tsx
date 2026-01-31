@@ -18,7 +18,6 @@ import { Breadcrumbs } from "@/components/breadcrumbs";
 import { getReviewBreadcrumbs } from "@/lib/breadcrumb-utils";
 import { truncateFilename } from "@/lib/filename-utils";
 import { DeleteDocumentButton } from "@/components/delete-document-button";
-import { ProcessingLogViewer } from "@/components/processing-log-viewer";
 import { getTenantConfigFromDB, getUIStrings } from "@/config/tenant";
 
 export const dynamic = "force-dynamic";
@@ -358,17 +357,6 @@ export default async function ReviewPage({
             </div>
           </div>
         </div>
-
-        {/* PROCESSING LOG VIEWER */}
-        {extractedData._processingLog && extractedData._processingLog.length > 0 && (
-          <div className="mb-6">
-            <ProcessingLogViewer 
-              documentId={doc.id}
-              filename={doc.filename}
-              showStoredLogs={extractedData._processingLog}
-            />
-          </div>
-        )}
 
         {/* DOCUMENT METADATA */}
         {extractedData.documentMetadata && (
