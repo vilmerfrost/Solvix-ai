@@ -8,9 +8,26 @@
 import { createServiceRoleClient } from "./supabase";
 
 // Subscription plans
-// Note: Only Pro and Enterprise are available for purchase
-// No free tier - users must subscribe to use the service
+// BYOK model - users bring their own API keys for AI providers
+// Platform fee covers: infrastructure, support, and features
 export const PLANS = {
+  starter: {
+    id: "starter",
+    name: "Starter",
+    nameSv: "Starter",
+    price: 49, // ~49 USD
+    priceSek: 499,
+    stripePriceId: process.env.STRIPE_STARTER_PRICE_ID,
+    features: {
+      documentsPerMonth: 50,
+      models: ["gemini-3-flash", "gpt-5.2-chat", "claude-haiku-4.5"],
+      support: "email",
+      customInstructions: false,
+      priority: false,
+      azureIntegration: false,
+      excelExport: true,
+    },
+  },
   pro: {
     id: "pro",
     name: "Pro",
