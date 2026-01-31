@@ -11,7 +11,7 @@ interface LogContext {
   route?: string;
   action?: string;
   duration?: number;
-  [key: string]: any;
+  [key: string]: unknown;
 }
 
 interface LogtailClient {

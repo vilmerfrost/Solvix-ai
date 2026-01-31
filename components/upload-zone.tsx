@@ -65,7 +65,7 @@ function validateFile(file: File): string | null {
  */
 function getErrorMessage(error: unknown): string {
   if (error instanceof Error) {
-    const msg = error.message.toLowerCase();
+    const msg = (error instanceof Error ? error.message : String(error)).toLowerCase();
     
     // Network errors
     if (msg.includes('network') || msg.includes('fetch')) {
@@ -93,8 +93,8 @@ function getErrorMessage(error: unknown): string {
     }
     
     // Return original message if it's already user-friendly
-    if (error.message.length < 100 && !msg.includes('error')) {
-      return error.message;
+    if ((error instanceof Error ? error.message : String(error)).length < 100 && !msg.includes('error')) {
+      return (error instanceof Error ? error.message : String(error));
     }
     
     return 'Ett oväntat fel uppstod. Försök igen.';

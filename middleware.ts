@@ -23,8 +23,16 @@ const PUBLIC_PATHS = [
   "/favicon.ico",
 ];
 
-// Check if path starts with any public path
+// Exact paths that should be public (not just prefixes)
+const PUBLIC_EXACT_PATHS = ["/"];
+
+// Check if path starts with any public path or is an exact match
 function isPublicPath(pathname: string): boolean {
+  // Check exact matches first
+  if (PUBLIC_EXACT_PATHS.includes(pathname)) {
+    return true;
+  }
+  // Then check prefix matches
   return PUBLIC_PATHS.some(path => pathname.startsWith(path));
 }
 

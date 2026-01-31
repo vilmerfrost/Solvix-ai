@@ -131,8 +131,8 @@ async function main() {
       // });
 
       console.log(`   ✓ Migration file ready: ${migration.filename}\n`);
-    } catch (error: any) {
-      console.error(`❌ Migration ${migration.version} failed:`, error.message);
+    } catch (error) {
+      console.error(`❌ Migration ${migration.version} failed:`, (error instanceof Error ? error.message : String(error)));
       process.exit(1);
     }
   }

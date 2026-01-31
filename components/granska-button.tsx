@@ -116,9 +116,9 @@ export function GranskaButton({ documentId, filename, onSuccess }: GranskaButton
       setShowResultModal(true);
       setIsProcessing(false);
       
-    } catch (error: any) {
+    } catch (error) {
       // Don't show error modal if cancelled
-      if (error.message === "cancelled") {
+      if ((error instanceof Error ? error.message : String(error)) === "cancelled") {
         console.log("Processing was cancelled by user");
         return;
       }
@@ -130,7 +130,7 @@ export function GranskaButton({ documentId, filename, onSuccess }: GranskaButton
         documentId,
         filename: filename || "Okänt dokument",
         status: "error",
-        error: error.message || "Kunde inte starta granskning. Försök igen."
+        error: (error instanceof Error ? error.message : String(error)) || "Kunde inte starta granskning. Försök igen."
       });
       setShowResultModal(true);
       setIsProcessing(false);

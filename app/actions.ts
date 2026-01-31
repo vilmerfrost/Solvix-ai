@@ -430,7 +430,7 @@ async function processDocument(documentId: string) {
       return;
     }
 
-  } catch (error: any) {
+  } catch (error) {
     console.error("❌ Process Fail:", error);
     await supabase.from("documents").update({ status: "error" }).eq("id", documentId);
     throw error;
@@ -655,7 +655,7 @@ ${customInstructions ? `
     revalidatePath(`/review/${documentId}`);
     revalidatePath("/");
 
-  } catch (error: any) {
+  } catch (error) {
     console.error("❌ Re-Verify Fail:", error);
     await supabase.from("documents").update({ status: "error" }).eq("id", documentId);
     throw error;

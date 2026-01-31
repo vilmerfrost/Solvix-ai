@@ -395,18 +395,18 @@ Extract ALL ${chunkRows.length} rows from this chunk!`;
         
         break; // Success, exit retry loop
         
-      } catch (error: any) {
+      } catch (error) {
         lastError = error;
-        console.error(`   ⚠️ Attempt ${attempt + 1} failed:`, error.message);
+        console.error(`   ⚠️ Attempt ${attempt + 1} failed:`, (error instanceof Error ? error.message : String(error)));
         
         // If it's a JSON parse error and we haven't tried Sonnet yet, continue to retry
-        if (attempt === 0 && (error.message.includes('JSON') || error.message.includes('parse'))) {
+        if (attempt === 0 && ((error instanceof Error ? error.message : String(error)).includes('JSON') || (error instanceof Error ? error.message : String(error)).includes('parse'))) {
           console.log(`   🔄 Retrying with Sonnet (better JSON handling)...`);
           continue;
         }
         
         // If it's not a JSON error or we've already tried Sonnet, break
-        if (attempt === 1 || !error.message.includes('JSON')) {
+        if (attempt === 1 || !(error instanceof Error ? error.message : String(error)).includes('JSON')) {
           break;
         }
       }
@@ -841,11 +841,11 @@ Extract ALL material rows from the table. Return JSON only!`;
       _processingLog: processingLog  // ✅ Include processing log for UI display
     };
     
-  } catch (error: any) {
-    log(`❌ PDF extraction failed: ${error.message}`, 'error');
+  } catch (error) {
+    log(`❌ PDF extraction failed: ${(error instanceof Error ? error.message : String(error))}`, 'error');
     console.error("❌ PDF extraction failed:", error);
     // Include processingLog in thrown error for debugging
-    const enhancedError = new Error(`PDF extraction failed: ${error.message}`);
+    const enhancedError = new Error(`PDF extraction failed: ${(error instanceof Error ? error.message : String(error))}`);
     (enhancedError as any)._processingLog = processingLog;
     throw enhancedError;
   }
@@ -1067,11 +1067,11 @@ export async function GET(req: Request) {
       validation: extractedData._validation
     });
 
-  } catch (error: any) {
+  } catch (error) {
     console.error("❌ Processing error:", error);
     
     // Classify error type for better user feedback
-    const errorMessage = error.message || 'Unknown error';
+    const errorMessage = (error instanceof Error ? error.message : String(error)) || 'Unknown error';
     let errorType = 'unknown';
     let userFriendlyError = errorMessage;
     

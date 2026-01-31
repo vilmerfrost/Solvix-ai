@@ -77,8 +77,8 @@ export function MainDashboard({ initialDocuments }: MainDashboardProps) {
         const error = await response.json();
         alert(`Error: ${error.error || "Failed to approve"}`);
       }
-    } catch (error: any) {
-      alert(`Error: ${error.message}`);
+    } catch (error) {
+      alert(`Error: ${(error instanceof Error ? error.message : String(error))}`);
     } finally {
       setLoading({ ...loading, [docId]: false });
     }
@@ -100,8 +100,8 @@ export function MainDashboard({ initialDocuments }: MainDashboardProps) {
         next.delete(docId);
         return next;
       });
-    } catch (error: any) {
-      alert(`Error: ${error.message}`);
+    } catch (error) {
+      alert(`Error: ${(error instanceof Error ? error.message : String(error))}`);
     } finally {
       setLoading({ ...loading, [docId]: false });
     }

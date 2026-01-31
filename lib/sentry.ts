@@ -6,12 +6,25 @@
 // NOTE: Install sentry packages:
 // npm install @sentry/nextjs
 
+interface SentryEvent {
+  event_id?: string;
+  message?: string;
+  level?: string;
+  exception?: unknown;
+  [key: string]: unknown;
+}
+
+interface SentryTransaction {
+  finish: () => void;
+  setStatus: (status: string) => void;
+}
+
 interface SentryClient {
   captureException: (error: Error, context?: object) => void;
   captureMessage: (message: string, level?: string) => void;
   setUser: (user: { id: string; email?: string } | null) => void;
   setTag: (key: string, value: string) => void;
-  startTransaction: (context: object) => any;
+  startTransaction: (context: object) => SentryTransaction;
 }
 
 let sentryClient: SentryClient | null = null;
@@ -39,7 +52,7 @@ export function initSentry(): void {
       tracesSampleRate: process.env.NODE_ENV === "production" ? 0.1 : 1.0,
       
       // Only send errors in production
-      beforeSend(event: any) {
+      beforeSend(event: SentryEvent) {
         if (process.env.NODE_ENV === "development") {
           console.log("[Sentry] Would send:", event);
           return null;
@@ -77,13 +90,13 @@ export function captureException(
     documentId?: string;
     route?: string;
     action?: string;
-    extra?: Record<string, any>;
+    extra?: Record<string, unknown>;
   }
 ): void {
   const sentry = getSentry();
   
   // Always log to console
-  console.error("[Error]", error.message, context);
+  console.error("[Error]", (error instanceof Error ? error.message : String(error)), context);
   
   if (sentry) {
     sentry.captureException(error, {
@@ -94,7 +107,7 @@ export function captureException(
         action: context?.action,
       },
       user: context?.userId ? { id: context.userId } : undefined,
-    } as any);
+    });
   }
 }
 
@@ -167,6 +180,6 @@ export function handleApiError(
   return {
     error: process.env.NODE_ENV === "production" 
       ? "An error occurred" 
-      : error.message,
+      : (error instanceof Error ? error.message : String(error)),
   };
 }

@@ -206,13 +206,13 @@ export async function POST() {
           status: "queued",
           documentId: doc.id,
         });
-      } catch (error: any) {
+      } catch (error) {
         console.error(`❌ Manual auto-fetch: Error processing ${fileInfo.name}:`, error);
         results.errors++;
         results.files.push({
           filename: fileInfo.name,
           status: "error",
-          error: error.message,
+          error: (error instanceof Error ? error.message : String(error)),
         });
       }
     }
@@ -230,13 +230,13 @@ export async function POST() {
       message: `Imported ${results.processed} new file(s)${results.skipped > 0 ? `, skipped ${results.skipped} duplicate(s)` : ''}`,
       ...results,
     });
-  } catch (error: any) {
+  } catch (error) {
     console.error("\n" + "=".repeat(60));
     console.error("❌ MANUAL SYNC: Fatal error");
     console.error(`   ${error?.message || error}`);
     console.error("=".repeat(60) + "\n");
     return NextResponse.json(
-      { error: error.message || "Failed to run auto-fetch" },
+      { error: (error instanceof Error ? error.message : String(error)) || "Failed to run auto-fetch" },
       { status: 500 }
     );
   }

@@ -14,8 +14,8 @@ export function RetryButton({ docId }: { docId: string }) {
     try {
       await retryProcessing(docId);
       router.refresh(); // Uppdatera sidan för att visa ny status
-    } catch (error: any) {
-      alert(`Kunde inte försöka igen: ${error.message || "Okänt fel"}`);
+    } catch (error) {
+      alert(`Kunde inte försöka igen: ${(error instanceof Error ? error.message : String(error)) || "Okänt fel"}`);
     } finally {
       setIsRetrying(false);
     }

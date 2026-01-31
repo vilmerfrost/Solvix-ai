@@ -49,9 +49,9 @@ export function UndoExportButton({
       // Reload to show updated status
       window.location.reload();
       
-    } catch (error: any) {
+    } catch (error) {
       console.error("Undo export error:", error);
-      alert(`Kunde inte ångra export: ${error.message}`);
+      alert(`Kunde inte ångra export: ${(error instanceof Error ? error.message : String(error))}`);
     } finally {
       setIsLoading(false);
     }

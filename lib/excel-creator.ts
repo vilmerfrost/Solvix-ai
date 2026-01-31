@@ -29,6 +29,42 @@ export interface SummaryData {
   flags?: string[];
 }
 
+/**
+ * Wrapped value type for fields that may include confidence
+ */
+interface WrappedField<T> {
+  value: T;
+  confidence?: number;
+}
+
+/**
+ * Line item in a waste record
+ */
+interface WasteLineItem {
+  material?: WrappedField<string>;
+  weightKg?: WrappedField<number>;
+  address?: WrappedField<string>;
+  receiver?: WrappedField<string>;
+  handling?: WrappedField<string>;
+  isHazardous?: WrappedField<boolean>;
+  co2Saved?: WrappedField<number>;
+}
+
+/**
+ * Waste record from document extraction
+ */
+interface WasteRecord {
+  date?: WrappedField<string>;
+  supplier?: WrappedField<string>;
+  material?: WrappedField<string>;
+  weightKg?: WrappedField<number>;
+  cost?: WrappedField<number>;
+  address?: WrappedField<string>;
+  receiver?: WrappedField<string>;
+  totalCo2Saved?: WrappedField<number>;
+  lineItems?: WasteLineItem[];
+}
+
 export class ExcelCreator {
   private headers = [
     "Datum",
@@ -72,7 +108,7 @@ export class ExcelCreator {
     const wb = XLSX.utils.book_new();
 
     // === SUMMARY SHEET ===
-    const summaryData: any[][] = [
+    const summaryData: (string | number)[][] = [
       ["PROCESSING SUMMARY"],
       [],
       ["Original File:", originalFilename],
@@ -102,7 +138,7 @@ export class ExcelCreator {
     XLSX.utils.book_append_sheet(wb, wsSummary, "Summary");
 
     // === DATA SHEET ===
-    const dataRows: any[][] = [this.headers];
+    const dataRows: (string | number)[][] = [this.headers];
 
     extractedData.forEach((item) => {
       dataRows.push([
@@ -166,14 +202,14 @@ export class ExcelCreator {
    * This creates MULTIPLE rows - one per lineItem (material)
    */
   convertWasteRecordToExcelRows(
-    wasteRecord: any,
+    wasteRecord: WasteRecord,
     originalFilename: string
   ): ExtractedDataRow[] {
     const rows: ExtractedDataRow[] = [];
 
     // If there are lineItems, create one row per lineItem
     if (wasteRecord.lineItems && wasteRecord.lineItems.length > 0) {
-      wasteRecord.lineItems.forEach((lineItem: any) => {
+      wasteRecord.lineItems.forEach((lineItem: WasteLineItem) => {
         rows.push({
           date: wasteRecord.date?.value || "",
           filename: originalFilename,

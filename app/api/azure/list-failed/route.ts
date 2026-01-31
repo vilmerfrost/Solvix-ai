@@ -64,10 +64,10 @@ export async function GET() {
       count: files.length,
       inputFolders: folderPaths,
     });
-  } catch (error: any) {
+  } catch (error) {
     console.error("Error listing failed files:", error);
     return NextResponse.json(
-      { error: error.message || "Failed to list files" },
+      { error: (error instanceof Error ? error.message : String(error)) || "Failed to list files" },
       { status: 500 }
     );
   }

@@ -33,7 +33,7 @@ export default function ForgotPasswordPage() {
     });
 
     if (error) {
-      setError(error.message);
+      setError((error instanceof Error ? error.message : String(error)));
       setLoading(false);
       return;
     }

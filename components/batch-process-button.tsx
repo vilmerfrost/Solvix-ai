@@ -34,7 +34,7 @@ export function BatchProcessButton({ uploadedDocs, onSuccess }: BatchProcessButt
         const response = await fetch('/api/user/preferences');
         const data = await response.json();
         if (data.success) {
-          setSelectedModel(data.preferredModel || 'gemini-2.0-flash');
+          setSelectedModel(data.preferredModel || 'gemini-3-flash');
           setCustomInstructions(data.customInstructions || '');
         }
       } catch (err) {
@@ -204,7 +204,7 @@ export function BatchProcessButton({ uploadedDocs, onSuccess }: BatchProcessButt
       setProcessedCount(0);
       processingDocsRef.current = [];
       
-    } catch (error: any) {
+    } catch (error) {
       console.error("Batch process error:", error);
       alert("Kunde inte starta batch-granskning. Försök igen.");
       setIsProcessing(false);

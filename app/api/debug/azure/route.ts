@@ -71,20 +71,20 @@ export async function GET() {
           fileCount,
           sampleFiles: files,
         });
-      } catch (error: any) {
+      } catch (error) {
         results.azure.containers.push({
           name: containerName,
           exists: false,
-          error: error.message,
+          error: (error instanceof Error ? error.message : String(error)),
         });
       }
     }
 
     results.azure.status = "connected";
     
-  } catch (error: any) {
+  } catch (error) {
     results.azure.status = "error";
-    results.azure.errors.push(error.message);
+    results.azure.errors.push((error instanceof Error ? error.message : String(error)));
   }
 
   return NextResponse.json(results, { 

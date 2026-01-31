@@ -88,10 +88,10 @@ export async function POST(req: NextRequest) {
       rows: rows.length
     });
 
-  } catch (error: any) {
+  } catch (error) {
     console.error("Error approving document:", error);
     return NextResponse.json(
-      { error: error.message || "Failed to approve document" },
+      { error: (error instanceof Error ? error.message : String(error)) || "Failed to approve document" },
       { status: 500 }
     );
   }

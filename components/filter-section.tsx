@@ -81,8 +81,8 @@ export function FilterSection({
       
       // Reload page to show updated status
       window.location.reload();
-    } catch (error: any) {
-      toast.error("Kunde inte radera", error.message);
+    } catch (error) {
+      toast.error("Kunde inte radera", (error instanceof Error ? error.message : String(error)));
     } finally {
       setIsDeleting(false);
     }

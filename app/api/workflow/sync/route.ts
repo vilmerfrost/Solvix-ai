@@ -201,13 +201,13 @@ export async function POST() {
           status: "queued",
           documentId: doc.id,
         });
-      } catch (error: any) {
+      } catch (error) {
         console.error(`Error processing ${fileInfo.name}:`, error);
         results.errors++;
         results.files.push({
           filename: fileInfo.name,
           status: "error",
-          error: error.message,
+          error: (error instanceof Error ? error.message : String(error)),
         });
       }
     }
@@ -222,13 +222,13 @@ export async function POST() {
       message: `Processed ${results.processed} of ${results.total} files`,
       ...results,
     });
-  } catch (error: any) {
+  } catch (error) {
     console.error("\n" + "=".repeat(60));
     console.error("❌ WORKFLOW SYNC: Fatal error");
     console.error(`   ${error?.message || error}`);
     console.error("=".repeat(60) + "\n");
     return NextResponse.json(
-      { error: error.message || "Failed to sync workflow" },
+      { error: (error instanceof Error ? error.message : String(error)) || "Failed to sync workflow" },
       { status: 500 }
     );
   }

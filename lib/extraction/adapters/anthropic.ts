@@ -9,9 +9,11 @@ import {
   ExtractionRequest, 
   ExtractionResult, 
   ExtractedRow,
+  RawExtractedItem,
   buildExtractionPrompt,
   parseExtractionResponse
 } from '../types';
+import type { ContentBlockParam } from '@anthropic-ai/sdk/resources/messages';
 import { getModelById, estimateCost } from '@/config/models';
 
 export class AnthropicAdapter implements ExtractionAdapter {
@@ -56,12 +58,14 @@ export class AnthropicAdapter implements ExtractionAdapter {
         request.customInstructions
       );
 
-      // Build content array
-      const content: any[] = [];
+      // Build content array using Anthropic SDK types
+      const content: ContentBlockParam[] = [];
       
       // For PDFs/images, add as base64
       if ((request.contentType === 'pdf' || request.contentType === 'image') && Buffer.isBuffer(request.content)) {
-        const mediaType = request.contentType === 'pdf' ? 'application/pdf' : 'image/png';
+        // Anthropic requires specific media types for images
+        const mediaType: 'image/png' | 'image/jpeg' | 'image/gif' | 'image/webp' = 
+          request.contentType === 'pdf' ? 'image/png' : 'image/png'; // PDFs are converted to images
         content.push({
           type: 'image',
           source: {
@@ -96,8 +100,8 @@ export class AnthropicAdapter implements ExtractionAdapter {
 
       // Extract text from response
       const text = response.content
-        .filter((block: any) => block.type === 'text')
-        .map((block: any) => block.text)
+        .filter((block): block is Anthropic.TextBlock => block.type === 'text')
+        .map((block) => block.text)
         .join('');
       
       // Get token usage
@@ -114,7 +118,7 @@ export class AnthropicAdapter implements ExtractionAdapter {
           model: this.modelId,
           provider: this.provider,
           tokensUsed: { input: inputTokens, output: outputTokens },
-          cost: estimateCost(inputTokens, outputTokens, this.modelId),
+          cost: estimateCost(inputTokens, outputTokens, this.modelId).SEK,
           processingTimeMs: Date.now() - startTime,
           error: 'Failed to parse extraction response',
           rawResponse: text
@@ -122,11 +126,11 @@ export class AnthropicAdapter implements ExtractionAdapter {
       }
 
       // Validate and normalize items
-      const items: ExtractedRow[] = parsed.items.map((item: any) => ({
+      const items: ExtractedRow[] = parsed.items.map((item: RawExtractedItem) => ({
         date: item.date || '',
         location: item.location || item.address || '',
         material: item.material || '',
-        weightKg: parseFloat(item.weightKg) || 0,
+        weightKg: parseFloat(String(item.weightKg)) || 0,
         unit: item.unit || 'kg',
         receiver: item.receiver || '',
         isHazardous: item.isHazardous === true,
@@ -139,11 +143,11 @@ export class AnthropicAdapter implements ExtractionAdapter {
         model: this.modelId,
         provider: this.provider,
         tokensUsed: { input: inputTokens, output: outputTokens },
-        cost: estimateCost(inputTokens, outputTokens, this.modelId),
+        cost: estimateCost(inputTokens, outputTokens, this.modelId).SEK,
         processingTimeMs: Date.now() - startTime
       };
 
-    } catch (error: any) {
+    } catch (error) {
       return {
         success: false,
         items: [],
@@ -152,7 +156,7 @@ export class AnthropicAdapter implements ExtractionAdapter {
         tokensUsed: { input: 0, output: 0 },
         cost: 0,
         processingTimeMs: Date.now() - startTime,
-        error: error.message || 'Unknown error during Anthropic extraction'
+        error: error instanceof Error ? (error instanceof Error ? error.message : String(error)) : 'Unknown error during Anthropic extraction'
       };
     }
   }

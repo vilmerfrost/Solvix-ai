@@ -41,9 +41,9 @@ export function ExportToAzureButton({
         onSuccess();
       }
 
-    } catch (error: any) {
+    } catch (error) {
       console.error("Export error:", error);
-      alert(`Export misslyckades: ${error.message}`);
+      alert(`Export misslyckades: ${(error instanceof Error ? error.message : String(error))}`);
     } finally {
       setIsExporting(false);
     }

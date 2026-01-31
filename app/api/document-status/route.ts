@@ -30,10 +30,10 @@ export async function GET(req: Request) {
     
     return NextResponse.json({ document: doc });
     
-  } catch (error: any) {
+  } catch (error) {
     console.error("Document status error:", error);
     return NextResponse.json(
-      { error: error.message || "Failed to fetch document status" },
+      { error: (error instanceof Error ? error.message : String(error)) || "Failed to fetch document status" },
       { status: 500 }
     );
   }

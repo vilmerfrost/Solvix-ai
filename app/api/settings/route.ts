@@ -80,10 +80,10 @@ export async function GET() {
       // Include env-based config for UI display
       azureContainerName,
     });
-  } catch (error: any) {
+  } catch (error) {
     console.error("Settings API error:", error);
     return NextResponse.json(
-      { success: false, error: error.message },
+      { success: false, error: (error instanceof Error ? error.message : String(error)) },
       { status: 500 }
     );
   }
@@ -169,10 +169,10 @@ export async function POST(request: Request) {
       settings: data,
       message: "Inställningar uppdaterade!"
     });
-  } catch (error: any) {
+  } catch (error) {
     console.error("Settings POST error:", error);
     return NextResponse.json(
-      { success: false, error: error.message },
+      { success: false, error: (error instanceof Error ? error.message : String(error)) },
       { status: 500 }
     );
   }

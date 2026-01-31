@@ -192,9 +192,9 @@ export async function GET(req: Request) {
           processingLog: adaptiveResult._processingLog
         });
         
-      } catch (error: any) {
+      } catch (error) {
         console.error("Stream processing error:", error);
-        send('error', { message: error.message || 'Processing failed' });
+        send('error', { message: (error instanceof Error ? error.message : String(error)) || 'Processing failed' });
         
         // Update document status to error
         const supabase = createServiceRoleClient();

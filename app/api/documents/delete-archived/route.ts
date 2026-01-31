@@ -88,10 +88,10 @@ export async function DELETE(request: NextRequest) {
       storageWarnings: storageErrors.length > 0 ? storageErrors : undefined,
     });
     
-  } catch (error: any) {
+  } catch (error) {
     console.error("❌ Delete archived failed:", error);
     return NextResponse.json(
-      { error: error.message || "Failed to delete archived documents" },
+      { error: (error instanceof Error ? error.message : String(error)) || "Failed to delete archived documents" },
       { status: 500 }
     );
   }

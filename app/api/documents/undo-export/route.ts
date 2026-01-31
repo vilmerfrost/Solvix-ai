@@ -84,10 +84,10 @@ export async function POST(request: NextRequest) {
       note: "Filen finns kvar i Azure 'completed' container och kan behöva raderas manuellt om den inte ska finnas där.",
     });
     
-  } catch (error: any) {
+  } catch (error) {
     console.error("❌ Undo export failed:", error);
     return NextResponse.json(
-      { error: error.message || "Failed to undo export" },
+      { error: (error instanceof Error ? error.message : String(error)) || "Failed to undo export" },
       { status: 500 }
     );
   }

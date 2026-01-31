@@ -29,12 +29,15 @@ interface WebhookConfig {
   secret: string | null;
   events: string[];
   is_active: boolean;
+  total_sent?: number;
+  total_success?: number;
+  total_failed?: number;
 }
 
 interface WebhookPayload {
   event: WebhookEvent;
   timestamp: string;
-  data: Record<string, any>;
+  data: Record<string, unknown>;
 }
 
 interface DispatchResult {
@@ -61,7 +64,7 @@ function generateSignature(payload: string, secret: string): string {
 export async function dispatchWebhook(
   userId: string,
   event: WebhookEvent,
-  data: Record<string, any>
+  data: Record<string, unknown>
 ): Promise<DispatchResult[]> {
   const supabase = createServiceRoleClient();
   
@@ -94,7 +97,7 @@ export async function dispatchWebhook(
 async function sendWebhook(
   webhook: WebhookConfig,
   event: WebhookEvent,
-  data: Record<string, any>,
+  data: Record<string, unknown>,
   supabase: ReturnType<typeof createServiceRoleClient>
 ): Promise<DispatchResult> {
   const payload: WebhookPayload = {
@@ -182,8 +185,8 @@ async function sendWebhook(
         await supabase
           .from("webhooks")
           .update({
-            total_sent: (webhook as any).total_sent + 1 || 1,
-            total_success: (webhook as any).total_success + 1 || 1,
+            total_sent: (webhook.total_sent || 0) + 1,
+            total_success: (webhook.total_success || 0) + 1,
             last_triggered_at: new Date().toISOString(),
             last_status: responseStatus,
           })
@@ -205,8 +208,8 @@ async function sendWebhook(
         break;
       }
       
-    } catch (error: any) {
-      lastError = error.message || "Network error";
+    } catch (error) {
+      lastError = error instanceof Error ? (error instanceof Error ? error.message : String(error)) : "Network error";
     }
     
     // Wait before retry (exponential backoff)
@@ -234,8 +237,8 @@ async function sendWebhook(
   await supabase
     .from("webhooks")
     .update({
-      total_sent: (webhook as any).total_sent + 1 || 1,
-      total_failed: (webhook as any).total_failed + 1 || 1,
+      total_sent: (webhook.total_sent || 0) + 1,
+      total_failed: (webhook.total_failed || 0) + 1,
       last_triggered_at: new Date().toISOString(),
       last_status: responseStatus || 0,
     })
@@ -321,11 +324,11 @@ export async function testWebhook(
       responseTime,
       error: response.ok ? undefined : `HTTP ${response.status}`,
     };
-  } catch (error: any) {
+  } catch (error) {
     return {
       success: false,
       webhookId,
-      error: error.message || "Connection failed",
+      error: error instanceof Error ? (error instanceof Error ? error.message : String(error)) : "Connection failed",
     };
   }
 }

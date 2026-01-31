@@ -19,7 +19,7 @@ interface ErrorContext {
   action?: string;
   documentId?: string;
   sessionId?: string;
-  [key: string]: any;
+  [key: string]: unknown;
 }
 
 const DEVELOPER_EMAIL = "vilmer.frost@gmail.com";
@@ -97,7 +97,7 @@ export async function notifyDeveloperError(
       
       <div style="background: #fef2f2; border: 1px solid #fecaca; border-radius: 8px; padding: 16px; margin: 16px 0;">
         <h3 style="margin: 0 0 8px 0; color: #991b1b;">${error.name || "Error"}</h3>
-        <p style="margin: 0; color: #b91c1c;">${error.message}</p>
+        <p style="margin: 0; color: #b91c1c;">${(error instanceof Error ? error.message : String(error))}</p>
       </div>
 
       <h3>Context</h3>
@@ -121,9 +121,9 @@ ${error.stack || "No stack trace available"}
 
   await sendEmail({
     to: DEVELOPER_EMAIL,
-    subject: `[Vextra AI] System Error: ${error.message.slice(0, 50)}`,
+    subject: `[Vextra AI] System Error: ${(error instanceof Error ? error.message : String(error)).slice(0, 50)}`,
     html,
-    text: `Error: ${error.message}\n\nError ID: ${errorId}\nTimestamp: ${timestamp}\n\nStack:\n${error.stack}`,
+    text: `Error: ${(error instanceof Error ? error.message : String(error))}\n\nError ID: ${errorId}\nTimestamp: ${timestamp}\n\nStack:\n${error.stack}`,
   });
 }
 

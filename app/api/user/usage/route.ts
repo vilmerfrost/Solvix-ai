@@ -26,10 +26,10 @@ export async function GET() {
       byModel: usageByModel,
       daily: dailyUsage,
     });
-  } catch (error: any) {
+  } catch (error) {
     console.error("Error fetching usage:", error);
     return NextResponse.json(
-      { success: false, error: error.message },
+      { success: false, error: (error instanceof Error ? error.message : String(error)) },
       { status: 500 }
     );
   }

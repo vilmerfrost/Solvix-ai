@@ -60,10 +60,10 @@ export async function POST(req: Request) {
       documentId
     });
     
-  } catch (error: any) {
+  } catch (error) {
     console.error("Cancel processing error:", error);
     return NextResponse.json(
-      { error: error.message || "Failed to cancel processing" },
+      { error: (error instanceof Error ? error.message : String(error)) || "Failed to cancel processing" },
       { status: 500 }
     );
   }

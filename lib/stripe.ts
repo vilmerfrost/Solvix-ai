@@ -69,18 +69,40 @@ export const TRIAL_PLAN = {
   },
 };
 
+interface CustomerCreateParams {
+  email: string;
+  metadata?: Record<string, string>;
+}
+
+interface CheckoutSessionCreateParams {
+  customer?: string;
+  mode: 'payment' | 'subscription' | 'setup';
+  line_items?: Array<{
+    price: string;
+    quantity?: number;
+  }>;
+  success_url: string;
+  cancel_url: string;
+  metadata?: Record<string, string>;
+}
+
+interface BillingPortalSessionCreateParams {
+  customer: string;
+  return_url: string;
+}
+
 interface StripeClient {
   customers: {
-    create: (params: any) => Promise<{ id: string }>;
+    create: (params: CustomerCreateParams) => Promise<{ id: string }>;
   };
   checkout: {
     sessions: {
-      create: (params: any) => Promise<{ url: string }>;
+      create: (params: CheckoutSessionCreateParams) => Promise<{ url: string }>;
     };
   };
   billingPortal: {
     sessions: {
-      create: (params: any) => Promise<{ url: string }>;
+      create: (params: BillingPortalSessionCreateParams) => Promise<{ url: string }>;
     };
   };
 }

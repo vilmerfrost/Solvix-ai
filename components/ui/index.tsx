@@ -1,11 +1,15 @@
 /**
  * Vextra AI UI Components
  * 
- * Shared components with consistent styling based on the design system.
+ * Premium design system components with theme support,
+ * micro-interactions, and WCAG AA compliance.
  */
 
+"use client";
+
 import * as React from "react";
-import { Loader2 } from "lucide-react";
+import { createContext, useContext, useState, useCallback, useEffect } from "react";
+import { Loader2, X, CheckCircle, AlertCircle, AlertTriangle, Info } from "lucide-react";
 
 // ============================================================================
 // Button Component
@@ -13,9 +17,10 @@ import { Loader2 } from "lucide-react";
 
 interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
   variant?: "primary" | "secondary" | "ghost" | "danger" | "success";
-  size?: "sm" | "md" | "lg";
+  size?: "xs" | "sm" | "md" | "lg";
   loading?: boolean;
   icon?: React.ReactNode;
+  iconPosition?: "left" | "right";
 }
 
 export function Button({
@@ -23,22 +28,51 @@ export function Button({
   size = "md",
   loading = false,
   icon,
+  iconPosition = "left",
   children,
   className = "",
   disabled,
   ...props
 }: ButtonProps) {
-  const baseStyles = "inline-flex items-center justify-center font-medium rounded-lg transition-all focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed";
+  const baseStyles = `
+    inline-flex items-center justify-center font-medium rounded-lg 
+    transition-all duration-150 ease-out
+    focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2
+    disabled:opacity-50 disabled:cursor-not-allowed disabled:pointer-events-none
+    active:scale-[0.98]
+  `;
   
   const variants = {
-    primary: "bg-indigo-600 hover:bg-indigo-700 text-white focus:ring-indigo-500 shadow-sm",
-    secondary: "bg-white hover:bg-stone-50 text-stone-700 border border-stone-200 focus:ring-stone-500",
-    ghost: "hover:bg-stone-100 text-stone-600 focus:ring-stone-500",
-    danger: "bg-red-600 hover:bg-red-700 text-white focus:ring-red-500 shadow-sm",
-    success: "bg-emerald-600 hover:bg-emerald-700 text-white focus:ring-emerald-500 shadow-sm",
+    primary: `
+      bg-[var(--color-accent)] hover:bg-[var(--color-accent-hover)] 
+      text-white focus-visible:ring-[var(--color-accent)]
+      shadow-sm hover:shadow-md
+    `,
+    secondary: `
+      bg-[var(--color-bg-elevated)] hover:bg-[var(--color-bg-secondary)] 
+      text-[var(--color-text-primary)] 
+      border border-[var(--color-border)] hover:border-[var(--color-border-strong)]
+      focus-visible:ring-[var(--color-accent)]
+    `,
+    ghost: `
+      hover:bg-[var(--color-bg-secondary)] 
+      text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)]
+      focus-visible:ring-[var(--color-accent)]
+    `,
+    danger: `
+      bg-[var(--color-error)] hover:bg-red-600 
+      text-white focus-visible:ring-[var(--color-error)]
+      shadow-sm hover:shadow-md
+    `,
+    success: `
+      bg-[var(--color-success)] hover:bg-emerald-600 
+      text-white focus-visible:ring-[var(--color-success)]
+      shadow-sm hover:shadow-md
+    `,
   };
   
   const sizes = {
+    xs: "px-2 py-1 text-xs gap-1",
     sm: "px-3 py-1.5 text-sm gap-1.5",
     md: "px-4 py-2.5 text-sm gap-2",
     lg: "px-5 py-3 text-base gap-2",
@@ -52,10 +86,13 @@ export function Button({
     >
       {loading ? (
         <Loader2 className="w-4 h-4 animate-spin" />
-      ) : icon ? (
+      ) : icon && iconPosition === "left" ? (
         <span className="flex-shrink-0">{icon}</span>
       ) : null}
       {children}
+      {!loading && icon && iconPosition === "right" && (
+        <span className="flex-shrink-0">{icon}</span>
+      )}
     </button>
   );
 }
@@ -65,7 +102,7 @@ export function Button({
 // ============================================================================
 
 interface CardProps extends React.HTMLAttributes<HTMLDivElement> {
-  variant?: "default" | "hover" | "interactive";
+  variant?: "default" | "hover" | "interactive" | "elevated";
   padding?: "none" | "sm" | "md" | "lg";
 }
 
@@ -76,10 +113,17 @@ export function Card({
   className = "",
   ...props
 }: CardProps) {
+  const baseStyles = `
+    bg-[var(--color-bg-elevated)] rounded-xl 
+    border border-[var(--color-border)]
+    transition-all duration-150
+  `;
+  
   const variants = {
-    default: "bg-white rounded-xl border border-stone-200 shadow-sm",
-    hover: "bg-white rounded-xl border border-stone-200 shadow-sm hover:shadow-md hover:border-stone-300 transition-all",
-    interactive: "bg-white rounded-xl border border-stone-200 shadow-sm hover:shadow-md hover:border-indigo-300 transition-all cursor-pointer",
+    default: "shadow-[var(--shadow-sm)]",
+    hover: "shadow-[var(--shadow-sm)] hover:shadow-[var(--shadow-md)] hover:border-[var(--color-border-strong)]",
+    interactive: "shadow-[var(--shadow-sm)] hover:shadow-[var(--shadow-md)] hover:border-[var(--color-accent)] cursor-pointer",
+    elevated: "shadow-[var(--shadow-md)]",
   };
   
   const paddings = {
@@ -90,7 +134,7 @@ export function Card({
   };
 
   return (
-    <div className={`${variants[variant]} ${paddings[padding]} ${className}`} {...props}>
+    <div className={`${baseStyles} ${variants[variant]} ${paddings[padding]} ${className}`} {...props}>
       {children}
     </div>
   );
@@ -101,11 +145,11 @@ export function CardHeader({ children, className = "" }: { children: React.React
 }
 
 export function CardTitle({ children, className = "" }: { children: React.ReactNode; className?: string }) {
-  return <h3 className={`text-lg font-semibold text-stone-900 ${className}`}>{children}</h3>;
+  return <h3 className={`text-lg font-semibold text-[var(--color-text-primary)] ${className}`}>{children}</h3>;
 }
 
 export function CardDescription({ children, className = "" }: { children: React.ReactNode; className?: string }) {
-  return <p className={`text-sm text-stone-500 mt-1 ${className}`}>{children}</p>;
+  return <p className={`text-sm text-[var(--color-text-muted)] mt-1 ${className}`}>{children}</p>;
 }
 
 export function CardContent({ children, className = "" }: { children: React.ReactNode; className?: string }) {
@@ -113,7 +157,7 @@ export function CardContent({ children, className = "" }: { children: React.Reac
 }
 
 export function CardFooter({ children, className = "" }: { children: React.ReactNode; className?: string }) {
-  return <div className={`mt-6 pt-4 border-t border-stone-100 ${className}`}>{children}</div>;
+  return <div className={`mt-6 pt-4 border-t border-[var(--color-border-muted)] ${className}`}>{children}</div>;
 }
 
 // ============================================================================
@@ -135,31 +179,31 @@ export function Badge({
   ...props
 }: BadgeProps) {
   const variants = {
-    default: "bg-stone-100 text-stone-700",
-    primary: "bg-indigo-100 text-indigo-700",
-    success: "bg-emerald-100 text-emerald-700",
-    warning: "bg-amber-100 text-amber-700",
-    error: "bg-red-100 text-red-700",
-    info: "bg-blue-100 text-blue-700",
+    default: "bg-[var(--color-bg-secondary)] text-[var(--color-text-secondary)] border border-[var(--color-border)]",
+    primary: "bg-[var(--color-accent-muted)] text-[var(--color-accent-text)] border border-[var(--color-accent)]/20",
+    success: "bg-[var(--color-success-bg)] text-[var(--color-success-text)] border border-[var(--color-success-border)]",
+    warning: "bg-[var(--color-warning-bg)] text-[var(--color-warning-text)] border border-[var(--color-warning-border)]",
+    error: "bg-[var(--color-error-bg)] text-[var(--color-error-text)] border border-[var(--color-error-border)]",
+    info: "bg-[var(--color-info-bg)] text-[var(--color-info-text)] border border-[var(--color-info-border)]",
   };
   
   const dotColors = {
-    default: "bg-stone-500",
-    primary: "bg-indigo-500",
-    success: "bg-emerald-500",
-    warning: "bg-amber-500",
-    error: "bg-red-500",
-    info: "bg-blue-500",
+    default: "bg-[var(--color-text-muted)]",
+    primary: "bg-[var(--color-accent)]",
+    success: "bg-[var(--color-success)]",
+    warning: "bg-[var(--color-warning)]",
+    error: "bg-[var(--color-error)]",
+    info: "bg-[var(--color-info)]",
   };
   
   const sizes = {
-    sm: "px-1.5 py-0.5 text-xs",
+    sm: "px-1.5 py-0.5 text-[10px]",
     md: "px-2 py-0.5 text-xs",
   };
 
   return (
     <span
-      className={`inline-flex items-center gap-1.5 font-medium rounded-md ${variants[variant]} ${sizes[size]} ${className}`}
+      className={`inline-flex items-center gap-1.5 font-medium rounded-full ${variants[variant]} ${sizes[size]} ${className}`}
       {...props}
     >
       {dot && <span className={`w-1.5 h-1.5 rounded-full ${dotColors[variant]}`} />}
@@ -184,35 +228,37 @@ export const Input = React.forwardRef<HTMLInputElement, InputProps>(
     return (
       <div className="w-full">
         {label && (
-          <label className="block text-sm font-medium text-stone-700 mb-1.5">
+          <label className="block text-sm font-medium text-[var(--color-text-primary)] mb-1.5">
             {label}
           </label>
         )}
         <div className="relative">
           {icon && (
-            <div className="absolute left-3 top-1/2 -translate-y-1/2 text-stone-400">
+            <div className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--color-text-muted)]">
               {icon}
             </div>
           )}
           <input
             ref={ref}
             className={`
-              w-full px-3.5 py-2.5 rounded-lg border transition-colors
+              w-full px-3.5 py-2.5 rounded-lg 
+              border transition-all duration-150
+              bg-[var(--color-bg)] 
               ${icon ? "pl-10" : ""}
               ${error
-                ? "border-red-300 bg-red-50 focus:ring-red-500 focus:border-red-500"
-                : "border-stone-300 bg-white focus:ring-indigo-500 focus:border-indigo-500"
+                ? "border-[var(--color-error)] bg-[var(--color-error-bg)]/30 focus:ring-[var(--color-error)]"
+                : "border-[var(--color-border)] hover:border-[var(--color-border-strong)] focus:ring-[var(--color-accent)] focus:border-[var(--color-accent)]"
               }
-              text-stone-900 placeholder:text-stone-400
-              focus:outline-none focus:ring-2
-              disabled:bg-stone-100 disabled:text-stone-500 disabled:cursor-not-allowed
+              text-[var(--color-text-primary)] placeholder:text-[var(--color-text-muted)]
+              focus:outline-none focus:ring-2 focus:ring-offset-0
+              disabled:bg-[var(--color-bg-inset)] disabled:text-[var(--color-text-disabled)] disabled:cursor-not-allowed
               ${className}
             `}
             {...props}
           />
         </div>
-        {error && <p className="mt-1.5 text-sm text-red-600">{error}</p>}
-        {hint && !error && <p className="mt-1.5 text-sm text-stone-500">{hint}</p>}
+        {error && <p className="mt-1.5 text-sm text-[var(--color-error-text)]">{error}</p>}
+        {hint && !error && <p className="mt-1.5 text-sm text-[var(--color-text-muted)]">{hint}</p>}
       </div>
     );
   }
@@ -235,20 +281,23 @@ export const Select = React.forwardRef<HTMLSelectElement, SelectProps>(
     return (
       <div className="w-full">
         {label && (
-          <label className="block text-sm font-medium text-stone-700 mb-1.5">
+          <label className="block text-sm font-medium text-[var(--color-text-primary)] mb-1.5">
             {label}
           </label>
         )}
         <select
           ref={ref}
           className={`
-            w-full px-3.5 py-2.5 rounded-lg border transition-colors
+            w-full px-3.5 py-2.5 rounded-lg 
+            border transition-all duration-150
+            bg-[var(--color-bg)]
             ${error
-              ? "border-red-300 bg-red-50 focus:ring-red-500 focus:border-red-500"
-              : "border-stone-300 bg-white focus:ring-indigo-500 focus:border-indigo-500"
+              ? "border-[var(--color-error)] focus:ring-[var(--color-error)]"
+              : "border-[var(--color-border)] hover:border-[var(--color-border-strong)] focus:ring-[var(--color-accent)] focus:border-[var(--color-accent)]"
             }
-            text-stone-900 focus:outline-none focus:ring-2
-            disabled:bg-stone-100 disabled:text-stone-500 disabled:cursor-not-allowed
+            text-[var(--color-text-primary)]
+            focus:outline-none focus:ring-2 focus:ring-offset-0
+            disabled:bg-[var(--color-bg-inset)] disabled:text-[var(--color-text-disabled)] disabled:cursor-not-allowed
             ${className}
           `}
           {...props}
@@ -259,7 +308,7 @@ export const Select = React.forwardRef<HTMLSelectElement, SelectProps>(
             </option>
           ))}
         </select>
-        {error && <p className="mt-1.5 text-sm text-red-600">{error}</p>}
+        {error && <p className="mt-1.5 text-sm text-[var(--color-error-text)]">{error}</p>}
       </div>
     );
   }
@@ -272,29 +321,105 @@ Select.displayName = "Select";
 // ============================================================================
 
 interface StatusBadgeProps {
-  status: "uploaded" | "processing" | "needs_review" | "approved" | "exported" | "error" | "rejected";
+  status: "uploaded" | "queued" | "processing" | "needs_review" | "approved" | "exported" | "error" | "rejected" | "verified";
   showDot?: boolean;
+  showIcon?: boolean;
   className?: string;
 }
 
 const statusConfig = {
-  uploaded: { bg: "bg-stone-100", text: "text-stone-700", dot: "bg-stone-500", label: "Uppladdad" },
-  processing: { bg: "bg-blue-100", text: "text-blue-700", dot: "bg-blue-500", label: "Bearbetar" },
-  needs_review: { bg: "bg-amber-100", text: "text-amber-700", dot: "bg-amber-500", label: "Granskas" },
-  approved: { bg: "bg-emerald-100", text: "text-emerald-700", dot: "bg-emerald-500", label: "Godkänd" },
-  exported: { bg: "bg-indigo-100", text: "text-indigo-700", dot: "bg-indigo-500", label: "Exporterad" },
-  error: { bg: "bg-red-100", text: "text-red-700", dot: "bg-red-500", label: "Fel" },
-  rejected: { bg: "bg-stone-100", text: "text-stone-500", dot: "bg-stone-400", label: "Avvisad" },
+  uploaded: { 
+    bg: "bg-[var(--color-bg-secondary)]", 
+    text: "text-[var(--color-text-secondary)]", 
+    dot: "bg-[var(--color-text-muted)]", 
+    border: "border-[var(--color-border)]",
+    label: "Uppladdad",
+    icon: null
+  },
+  queued: { 
+    bg: "bg-[var(--color-info-bg)]", 
+    text: "text-[var(--color-info-text)]", 
+    dot: "bg-[var(--color-info)]", 
+    border: "border-[var(--color-info-border)]",
+    label: "I kö",
+    icon: null
+  },
+  processing: { 
+    bg: "bg-[var(--color-info-bg)]", 
+    text: "text-[var(--color-info-text)]", 
+    dot: "bg-[var(--color-info)]", 
+    border: "border-[var(--color-info-border)]",
+    label: "Bearbetar",
+    icon: Loader2
+  },
+  needs_review: { 
+    bg: "bg-[var(--color-warning-bg)]", 
+    text: "text-[var(--color-warning-text)]", 
+    dot: "bg-[var(--color-warning)]", 
+    border: "border-[var(--color-warning-border)]",
+    label: "Granska",
+    icon: AlertTriangle
+  },
+  approved: { 
+    bg: "bg-[var(--color-success-bg)]", 
+    text: "text-[var(--color-success-text)]", 
+    dot: "bg-[var(--color-success)]", 
+    border: "border-[var(--color-success-border)]",
+    label: "Godkänd",
+    icon: CheckCircle
+  },
+  verified: { 
+    bg: "bg-[var(--color-success-bg)]", 
+    text: "text-[var(--color-success-text)]", 
+    dot: "bg-[var(--color-success)]", 
+    border: "border-[var(--color-success-border)]",
+    label: "Verifierad",
+    icon: CheckCircle
+  },
+  exported: { 
+    bg: "bg-[var(--color-accent-muted)]", 
+    text: "text-[var(--color-accent-text)]", 
+    dot: "bg-[var(--color-accent)]", 
+    border: "border-[var(--color-accent)]/20",
+    label: "Exporterad",
+    icon: null
+  },
+  error: { 
+    bg: "bg-[var(--color-error-bg)]", 
+    text: "text-[var(--color-error-text)]", 
+    dot: "bg-[var(--color-error)]", 
+    border: "border-[var(--color-error-border)]",
+    label: "Fel",
+    icon: AlertCircle
+  },
+  rejected: { 
+    bg: "bg-[var(--color-bg-secondary)]", 
+    text: "text-[var(--color-text-muted)]", 
+    dot: "bg-[var(--color-text-disabled)]", 
+    border: "border-[var(--color-border)]",
+    label: "Avvisad",
+    icon: null
+  },
 };
 
-export function StatusBadge({ status, showDot = true, className = "" }: StatusBadgeProps) {
+export function StatusBadge({ status, showDot = true, showIcon = false, className = "" }: StatusBadgeProps) {
   const config = statusConfig[status] || statusConfig.uploaded;
+  const IconComponent = config.icon;
   
   return (
     <span
-      className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md text-xs font-medium ${config.bg} ${config.text} ${className}`}
+      className={`
+        inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full 
+        text-xs font-medium border
+        ${config.bg} ${config.text} ${config.border} ${className}
+        ${status === 'processing' ? 'animate-pulse' : ''}
+      `}
     >
-      {showDot && <span className={`w-1.5 h-1.5 rounded-full ${config.dot}`} />}
+      {showIcon && IconComponent ? (
+        <IconComponent className={`w-3 h-3 ${status === 'processing' ? 'animate-spin' : ''}`} />
+      ) : showDot ? (
+        <span className={`w-1.5 h-1.5 rounded-full ${config.dot}`} />
+      ) : null}
       {config.label}
     </span>
   );
@@ -321,31 +446,37 @@ export function ConfidenceIndicator({
   
   const config = {
     high: { 
-      bg: "bg-emerald-100", 
-      text: "text-emerald-700", 
-      dot: "bg-emerald-500",
-      label: "Hög säkerhet" 
+      bg: "bg-[var(--color-success-bg)]", 
+      text: "text-[var(--color-success-text)]", 
+      dot: "bg-[var(--color-success)]",
+      border: "border-[var(--color-success-border)]",
+      label: "Hög" 
     },
     medium: { 
-      bg: "bg-amber-100", 
-      text: "text-amber-700", 
-      dot: "bg-amber-500",
-      label: "Kontrollera" 
+      bg: "bg-[var(--color-warning-bg)]", 
+      text: "text-[var(--color-warning-text)]", 
+      dot: "bg-[var(--color-warning)]",
+      border: "border-[var(--color-warning-border)]",
+      label: "Medium" 
     },
     low: { 
-      bg: "bg-rose-100", 
-      text: "text-rose-700", 
-      dot: "bg-rose-500",
-      label: "Osäker" 
+      bg: "bg-[var(--color-error-bg)]", 
+      text: "text-[var(--color-error-text)]", 
+      dot: "bg-[var(--color-error)]",
+      border: "border-[var(--color-error-border)]",
+      label: "Låg" 
     },
   };
   
   const c = config[level];
-  const sizeClasses = size === "sm" ? "px-1.5 py-0.5 text-xs" : "px-2 py-0.5 text-xs";
+  const sizeClasses = size === "sm" ? "px-1.5 py-0.5 text-[10px]" : "px-2 py-0.5 text-xs";
 
   return (
     <span
-      className={`inline-flex items-center gap-1.5 rounded-md font-medium ${c.bg} ${c.text} ${sizeClasses} ${className}`}
+      className={`
+        inline-flex items-center gap-1.5 rounded-full font-medium border
+        ${c.bg} ${c.text} ${c.border} ${sizeClasses} ${className}
+      `}
       title={`${confidence}% säkerhet`}
     >
       <span className={`w-1.5 h-1.5 rounded-full ${c.dot}`} />
@@ -371,8 +502,8 @@ export function PageHeader({ title, description, actions, breadcrumb }: PageHead
       {breadcrumb && <div className="mb-4">{breadcrumb}</div>}
       <div className="flex items-start justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-stone-900">{title}</h1>
-          {description && <p className="mt-1 text-stone-500">{description}</p>}
+          <h1 className="text-2xl font-bold text-[var(--color-text-primary)]">{title}</h1>
+          {description && <p className="mt-1 text-[var(--color-text-muted)]">{description}</p>}
         </div>
         {actions && <div className="flex items-center gap-3">{actions}</div>}
       </div>
@@ -393,14 +524,14 @@ interface EmptyStateProps {
 
 export function EmptyState({ icon, title, description, action }: EmptyStateProps) {
   return (
-    <div className="flex flex-col items-center justify-center py-12 px-4 text-center">
+    <div className="flex flex-col items-center justify-center py-16 px-4 text-center">
       {icon && (
-        <div className="w-12 h-12 rounded-full bg-stone-100 flex items-center justify-center mb-4 text-stone-400">
+        <div className="w-14 h-14 rounded-full bg-[var(--color-bg-secondary)] flex items-center justify-center mb-4 text-[var(--color-text-muted)]">
           {icon}
         </div>
       )}
-      <h3 className="text-lg font-medium text-stone-900 mb-1">{title}</h3>
-      {description && <p className="text-stone-500 mb-4 max-w-sm">{description}</p>}
+      <h3 className="text-lg font-semibold text-[var(--color-text-primary)] mb-1">{title}</h3>
+      {description && <p className="text-[var(--color-text-muted)] mb-6 max-w-sm">{description}</p>}
       {action}
     </div>
   );
@@ -411,7 +542,7 @@ export function EmptyState({ icon, title, description, action }: EmptyStateProps
 // ============================================================================
 
 export function Divider({ className = "" }: { className?: string }) {
-  return <hr className={`border-stone-200 ${className}`} />;
+  return <hr className={`border-[var(--color-border)] ${className}`} />;
 }
 
 // ============================================================================
@@ -420,7 +551,7 @@ export function Divider({ className = "" }: { className?: string }) {
 
 export function Skeleton({ className = "" }: { className?: string }) {
   return (
-    <div className={`animate-pulse bg-stone-200 rounded ${className}`} />
+    <div className={`skeleton ${className}`} />
   );
 }
 
@@ -433,6 +564,253 @@ export function SkeletonText({ lines = 3, className = "" }: { lines?: number; cl
           className={`h-4 ${i === lines - 1 ? "w-3/4" : "w-full"}`} 
         />
       ))}
+    </div>
+  );
+}
+
+// ============================================================================
+// Spinner Component
+// ============================================================================
+
+interface SpinnerProps {
+  size?: "sm" | "md" | "lg";
+  className?: string;
+}
+
+export function Spinner({ size = "md", className = "" }: SpinnerProps) {
+  const sizes = {
+    sm: "w-4 h-4",
+    md: "w-6 h-6",
+    lg: "w-8 h-8",
+  };
+
+  return (
+    <Loader2 className={`animate-spin text-[var(--color-accent)] ${sizes[size]} ${className}`} />
+  );
+}
+
+// ============================================================================
+// Toast System
+// ============================================================================
+
+type ToastType = "success" | "error" | "warning" | "info";
+
+interface Toast {
+  id: string;
+  type: ToastType;
+  title: string;
+  description?: string;
+  duration?: number;
+}
+
+interface ToastContextType {
+  toasts: Toast[];
+  addToast: (toast: Omit<Toast, "id">) => void;
+  removeToast: (id: string) => void;
+}
+
+const ToastContext = createContext<ToastContextType | null>(null);
+
+export function ToastProvider({ children }: { children: React.ReactNode }) {
+  const [toasts, setToasts] = useState<Toast[]>([]);
+
+  const addToast = useCallback((toast: Omit<Toast, "id">) => {
+    const id = Math.random().toString(36).substr(2, 9);
+    setToasts((prev) => [...prev, { ...toast, id }]);
+
+    // Auto-remove after duration
+    const duration = toast.duration ?? 5000;
+    if (duration > 0) {
+      setTimeout(() => {
+        setToasts((prev) => prev.filter((t) => t.id !== id));
+      }, duration);
+    }
+  }, []);
+
+  const removeToast = useCallback((id: string) => {
+    setToasts((prev) => prev.filter((t) => t.id !== id));
+  }, []);
+
+  return (
+    <ToastContext.Provider value={{ toasts, addToast, removeToast }}>
+      {children}
+      <ToastContainer toasts={toasts} onRemove={removeToast} />
+    </ToastContext.Provider>
+  );
+}
+
+export function useToast() {
+  const context = useContext(ToastContext);
+  if (!context) {
+    throw new Error("useToast must be used within a ToastProvider");
+  }
+  return context;
+}
+
+function ToastContainer({ toasts, onRemove }: { toasts: Toast[]; onRemove: (id: string) => void }) {
+  if (toasts.length === 0) return null;
+
+  return (
+    <div className="toast-container">
+      {toasts.map((toast) => (
+        <ToastItem key={toast.id} toast={toast} onRemove={() => onRemove(toast.id)} />
+      ))}
+    </div>
+  );
+}
+
+function ToastItem({ toast, onRemove }: { toast: Toast; onRemove: () => void }) {
+  const icons = {
+    success: CheckCircle,
+    error: AlertCircle,
+    warning: AlertTriangle,
+    info: Info,
+  };
+
+  const colors = {
+    success: "border-[var(--color-success)] text-[var(--color-success)]",
+    error: "border-[var(--color-error)] text-[var(--color-error)]",
+    warning: "border-[var(--color-warning)] text-[var(--color-warning)]",
+    info: "border-[var(--color-info)] text-[var(--color-info)]",
+  };
+
+  const Icon = icons[toast.type];
+
+  return (
+    <div 
+      className={`
+        animate-fade-in
+        bg-[var(--color-bg-elevated)] border-l-4 ${colors[toast.type]}
+        rounded-lg shadow-[var(--shadow-lg)] p-4 pr-10 min-w-[320px] max-w-[420px]
+        relative
+      `}
+    >
+      <button
+        onClick={onRemove}
+        className="absolute top-3 right-3 text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] transition-colors"
+      >
+        <X className="w-4 h-4" />
+      </button>
+      <div className="flex gap-3">
+        <Icon className={`w-5 h-5 flex-shrink-0 mt-0.5 ${colors[toast.type].split(' ')[1]}`} />
+        <div>
+          <p className="font-medium text-[var(--color-text-primary)]">{toast.title}</p>
+          {toast.description && (
+            <p className="text-sm text-[var(--color-text-muted)] mt-1">{toast.description}</p>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ============================================================================
+// Progress Bar
+// ============================================================================
+
+interface ProgressProps {
+  value: number;
+  max?: number;
+  size?: "sm" | "md";
+  showLabel?: boolean;
+  className?: string;
+}
+
+export function Progress({ value, max = 100, size = "md", showLabel = false, className = "" }: ProgressProps) {
+  const percentage = Math.min(100, Math.max(0, (value / max) * 100));
+  const heights = {
+    sm: "h-1.5",
+    md: "h-2.5",
+  };
+
+  return (
+    <div className={className}>
+      <div className={`w-full bg-[var(--color-bg-inset)] rounded-full overflow-hidden ${heights[size]}`}>
+        <div
+          className="h-full bg-[var(--color-accent)] rounded-full transition-all duration-300 ease-out"
+          style={{ width: `${percentage}%` }}
+        />
+      </div>
+      {showLabel && (
+        <p className="text-xs text-[var(--color-text-muted)] mt-1">{Math.round(percentage)}%</p>
+      )}
+    </div>
+  );
+}
+
+// ============================================================================
+// Tooltip (simple CSS-based)
+// ============================================================================
+
+interface TooltipProps {
+  content: string;
+  children: React.ReactNode;
+  position?: "top" | "bottom" | "left" | "right";
+}
+
+export function Tooltip({ content, children, position = "top" }: TooltipProps) {
+  const positions = {
+    top: "bottom-full left-1/2 -translate-x-1/2 mb-2",
+    bottom: "top-full left-1/2 -translate-x-1/2 mt-2",
+    left: "right-full top-1/2 -translate-y-1/2 mr-2",
+    right: "left-full top-1/2 -translate-y-1/2 ml-2",
+  };
+
+  return (
+    <div className="relative group inline-block">
+      {children}
+      <div
+        className={`
+          absolute ${positions[position]} z-50
+          px-2 py-1 text-xs font-medium
+          bg-[var(--color-text-primary)] text-[var(--color-text-inverse)]
+          rounded shadow-lg
+          opacity-0 invisible group-hover:opacity-100 group-hover:visible
+          transition-all duration-150
+          whitespace-nowrap
+        `}
+      >
+        {content}
+      </div>
+    </div>
+  );
+}
+
+// ============================================================================
+// Avatar Component
+// ============================================================================
+
+interface AvatarProps {
+  src?: string;
+  alt?: string;
+  fallback?: string;
+  size?: "sm" | "md" | "lg";
+  className?: string;
+}
+
+export function Avatar({ src, alt = "", fallback, size = "md", className = "" }: AvatarProps) {
+  const sizes = {
+    sm: "w-8 h-8 text-xs",
+    md: "w-10 h-10 text-sm",
+    lg: "w-12 h-12 text-base",
+  };
+
+  const initials = fallback || alt.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
+
+  return (
+    <div 
+      className={`
+        ${sizes[size]} rounded-full overflow-hidden
+        bg-[var(--color-accent-muted)] text-[var(--color-accent-text)]
+        flex items-center justify-center font-medium
+        ${className}
+      `}
+    >
+      {src ? (
+        <img src={src} alt={alt} className="w-full h-full object-cover" />
+      ) : (
+        initials
+      )}
     </div>
   );
 }

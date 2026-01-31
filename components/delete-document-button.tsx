@@ -50,9 +50,9 @@ export function DeleteDocumentButton({
       } else {
         router.refresh();
       }
-    } catch (error: any) {
+    } catch (error) {
       console.error("Delete failed:", error);
-      alert(`Kunde inte radera dokument: ${error.message || "Okänt fel"}`);
+      alert(`Kunde inte radera dokument: ${(error instanceof Error ? error.message : String(error)) || "Okänt fel"}`);
       setIsDeleting(false);
     }
   };

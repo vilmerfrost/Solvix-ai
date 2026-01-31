@@ -75,9 +75,9 @@ function LoginPageContent() {
     });
 
     if (error) {
-      setError(error.message === "Invalid login credentials" 
+      setError((error instanceof Error ? error.message : String(error)) === "Invalid login credentials" 
         ? "Fel e-post eller lösenord" 
-        : error.message);
+        : (error instanceof Error ? error.message : String(error)));
       setLoading(false);
       return;
     }
@@ -102,7 +102,7 @@ function LoginPageContent() {
     });
 
     if (error) {
-      setError(error.message);
+      setError((error instanceof Error ? error.message : String(error)));
       setSocialLoading(null);
     }
   };
@@ -128,7 +128,7 @@ function LoginPageContent() {
     });
 
     if (error) {
-      setError(error.message);
+      setError((error instanceof Error ? error.message : String(error)));
       setSocialLoading(null);
       return;
     }

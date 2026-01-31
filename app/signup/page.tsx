@@ -66,10 +66,10 @@ export default function SignupPage() {
     });
 
     if (error) {
-      if (error.message.includes("already registered")) {
+      if ((error instanceof Error ? error.message : String(error)).includes("already registered")) {
         setError("Denna e-postadress är redan registrerad");
       } else {
-        setError(error.message);
+        setError((error instanceof Error ? error.message : String(error)));
       }
       setLoading(false);
       return;

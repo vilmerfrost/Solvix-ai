@@ -17,12 +17,12 @@ export async function GET() {
     const dbLatency = Date.now() - dbStart;
 
     if (error) {
-      checks.database = { status: "error", message: error.message };
+      checks.database = { status: "error", message: (error instanceof Error ? error.message : String(error)) };
     } else {
       checks.database = { status: "ok", latency: dbLatency };
     }
-  } catch (error: any) {
-    checks.database = { status: "error", message: error.message };
+  } catch (error) {
+    checks.database = { status: "error", message: (error instanceof Error ? error.message : String(error)) };
   }
 
   // Check environment variables

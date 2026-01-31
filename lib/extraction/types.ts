@@ -156,9 +156,77 @@ CRITICAL:
 }
 
 /**
+ * Anthropic content block types
+ */
+export interface AnthropicTextBlock {
+  type: 'text';
+  text: string;
+}
+
+export interface AnthropicImageBlock {
+  type: 'image';
+  source: {
+    type: 'base64';
+    media_type: string;
+    data: string;
+  };
+}
+
+export type AnthropicContentBlock = AnthropicTextBlock | AnthropicImageBlock;
+
+/**
+ * OpenAI message types
+ */
+export interface OpenAIVisionContent {
+  type: 'image_url' | 'text';
+  image_url?: { url: string };
+  text?: string;
+}
+
+export interface OpenAIMessage {
+  role: 'user' | 'assistant' | 'system';
+  content: string | OpenAIVisionContent[];
+}
+
+/**
+ * Gemini request body type
+ */
+export interface GeminiRequestBody {
+  contents: Array<{
+    parts: Array<{ text?: string; inline_data?: { mime_type: string; data: string } }>;
+  }>;
+  generationConfig: {
+    temperature: number;
+    maxOutputTokens: number;
+  };
+}
+
+/**
+ * Raw extracted item from AI response (before normalization)
+ */
+export interface RawExtractedItem {
+  date?: string;
+  location?: string;
+  address?: string;
+  material?: string;
+  weightKg?: string | number;
+  unit?: string;
+  receiver?: string;
+  isHazardous?: boolean;
+  confidence?: number;
+}
+
+/**
+ * Parsed extraction response
+ */
+export interface ParsedExtractionResponse {
+  items: RawExtractedItem[];
+}
+
+/**
  * Parse JSON response with multiple fallback strategies
  */
-export function parseExtractionResponse(text: string): { items: ExtractedRow[] } | null {
+export function parseExtractionResponse(text: string): ParsedExtractionResponse | null {
   // Clean the response
   let cleaned = text
     .replace(/```json/gi, '')

@@ -47,10 +47,10 @@ export async function GET() {
       configuredProviders,
       availableModels
     });
-  } catch (error: any) {
+  } catch (error) {
     console.error("Error fetching preferences:", error);
     return NextResponse.json(
-      { success: false, error: error.message },
+      { success: false, error: (error instanceof Error ? error.message : String(error)) },
       { status: 500 }
     );
   }
@@ -112,10 +112,10 @@ export async function POST(request: Request) {
       success: true,
       message: "Preferences updated successfully"
     });
-  } catch (error: any) {
+  } catch (error) {
     console.error("Error updating preferences:", error);
     return NextResponse.json(
-      { success: false, error: error.message },
+      { success: false, error: (error instanceof Error ? error.message : String(error)) },
       { status: 500 }
     );
   }

@@ -174,7 +174,7 @@ export async function extractWithModel(
   try {
     const adapter = createAdapter(actualModelId);
     return await adapter.extract(request, apiKey);
-  } catch (error: any) {
+  } catch (error) {
     return {
       success: false,
       items: [],
@@ -183,7 +183,7 @@ export async function extractWithModel(
       tokensUsed: { input: 0, output: 0 },
       cost: 0,
       processingTimeMs: 0,
-      error: error.message || 'Extraction failed'
+      error: error instanceof Error ? (error instanceof Error ? error.message : String(error)) : 'Extraction failed'
     };
   }
 }
@@ -213,7 +213,7 @@ export async function extractWithAPIKey(
   try {
     const adapter = createAdapter(modelId);
     return await adapter.extract(request, apiKey);
-  } catch (error: any) {
+  } catch (error) {
     return {
       success: false,
       items: [],
@@ -222,7 +222,7 @@ export async function extractWithAPIKey(
       tokensUsed: { input: 0, output: 0 },
       cost: 0,
       processingTimeMs: 0,
-      error: error.message || 'Extraction failed'
+      error: error instanceof Error ? (error instanceof Error ? error.message : String(error)) : 'Extraction failed'
     };
   }
 }
@@ -272,8 +272,8 @@ interface ErrorDetail {
 /**
  * Classify error type for better user feedback
  */
-function classifyError(error: any): ErrorDetail['errorType'] {
-  const message = (error.message || error.toString()).toLowerCase();
+function classifyError(error: unknown): ErrorDetail['errorType'] {
+  const message = (error instanceof Error ? (error instanceof Error ? error.message : String(error)) : String(error)).toLowerCase();
   
   if (message.includes('api key') || message.includes('authentication') || message.includes('unauthorized') || message.includes('invalid key') || message.includes('api_key')) {
     return 'api_key';
@@ -328,10 +328,10 @@ const FALLBACK_ORDER: Record<AIProvider, AIProvider[]> = {
  */
 function getDefaultModelForProvider(provider: AIProvider): string {
   switch (provider) {
-    case 'google': return 'gemini-2.5-flash';
-    case 'anthropic': return 'claude-haiku-4';
-    case 'openai': return 'gpt-4o-mini';
-    default: return 'gemini-2.5-flash';
+    case 'google': return 'gemini-3-flash';
+    case 'anthropic': return 'claude-haiku-4.5';
+    case 'openai': return 'gpt-5.2-chat';
+    default: return 'gemini-3-flash';
   }
 }
 
@@ -459,17 +459,18 @@ export async function extractWithRetryAndFallback(
           await new Promise(resolve => setTimeout(resolve, waitMs));
         }
         
-      } catch (error: any) {
+      } catch (error) {
+        const errorMessage = error instanceof Error ? (error instanceof Error ? error.message : String(error)) : 'Unknown error';
         const errorType = classifyError(error);
         attempts.push({
           provider,
           model: currentModelId,
-          error: error.message || 'Unknown error',
+          error: errorMessage,
           errorType,
           timestamp: new Date().toISOString()
         });
         
-        log(`❌ ${provider} error (attempt ${attempt}/${maxRetries}): ${error.message}`, 'error');
+        log(`❌ ${provider} error (attempt ${attempt}/${maxRetries}): ${errorMessage}`, 'error');
         
         // Don't retry API key errors
         if (errorType === 'api_key') {

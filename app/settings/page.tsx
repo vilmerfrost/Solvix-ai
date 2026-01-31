@@ -1088,7 +1088,7 @@ export default function SettingsPage() {
                       <div className="flex items-center justify-between">
                         <div>
                           <p className="font-medium text-gray-900">Excel (XLSX)</p>
-                          <p className="text-sm text-gray-600">Standard exportformat för Simplitics</p>
+                          <p className="text-sm text-gray-600">Standardformat för avfallsdata</p>
                         </div>
                         <span className="px-3 py-1 bg-green-100 text-green-700 text-xs font-semibold rounded-full">
                           AKTIVT

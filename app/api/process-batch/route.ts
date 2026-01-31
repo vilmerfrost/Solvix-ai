@@ -63,13 +63,19 @@ export async function POST(req: Request) {
     // This runs synchronously to avoid Vercel auth issues with internal HTTP calls
     console.log(`🚀 Starting direct processing...`);
     
+    // Build processing options from request
+    const processOptions = {
+      modelId: modelId || undefined,
+      customInstructions: customInstructions || undefined
+    };
+    
     const results: any[] = [];
     for (let i = 0; i < validIds.length; i++) {
       const docId = validIds[i];
       console.log(`📊 Processing ${i + 1}/${validIds.length} (${docId})`);
       
       try {
-        const result = await processDocument(docId);
+        const result = await processDocument(docId, processOptions);
         results.push(result);
         console.log(`   ✅ ${result.status}`);
       } catch (err: any) {
@@ -96,10 +102,10 @@ export async function POST(req: Request) {
       results
     });
     
-  } catch (error: any) {
+  } catch (error) {
     console.error("Batch process error:", error);
     return NextResponse.json(
-      { error: error.message || "Failed to start batch processing" },
+      { error: (error instanceof Error ? error.message : String(error)) || "Failed to start batch processing" },
       { status: 500 }
     );
   }

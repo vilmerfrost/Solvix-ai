@@ -292,7 +292,7 @@ export async function POST(request: NextRequest) {
     const { data: documents, error } = await query;
     
     if (error) {
-      throw new Error(`Failed to fetch documents: ${error.message}`);
+      throw new Error(`Failed to fetch documents: ${(error instanceof Error ? error.message : String(error))}`);
     }
     
     if (!documents || documents.length === 0) {
@@ -418,13 +418,13 @@ export async function POST(request: NextRequest) {
           success: true,
         });
         
-      } catch (error: any) {
-        console.error(`   ❌ Failed to export ${doc.filename}:`, error.message);
+      } catch (error) {
+        console.error(`   ❌ Failed to export ${doc.filename}:`, (error instanceof Error ? error.message : String(error)));
         
         results.push({
           filename: doc.filename,
           success: false,
-          error: error.message,
+          error: (error instanceof Error ? error.message : String(error)),
         });
       }
     }
@@ -459,10 +459,10 @@ export async function POST(request: NextRequest) {
       files: results,
     });
     
-  } catch (error: any) {
+  } catch (error) {
     console.error("❌ Export failed:", error);
     return NextResponse.json(
-      { error: error.message || "Export failed" },
+      { error: (error instanceof Error ? error.message : String(error)) || "Export failed" },
       { status: 500 }
     );
   }

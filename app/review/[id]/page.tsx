@@ -269,9 +269,9 @@ export default async function ReviewPage({
     : `✓ Dokument med ${lineItems.length} rader från ${uniqueAddresses} adresser till ${uniqueReceivers} mottagare (${Array.from(new Set(lineItems.map((i: any) => i.receiver?.value || extractedData.receiver?.value).filter(Boolean))).join(", ")}). All obligatorisk data komplett.`;
 
   return (
-    <div className="min-h-screen bg-stone-50">
+    <div className="min-h-screen bg-[var(--color-bg)]">
       {/* Header */}
-      <div className="bg-white border-b border-stone-200">
+      <div className="bg-[var(--color-bg-elevated)] border-b border-[var(--color-border)]">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 py-6">
           {/* Breadcrumbs */}
           <Breadcrumbs 
@@ -282,7 +282,7 @@ export default async function ReviewPage({
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4">
             <Link
               href="/dashboard"
-              className="flex items-center gap-2 px-4 py-2 text-sm text-stone-600 hover:text-stone-900 hover:bg-stone-100 rounded-lg transition-colors"
+              className="flex items-center gap-2 px-4 py-2 text-sm text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] hover:bg-[var(--color-bg-secondary)] rounded-lg transition-all"
             >
               <ArrowLeft className="w-4 h-4" />
               <span>Tillbaka</span>
@@ -301,7 +301,7 @@ export default async function ReviewPage({
               {nextDocId && (
                 <Link
                   href={`/review/${nextDocId}`}
-                  className="flex items-center gap-2 px-4 py-2 text-sm bg-indigo-600 text-white hover:bg-indigo-700 rounded-lg transition-colors"
+                  className="flex items-center gap-2 px-4 py-2 text-sm bg-[var(--color-accent)] text-white hover:bg-[var(--color-accent-hover)] rounded-lg transition-all shadow-sm"
                 >
                   <span>Nästa dokument</span>
                   <ArrowRight className="w-4 h-4" />
@@ -311,17 +311,17 @@ export default async function ReviewPage({
           </div>
 
           <div className="flex items-center gap-2 mb-4">
-            <div className={`w-2 h-2 rounded-full animate-pulse ${
-              doc.status === 'approved' ? 'bg-emerald-500' :
-              doc.status === 'needs_review' ? 'bg-yellow-500' :
-              doc.status === 'error' ? 'bg-red-500' :
-              'bg-blue-500'
+            <div className={`w-2.5 h-2.5 rounded-full ${
+              doc.status === 'approved' ? 'bg-[var(--color-success)]' :
+              doc.status === 'needs_review' ? 'bg-[var(--color-warning)]' :
+              doc.status === 'error' ? 'bg-[var(--color-error)]' :
+              'bg-[var(--color-info)]'
             }`} />
-            <span className={`text-xs font-medium uppercase tracking-wider ${
-              doc.status === 'approved' ? 'text-emerald-600' :
-              doc.status === 'needs_review' ? 'text-yellow-600' :
-              doc.status === 'error' ? 'text-red-600' :
-              'text-indigo-600'
+            <span className={`text-xs font-semibold uppercase tracking-wider ${
+              doc.status === 'approved' ? 'text-[var(--color-success-text)]' :
+              doc.status === 'needs_review' ? 'text-[var(--color-warning-text)]' :
+              doc.status === 'error' ? 'text-[var(--color-error-text)]' :
+              'text-[var(--color-accent-text)]'
             }`}>
               {doc.status === 'approved' ? 'GODKÄND' :
                doc.status === 'needs_review' ? 'BEHÖVER GRANSKNING' :
@@ -330,10 +330,10 @@ export default async function ReviewPage({
             </span>
           </div>
 
-          <h1 className="text-3xl font-bold text-stone-900 mb-2" title={doc.filename}>
+          <h1 className="text-3xl font-bold text-[var(--color-text-primary)] mb-2" title={doc.filename}>
             {truncateFilename(doc.filename, 60)}
           </h1>
-          <p className="text-sm text-stone-600">
+          <p className="text-sm text-[var(--color-text-muted)]">
             {strings.reviewDescription}
           </p>
         </div>
@@ -341,20 +341,20 @@ export default async function ReviewPage({
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 py-8">
         {/* AI SUMMARY */}
-        <div className={`mb-6 p-4 rounded-lg border ${
+        <div className={`mb-6 p-4 rounded-xl border ${
           aiSummary.startsWith('✓') 
-            ? 'bg-emerald-50 border-emerald-200' 
-            : 'bg-yellow-50 border-yellow-200'
+            ? 'bg-[var(--color-success-bg)] border-[var(--color-success-border)]' 
+            : 'bg-[var(--color-warning-bg)] border-[var(--color-warning-border)]'
         }`}>
           <div className="flex items-start gap-3">
             {aiSummary.startsWith('✓') ? (
-              <CheckCircle className="w-5 h-5 text-emerald-600 mt-0.5 flex-shrink-0" />
+              <CheckCircle className="w-5 h-5 text-[var(--color-success)] mt-0.5 flex-shrink-0" />
             ) : (
-              <AlertCircle className="w-5 h-5 text-yellow-600 mt-0.5 flex-shrink-0" />
+              <AlertCircle className="w-5 h-5 text-[var(--color-warning)] mt-0.5 flex-shrink-0" />
             )}
             <div>
-              <h3 className="font-semibold text-stone-900 mb-1">AI-sammanfattning</h3>
-              <p className="text-sm text-stone-700">{aiSummary}</p>
+              <h3 className="font-semibold text-[var(--color-text-primary)] mb-1">AI-sammanfattning</h3>
+              <p className="text-sm text-[var(--color-text-secondary)]">{aiSummary}</p>
             </div>
           </div>
         </div>
@@ -372,40 +372,40 @@ export default async function ReviewPage({
 
         {/* DOCUMENT METADATA */}
         {extractedData.documentMetadata && (
-          <div className="mb-6 bg-blue-50 border border-indigo-200 rounded-lg p-6">
-            <h2 className="text-lg font-semibold text-blue-900 mb-4 flex items-center gap-2">
+          <div className="mb-6 bg-[var(--color-info-bg)] border border-[var(--color-info-border)] rounded-xl p-6">
+            <h2 className="text-lg font-semibold text-[var(--color-info-text)] mb-4 flex items-center gap-2">
               <FileText className="w-5 h-5" />
               Dokumentinformation
             </h2>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
               {extractedData.documentMetadata.date && (
                 <div>
-                  <label className="text-sm font-medium text-blue-700 block mb-1">Datum</label>
-                  <div className="text-stone-900 font-medium">
+                  <label className="text-sm font-medium text-[var(--color-info-text)] opacity-80 block mb-1">Datum</label>
+                  <div className="text-[var(--color-text-primary)] font-medium">
                     {extractedData.documentMetadata.date}
                   </div>
                 </div>
               )}
               {extractedData.documentMetadata.supplier && (
                 <div>
-                  <label className="text-sm font-medium text-blue-700 block mb-1">Leverantör</label>
-                  <div className="text-stone-900 font-medium">
+                  <label className="text-sm font-medium text-[var(--color-info-text)] opacity-80 block mb-1">Leverantör</label>
+                  <div className="text-[var(--color-text-primary)] font-medium">
                     {extractedData.documentMetadata.supplier}
                   </div>
                 </div>
               )}
               {extractedData.documentMetadata.address && (
                 <div>
-                  <label className="text-sm font-medium text-blue-700 block mb-1">Projektadress</label>
-                  <div className="text-stone-900 font-medium">
+                  <label className="text-sm font-medium text-[var(--color-info-text)] opacity-80 block mb-1">Projektadress</label>
+                  <div className="text-[var(--color-text-primary)] font-medium">
                     {extractedData.documentMetadata.address}
                   </div>
                 </div>
               )}
               {extractedData.documentMetadata.receiver && (
                 <div>
-                  <label className="text-sm font-medium text-blue-700 block mb-1">Mottagare</label>
-                  <div className="text-stone-900 font-medium">
+                  <label className="text-sm font-medium text-[var(--color-info-text)] opacity-80 block mb-1">Mottagare</label>
+                  <div className="text-[var(--color-text-primary)] font-medium">
                     {extractedData.documentMetadata.receiver}
                   </div>
                 </div>
@@ -680,7 +680,7 @@ export default async function ReviewPage({
             <div className="bg-white rounded-lg border-2 border-emerald-200 overflow-hidden">
               <div className="bg-emerald-50 px-4 py-2 border-b border-emerald-200">
                 <span className="text-sm font-medium text-green-800">
-                  Excel-format (Simplitics-kompatibel)
+                  Standard Excel-format
                 </span>
               </div>
               <div className="overflow-x-auto">

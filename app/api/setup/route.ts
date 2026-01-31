@@ -83,10 +83,10 @@ export async function POST(request: Request) {
       settings: data,
       redirectTo: "/dashboard",
     });
-  } catch (error: any) {
+  } catch (error) {
     console.error("Setup failed:", error);
     return NextResponse.json(
-      { success: false, error: error.message || "Setup failed" },
+      { success: false, error: (error instanceof Error ? error.message : String(error)) || "Setup failed" },
       { status: 500 }
     );
   }
@@ -128,9 +128,9 @@ export async function GET() {
       companyName: settings.company_name,
       source: "database",
     });
-  } catch (error: any) {
+  } catch (error) {
     return NextResponse.json(
-      { success: false, error: error.message },
+      { success: false, error: (error instanceof Error ? error.message : String(error)) },
       { status: 500 }
     );
   }

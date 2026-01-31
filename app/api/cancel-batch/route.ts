@@ -41,10 +41,10 @@ export async function POST(req: Request) {
       cancelled: cancelledCount
     });
     
-  } catch (error: any) {
+  } catch (error) {
     console.error("Cancel batch error:", error);
     return NextResponse.json(
-      { error: error.message || "Failed to cancel batch" },
+      { error: (error instanceof Error ? error.message : String(error)) || "Failed to cancel batch" },
       { status: 500 }
     );
   }

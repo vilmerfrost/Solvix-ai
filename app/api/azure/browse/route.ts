@@ -87,7 +87,7 @@ async function listFoldersRecursively(
     if (fileCount > 0) {
       console.log(`${indent}📄 ${fileCount} file(s) at this level`);
     }
-  } catch (error: any) {
+  } catch (error) {
     console.error(`${indent}❌ Error listing folder ${prefix}:`, error?.message || error);
   }
 
@@ -214,7 +214,7 @@ export async function GET(request: Request) {
       scanDuration: duration,
     });
 
-  } catch (error: any) {
+  } catch (error) {
     const duration = Date.now() - startTime;
     console.error("\n" + "=".repeat(60));
     console.error(`❌ AZURE BROWSE: Failed after ${duration}ms`);
@@ -222,7 +222,7 @@ export async function GET(request: Request) {
     console.error("=".repeat(60) + "\n");
     
     return NextResponse.json(
-      { success: false, error: error.message },
+      { success: false, error: (error instanceof Error ? error.message : String(error)) },
       { status: 500 }
     );
   }

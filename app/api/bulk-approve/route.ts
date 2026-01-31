@@ -78,8 +78,8 @@ export async function POST(req: NextRequest) {
         }
 
         results.success.push({ id: docId, filename: document.filename });
-      } catch (error: any) {
-        results.failed.push({ id: docId, error: error.message });
+      } catch (error) {
+        results.failed.push({ id: docId, error: (error instanceof Error ? error.message : String(error)) });
       }
     }
 
@@ -88,8 +88,8 @@ export async function POST(req: NextRequest) {
       results,
       message: `Approved ${results.success.length}/${documentIds.length} documents`,
     });
-  } catch (error: any) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
+  } catch (error) {
+    return NextResponse.json({ error: (error instanceof Error ? error.message : String(error)) }, { status: 500 });
   }
 }
 

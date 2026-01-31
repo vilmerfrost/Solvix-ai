@@ -90,9 +90,9 @@ export async function requireApiAuth(): Promise<string> {
  * Usage: export const GET = withAuth(async (userId) => { ... })
  */
 export function withAuth<T>(
-  handler: (userId: string, ...args: any[]) => Promise<NextResponse>
+  handler: (userId: string, ...args: unknown[]) => Promise<NextResponse>
 ) {
-  return async (...args: any[]): Promise<NextResponse> => {
+  return async (...args: unknown[]): Promise<NextResponse> => {
     const { user, error } = await getApiUser();
     
     if (error || !user) {

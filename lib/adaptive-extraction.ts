@@ -278,8 +278,8 @@ JSON OUTPUT (no markdown, no backticks):
     
     return analysis;
     
-  } catch (error: any) {
-    console.error("❌ Structure analysis failed:", error.message);
+  } catch (error) {
+    console.error("❌ Structure analysis failed:", (error instanceof Error ? error.message : String(error)));
     return {
       columnMapping: {},
       dateColumn: null,
@@ -800,16 +800,16 @@ OUTPUT FORMAT (JSON only, no markdown):
       verificationTime
     };
     
-  } catch (error: any) {
+  } catch (error) {
     const verificationTime = Date.now() - startTime;
-    console.log(`   ⚠️  Verification failed (${verificationTime}ms): ${error.message}`);
+    console.log(`   ⚠️  Verification failed (${verificationTime}ms): ${(error instanceof Error ? error.message : String(error))}`);
     
     // Return items without verification
     return {
       verifiedItems: extractedItems.map(item => ({ 
         ...item, 
         _verified: false,
-        _verificationError: error.message 
+        _verificationError: (error instanceof Error ? error.message : String(error)) 
       })),
       hallucinations: [],
       verificationConfidence: 0,

@@ -198,14 +198,14 @@ export async function GET(request: Request) {
               status: "queued",
               documentId: doc.id,
             });
-          } catch (error: any) {
-            console.error(`   ❌ Error: ${error.message}`);
+          } catch (error) {
+            console.error(`   ❌ Error: ${(error instanceof Error ? error.message : String(error))}`);
             totalErrors++;
             allResults.push({
               userId,
               filename: fileInfo.name,
               status: "error",
-              error: error.message,
+              error: (error instanceof Error ? error.message : String(error)),
             });
           }
         }
@@ -235,13 +235,13 @@ export async function GET(request: Request) {
       errors: totalErrors,
       files: allResults,
     });
-  } catch (error: any) {
+  } catch (error) {
     console.error("\n" + "=".repeat(60));
     console.error("❌ AUTO-FETCHER: Fatal error");
     console.error(`   ${error?.message || error}`);
     console.error("=".repeat(60) + "\n");
     return NextResponse.json(
-      { error: error.message || "Failed to run auto-fetcher" },
+      { error: (error instanceof Error ? error.message : String(error)) || "Failed to run auto-fetcher" },
       { status: 500 }
     );
   }

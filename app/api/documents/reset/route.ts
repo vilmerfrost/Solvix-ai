@@ -101,14 +101,14 @@ export async function POST() {
       deleted: beforeCount,
       remaining: afterCount || 0,
     });
-  } catch (error: any) {
+  } catch (error) {
     console.error("\n" + "=".repeat(60));
     console.error("❌ RESET DOCUMENTS: Error");
     console.error(`   ${error?.message || error}`);
     console.error("=".repeat(60) + "\n");
     
     return NextResponse.json(
-      { error: error.message || "Failed to reset documents" },
+      { error: (error instanceof Error ? error.message : String(error)) || "Failed to reset documents" },
       { status: 500 }
     );
   }

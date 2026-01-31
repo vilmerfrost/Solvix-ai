@@ -140,9 +140,9 @@ export default async function Dashboard({
     : 0;
 
   return (
-    <div className="min-h-screen bg-stone-50">
+    <div className="min-h-screen bg-[var(--color-bg)]">
       {/* Header - Clean and Professional */}
-      <div className="bg-white border-b border-stone-200">
+      <div className="bg-[var(--color-bg-elevated)] border-b border-[var(--color-border)]">
         <div className="max-w-7xl mx-auto px-6 py-6">
           {/* Breadcrumbs */}
           <Breadcrumbs items={getDashboardBreadcrumbs()} className="mb-4" />
@@ -152,7 +152,7 @@ export default async function Dashboard({
             {/* Left: Back button */}
             <Link
               href="/"
-              className="flex items-center gap-2 px-4 py-2 text-sm text-stone-600 hover:text-stone-900 hover:bg-stone-100 rounded-lg transition-colors"
+              className="flex items-center gap-2 px-4 py-2 text-sm text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] hover:bg-[var(--color-bg-secondary)] rounded-lg transition-all"
             >
               <ArrowLeft className="w-4 h-4" />
               <span>{strings.back}</span>
@@ -168,7 +168,7 @@ export default async function Dashboard({
               
               <Link
                 href="/health"
-                className="flex items-center gap-2 px-4 py-2 bg-white border border-stone-200 text-stone-700 rounded-lg hover:bg-stone-50 hover:border-stone-300 transition-all text-sm font-medium"
+                className="flex items-center gap-2 px-4 py-2 bg-[var(--color-bg-elevated)] border border-[var(--color-border)] text-[var(--color-text-secondary)] rounded-lg hover:bg-[var(--color-bg-secondary)] hover:border-[var(--color-border-strong)] transition-all text-sm font-medium"
               >
                 <Activity className="w-4 h-4" />
                 <span>{strings.health}</span>
@@ -176,7 +176,7 @@ export default async function Dashboard({
 
               <Link
                 href="/settings"
-                className="flex items-center gap-2 px-4 py-2 bg-white border border-stone-200 text-stone-700 rounded-lg hover:bg-stone-50 hover:border-stone-300 transition-all text-sm font-medium"
+                className="flex items-center gap-2 px-4 py-2 bg-[var(--color-bg-elevated)] border border-[var(--color-border)] text-[var(--color-text-secondary)] rounded-lg hover:bg-[var(--color-bg-secondary)] hover:border-[var(--color-border-strong)] transition-all text-sm font-medium"
               >
                 <Settings className="w-4 h-4" />
                 <span>{strings.settings}</span>
@@ -189,31 +189,31 @@ export default async function Dashboard({
 
           {/* System Status */}
           <div className="flex items-center gap-2 mb-4">
-            <div className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse" />
-            <span className="text-xs font-medium text-emerald-600 uppercase tracking-wider">
+            <div className="w-2 h-2 bg-[var(--color-success)] rounded-full animate-pulse" />
+            <span className="text-xs font-medium text-[var(--color-success-text)] uppercase tracking-wider">
               {strings.systemOnline}
             </span>
           </div>
 
           {/* Title */}
-          <h1 className="text-3xl font-bold text-stone-900 mb-2">
+          <h1 className="text-3xl font-bold text-[var(--color-text-primary)] mb-2">
             {config.companyName} {strings.review}
           </h1>
-          <p className="text-lg text-indigo-600 font-medium mb-2">
+          <p className="text-lg text-[var(--color-accent)] font-medium mb-2">
             {strings.dashboard}
           </p>
-          <p className="text-sm text-stone-500">
+          <p className="text-sm text-[var(--color-text-muted)]">
             {strings.reviewDescription}
           </p>
           
           {/* Tabs */}
-          <div className="flex gap-2 border-b border-stone-200 mt-6">
+          <div className="flex gap-2 border-b border-[var(--color-border)] mt-6">
             <a
               href="/dashboard?tab=active"
               className={`px-4 py-2 text-sm font-medium transition-colors ${
                 activeTab === "active" || !activeTab
-                  ? "text-indigo-600 border-b-2 border-indigo-600"
-                  : "text-stone-600 hover:text-stone-900"
+                  ? "text-[var(--color-accent)] border-b-2 border-[var(--color-accent)]"
+                  : "text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)]"
               }`}
             >
               {strings.active} ({documents?.filter(d => !d.exported_at).length || 0})
@@ -222,8 +222,8 @@ export default async function Dashboard({
               href="/dashboard?tab=archive"
               className={`px-4 py-2 text-sm font-medium transition-colors ${
                 activeTab === "archive"
-                  ? "text-indigo-600 border-b-2 border-indigo-600"
-                  : "text-stone-600 hover:text-stone-900"
+                  ? "text-[var(--color-accent)] border-b-2 border-[var(--color-accent)]"
+                  : "text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)]"
               }`}
             >
               {strings.archived} ({documents?.filter(d => d.exported_at).length || 0})
@@ -241,34 +241,34 @@ export default async function Dashboard({
         
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
           {/* Total */}
-          <div className="bg-white rounded-lg border border-stone-200 p-6">
+          <div className="bg-[var(--color-bg-elevated)] rounded-xl border border-[var(--color-border)] p-6 hover:border-[var(--color-border-strong)] transition-all">
             <div className="flex items-center justify-between mb-2">
-              <span className="text-sm font-medium text-stone-600 uppercase tracking-wide">
+              <span className="text-sm font-medium text-[var(--color-text-muted)] uppercase tracking-wide">
                 {strings.total.toUpperCase()}
               </span>
-              <div className="w-2 h-2 rounded-full bg-stone-400" />
+              <div className="w-2.5 h-2.5 rounded-full bg-[var(--color-text-muted)]" />
             </div>
-            <div className="text-4xl font-bold text-stone-900 mb-1">
+            <div className="text-4xl font-bold text-[var(--color-text-primary)] mb-1">
               {stats.total}
             </div>
-            <p className="text-xs text-stone-500">{strings.documents}</p>
+            <p className="text-xs text-[var(--color-text-muted)]">{strings.documents}</p>
           </div>
 
           {/* Needs Review - Clickable */}
           <a 
             href="#needs-review-section"
-            className="bg-white rounded-lg border border-stone-200 p-6 hover:shadow-md transition-shadow cursor-pointer block"
+            className="bg-[var(--color-bg-elevated)] rounded-xl border border-[var(--color-warning-border)] p-6 hover:shadow-[var(--shadow-md)] hover:border-[var(--color-warning)] transition-all cursor-pointer block"
           >
             <div className="flex items-center justify-between mb-2">
-              <span className="text-sm font-medium text-stone-600 uppercase tracking-wide">
+              <span className="text-sm font-medium text-[var(--color-text-muted)] uppercase tracking-wide">
                 {strings.needsReview.toUpperCase()}
               </span>
-              <div className="w-2 h-2 rounded-full bg-yellow-500" />
+              <div className="w-2.5 h-2.5 rounded-full bg-[var(--color-warning)]" />
             </div>
-            <div className="text-4xl font-bold text-stone-900 mb-1">
+            <div className="text-4xl font-bold text-[var(--color-text-primary)] mb-1">
               {stats.needsReview}
             </div>
-            <p className="text-xs text-yellow-600 font-medium">
+            <p className="text-xs text-[var(--color-warning-text)] font-medium">
               {config.language === 'sv' ? 'Väntar - Klicka för att visa' : 
                config.language === 'en' ? 'Waiting - Click to view' :
                config.language === 'no' ? 'Venter - Klikk for å vise' :
@@ -277,17 +277,17 @@ export default async function Dashboard({
           </a>
 
           {/* Approved */}
-          <div className="bg-white rounded-lg border border-stone-200 p-6">
+          <div className="bg-[var(--color-bg-elevated)] rounded-xl border border-[var(--color-success-border)] p-6 hover:border-[var(--color-success)] transition-all">
             <div className="flex items-center justify-between mb-2">
-              <span className="text-sm font-medium text-stone-600 uppercase tracking-wide">
+              <span className="text-sm font-medium text-[var(--color-text-muted)] uppercase tracking-wide">
                 {strings.approved.toUpperCase()}
               </span>
-              <div className="w-2 h-2 rounded-full bg-emerald-500" />
+              <div className="w-2.5 h-2.5 rounded-full bg-[var(--color-success)]" />
             </div>
-            <div className="text-4xl font-bold text-stone-900 mb-1">
+            <div className="text-4xl font-bold text-[var(--color-text-primary)] mb-1">
               {stats.approved}
             </div>
-            <p className="text-xs text-stone-500">
+            <p className="text-xs text-[var(--color-text-muted)]">
               {activeTab === "active" 
                 ? (config.language === 'sv' ? 'Redo för export' : 
                    config.language === 'en' ? 'Ready for export' :

@@ -8,6 +8,8 @@ import {
   ExtractionRequest, 
   ExtractionResult, 
   ExtractedRow,
+  GeminiRequestBody,
+  RawExtractedItem,
   buildExtractionPrompt,
   parseExtractionResponse
 } from '../types';
@@ -53,7 +55,7 @@ export class GeminiAdapter implements ExtractionAdapter {
       );
 
       // Prepare the request body for Gemini API
-      const requestBody: any = {
+      const requestBody: GeminiRequestBody = {
         contents: [{
           parts: [{ text: prompt }]
         }],
@@ -121,7 +123,7 @@ export class GeminiAdapter implements ExtractionAdapter {
           model: this.modelId,
           provider: this.provider,
           tokensUsed: { input: inputTokens, output: outputTokens },
-          cost: estimateCost(inputTokens, outputTokens, this.modelId),
+          cost: estimateCost(inputTokens, outputTokens, this.modelId).SEK,
           processingTimeMs: Date.now() - startTime,
           error: 'Failed to parse extraction response',
           rawResponse: text
@@ -129,11 +131,11 @@ export class GeminiAdapter implements ExtractionAdapter {
       }
 
       // Validate and normalize items
-      const items: ExtractedRow[] = parsed.items.map((item: any) => ({
+      const items: ExtractedRow[] = parsed.items.map((item: RawExtractedItem) => ({
         date: item.date || '',
         location: item.location || item.address || '',
         material: item.material || '',
-        weightKg: parseFloat(item.weightKg) || 0,
+        weightKg: parseFloat(String(item.weightKg)) || 0,
         unit: item.unit || 'kg',
         receiver: item.receiver || '',
         isHazardous: item.isHazardous === true,
@@ -146,11 +148,11 @@ export class GeminiAdapter implements ExtractionAdapter {
         model: this.modelId,
         provider: this.provider,
         tokensUsed: { input: inputTokens, output: outputTokens },
-        cost: estimateCost(inputTokens, outputTokens, this.modelId),
+        cost: estimateCost(inputTokens, outputTokens, this.modelId).SEK,
         processingTimeMs: Date.now() - startTime
       };
 
-    } catch (error: any) {
+    } catch (error) {
       return {
         success: false,
         items: [],
@@ -159,7 +161,7 @@ export class GeminiAdapter implements ExtractionAdapter {
         tokensUsed: { input: 0, output: 0 },
         cost: 0,
         processingTimeMs: Date.now() - startTime,
-        error: error.message || 'Unknown error during Gemini extraction'
+        error: error instanceof Error ? (error instanceof Error ? error.message : String(error)) : 'Unknown error during Gemini extraction'
       };
     }
   }

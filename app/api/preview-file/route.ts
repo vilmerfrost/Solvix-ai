@@ -59,10 +59,10 @@ export async function GET(req: Request) {
         "Cache-Control": "private, max-age=3600",
       },
     });
-  } catch (error: any) {
+  } catch (error) {
     console.error("Preview file error:", error);
     return NextResponse.json(
-      { error: error.message || "Failed to load preview file" },
+      { error: (error instanceof Error ? error.message : String(error)) || "Failed to load preview file" },
       { status: 500 }
     );
   }

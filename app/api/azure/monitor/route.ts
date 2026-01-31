@@ -50,10 +50,10 @@ export async function POST(request: Request) {
       status: "processing",
       message: "File still being processed",
     });
-  } catch (error: any) {
+  } catch (error) {
     console.error("Error monitoring file:", error);
     return NextResponse.json(
-      { error: error.message || "Failed to monitor file" },
+      { error: (error instanceof Error ? error.message : String(error)) || "Failed to monitor file" },
       { status: 500 }
     );
   }

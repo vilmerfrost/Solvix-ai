@@ -87,9 +87,9 @@ export async function POST(request: Request) {
       material_synonyms: data.material_synonyms,
       message: action === "add" ? "Synonym tillagd!" : "Synonym borttagen!"
     });
-  } catch (error: any) {
+  } catch (error) {
     return NextResponse.json(
-      { success: false, error: error.message },
+      { success: false, error: (error instanceof Error ? error.message : String(error)) },
       { status: 500 }
     );
   }

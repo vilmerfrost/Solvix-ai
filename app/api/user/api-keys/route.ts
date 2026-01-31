@@ -40,10 +40,10 @@ export async function GET() {
       success: true,
       providers
     });
-  } catch (error: any) {
+  } catch (error) {
     console.error("Error fetching API keys:", error);
     return NextResponse.json(
-      { success: false, error: error.message },
+      { success: false, error: (error instanceof Error ? error.message : String(error)) },
       { status: 500 }
     );
   }
@@ -104,10 +104,10 @@ export async function POST(request: Request) {
       message: `${PROVIDERS[provider as AIProvider].name} API key saved successfully`,
       keyHint
     });
-  } catch (error: any) {
+  } catch (error) {
     console.error("Error saving API key:", error);
     return NextResponse.json(
-      { success: false, error: error.message },
+      { success: false, error: (error instanceof Error ? error.message : String(error)) },
       { status: 500 }
     );
   }
@@ -143,10 +143,10 @@ export async function DELETE(request: Request) {
       success: true,
       message: `${PROVIDERS[provider as AIProvider].name} API key removed`
     });
-  } catch (error: any) {
+  } catch (error) {
     console.error("Error deleting API key:", error);
     return NextResponse.json(
-      { success: false, error: error.message },
+      { success: false, error: (error instanceof Error ? error.message : String(error)) },
       { status: 500 }
     );
   }

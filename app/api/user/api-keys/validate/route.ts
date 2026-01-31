@@ -80,10 +80,10 @@ export async function POST(request: Request) {
         error: errorMessage || "API key validation failed"
       });
     }
-  } catch (error: any) {
+  } catch (error) {
     console.error("Error validating API key:", error);
     return NextResponse.json(
-      { success: false, error: error.message },
+      { success: false, error: (error instanceof Error ? error.message : String(error)) },
       { status: 500 }
     );
   }

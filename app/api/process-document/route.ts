@@ -1,19 +1,35 @@
 import { createServiceRoleClient } from "@/lib/supabase";
 import { NextResponse } from "next/server";
 import { processDocument } from "@/lib/process-document";
+import { validateDocumentId, checkRateLimit } from "@/lib/validation";
+import { captureException } from "@/lib/sentry";
 
 export const maxDuration = 300; // 5 minutes max for document processing
 
 export async function POST(req: Request) {
   try {
-    const { documentId } = await req.json();
-    
-    if (!documentId) {
+    // Rate limiting
+    const clientIP = req.headers.get("x-forwarded-for") || "unknown";
+    const rateLimit = checkRateLimit(`process-doc:${clientIP}`, 10, 60000);
+    if (!rateLimit.allowed) {
       return NextResponse.json(
-        { error: "Document ID required" },
+        { error: "Rate limit exceeded. Try again later." },
+        { status: 429 }
+      );
+    }
+
+    const body = await req.json();
+    
+    // Validate document ID
+    const validation = validateDocumentId(body.documentId);
+    if (!validation.success) {
+      return NextResponse.json(
+        { error: validation.errors?.[0] || "Invalid document ID" },
         { status: 400 }
       );
     }
+    
+    const documentId = validation.data;
     
     console.log(`📄 Processing document: ${documentId}`);
     
@@ -81,10 +97,17 @@ export async function POST(req: Request) {
       status: result.status
     });
     
-  } catch (error: any) {
-    console.error("Process document error:", error);
+  } catch (error) {
+    const errorMessage = error instanceof Error ? (error instanceof Error ? error.message : String(error)) : "Failed to process document";
+    console.error("Process document error:", errorMessage);
+    
+    // Report to Sentry
+    if (error instanceof Error) {
+      captureException(error, { route: "/api/process-document" });
+    }
+    
     return NextResponse.json(
-      { error: error.message || "Failed to process document" },
+      { error: errorMessage },
       { status: 500 }
     );
   }

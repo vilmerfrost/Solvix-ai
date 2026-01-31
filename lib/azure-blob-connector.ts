@@ -98,8 +98,9 @@ export class AzureBlobConnector {
         
         console.log(`  ✅ Found ${fileCountInThisLocation} files in ${locationLabel}`);
         
-      } catch (error: any) {
-        console.error(`  ❌ Error listing files in ${locationLabel}:`, error?.message || error);
+      } catch (error) {
+        const errorMessage = error instanceof Error ? (error instanceof Error ? error.message : String(error)) : String(error);
+        console.error(`  ❌ Error listing files in ${locationLabel}:`, errorMessage);
         // Continue with other folders instead of failing completely
         continue;
       }
@@ -127,7 +128,8 @@ export class AzureBlobConnector {
     }
     
     const chunks: Uint8Array[] = [];
-    for await (const chunk of downloadResponse.readableStreamBody as any) {
+    const stream = downloadResponse.readableStreamBody as AsyncIterable<Uint8Array>;
+    for await (const chunk of stream) {
       if (chunk instanceof Uint8Array) {
         chunks.push(chunk);
       }
