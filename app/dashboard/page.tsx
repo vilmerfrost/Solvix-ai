@@ -450,6 +450,45 @@ export default async function Dashboard({
           </div>
         )}
 
+        {/* Filter Section */}
+        <div className="mb-6">
+          <div className="bg-white rounded-lg border border-stone-200 p-4">
+            <div className="flex flex-wrap items-center gap-4">
+              <span className="text-sm font-medium text-stone-700">
+                {config.language === 'sv' ? 'Snabbfilter:' : 'Quick filter:'}
+              </span>
+              <div className="flex flex-wrap gap-2">
+                <Link
+                  href="/dashboard?tab=active"
+                  className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
+                    activeTab === 'active' ? 'bg-stone-900 text-white' : 'bg-stone-100 text-stone-700 hover:bg-stone-200'
+                  }`}
+                >
+                  {config.language === 'sv' ? 'Alla aktiva' : 'All active'} ({stats.total})
+                </Link>
+                <Link
+                  href="/dashboard?status=needs_review"
+                  className="px-3 py-1.5 rounded-lg text-sm font-medium bg-yellow-100 text-yellow-800 hover:bg-yellow-200 transition-colors"
+                >
+                  {config.language === 'sv' ? 'Granska' : 'Review'} ({stats.needsReview})
+                </Link>
+                <Link
+                  href="/dashboard?status=approved"
+                  className="px-3 py-1.5 rounded-lg text-sm font-medium bg-green-100 text-green-800 hover:bg-green-200 transition-colors"
+                >
+                  {config.language === 'sv' ? 'Godkända' : 'Approved'} ({stats.approved})
+                </Link>
+                <Link
+                  href="/dashboard?status=error"
+                  className="px-3 py-1.5 rounded-lg text-sm font-medium bg-red-100 text-red-800 hover:bg-red-200 transition-colors"
+                >
+                  {config.language === 'sv' ? 'Fel' : 'Failed'} ({stats.failed})
+                </Link>
+              </div>
+            </div>
+          </div>
+        </div>
+
         {/* Senaste Dokument Section */}
         <div className="mb-8">
           <div className="flex items-center justify-between mb-4">
@@ -646,26 +685,32 @@ export default async function Dashboard({
                         </div>
                       )}
                       {doc.status === 'needs_review' && (
-                        <Link
-                          href={`/review/${doc.id}`}
-                          className="block w-full py-2.5 px-4 bg-orange-600 hover:bg-orange-700 text-white text-sm font-medium rounded-lg transition-colors text-center"
-                        >
-                          {config.language === 'sv' ? 'Granska nu' : 
-                           config.language === 'en' ? 'Review now' :
-                           config.language === 'no' ? 'Gjennomgå nå' :
-                           'Tarkista nyt'}
-                        </Link>
+                        <div className="space-y-2">
+                          <Link
+                            href={`/review/${doc.id}`}
+                            className="block w-full py-2.5 px-4 bg-orange-600 hover:bg-orange-700 text-white text-sm font-medium rounded-lg transition-colors text-center"
+                          >
+                            {config.language === 'sv' ? 'Granska nu' : 
+                             config.language === 'en' ? 'Review now' :
+                             config.language === 'no' ? 'Gjennomgå nå' :
+                             'Tarkista nyt'}
+                          </Link>
+                          <GranskaButton documentId={doc.id} filename={doc.filename} />
+                        </div>
                       )}
                       {doc.status === 'approved' && (
-                        <Link
-                          href={`/review/${doc.id}`}
-                          className="block w-full py-2.5 px-4 bg-green-600 hover:bg-green-700 text-white text-sm font-medium rounded-lg transition-colors text-center"
-                        >
-                          {config.language === 'sv' ? 'Se detaljer' : 
-                           config.language === 'en' ? 'View details' :
-                           config.language === 'no' ? 'Se detaljer' :
-                           'Näytä tiedot'}
-                        </Link>
+                        <div className="space-y-2">
+                          <Link
+                            href={`/review/${doc.id}`}
+                            className="block w-full py-2.5 px-4 bg-green-600 hover:bg-green-700 text-white text-sm font-medium rounded-lg transition-colors text-center"
+                          >
+                            {config.language === 'sv' ? 'Se detaljer' : 
+                             config.language === 'en' ? 'View details' :
+                             config.language === 'no' ? 'Se detaljer' :
+                             'Näytä tiedot'}
+                          </Link>
+                          <GranskaButton documentId={doc.id} filename={doc.filename} />
+                        </div>
                       )}
                       {doc.status === 'exported' && (
                         <div className="space-y-2">

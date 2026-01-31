@@ -143,14 +143,14 @@ export function GranskaButton({ documentId, filename, onSuccess }: GranskaButton
         <button
           onClick={handleGranska}
           disabled={isProcessing}
-          className={`px-4 py-2 rounded-lg font-medium transition-colors ${
+          className={`flex-1 w-full py-2.5 px-4 rounded-lg text-sm font-medium transition-colors text-center ${
             isProcessing
               ? "bg-gray-400 text-gray-200 cursor-not-allowed"
               : "bg-blue-600 hover:bg-blue-700 text-white"
           }`}
         >
           {isProcessing ? (
-            <span className="flex items-center gap-2">
+            <span className="flex items-center justify-center gap-2">
               <Loader2 className="w-4 h-4 animate-spin" />
               Behandlar...
             </span>
