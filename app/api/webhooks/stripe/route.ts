@@ -37,6 +37,34 @@ export async function POST(request: NextRequest) {
 
   const supabase = createServiceRoleClient();
 
+  // IDEMPOTENCY CHECK: Prevent duplicate event processing
+  // Stripe may retry webhooks, so we track processed events
+  try {
+    const { data: existingEvent } = await supabase
+      .from("webhook_events")
+      .select("id")
+      .eq("stripe_event_id", event.id)
+      .single();
+
+    if (existingEvent) {
+      console.log(`Webhook event ${event.id} already processed, skipping`);
+      return NextResponse.json({ received: true, duplicate: true });
+    }
+
+    // Record this event as being processed
+    await supabase
+      .from("webhook_events")
+      .insert({
+        stripe_event_id: event.id,
+        event_type: event.type,
+        processed_at: new Date().toISOString(),
+      });
+  } catch (idempotencyError) {
+    // If the webhook_events table doesn't exist, log warning but continue
+    // This allows the webhook to work even if the table hasn't been created yet
+    console.warn("Idempotency check failed (table may not exist):", idempotencyError);
+  }
+
   try {
     switch (event.type) {
       case "checkout.session.completed": {

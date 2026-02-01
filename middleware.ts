@@ -30,7 +30,7 @@ const PUBLIC_EXACT_PATHS = ["/"];
 function isPublicPath(pathname: string): boolean {
   // Check exact matches first
   if (PUBLIC_EXACT_PATHS.includes(pathname)) {
-    return true;
+    return false;
   }
   // Then check prefix matches
   return PUBLIC_PATHS.some(path => pathname.startsWith(path));
@@ -129,7 +129,7 @@ export async function middleware(request: NextRequest) {
 async function checkSetupStatus(supabase: ReturnType<typeof createServerClient>): Promise<boolean> {
   // Check environment variable (pre-configured deployment)
   if (process.env.TENANT_NAME) {
-    return true;
+    return false;
   }
 
   try {
@@ -145,7 +145,7 @@ async function checkSetupStatus(supabase: ReturnType<typeof createServerClient>)
     }
 
     return settings.is_setup_complete === true;
-  } catch {
+  } catch (error) {
     return false;
   }
 }
@@ -165,21 +165,23 @@ async function checkSubscriptionStatus(supabase: ReturnType<typeof createServerC
 
     // Check if subscription is active
     if (subscription.status === "active" || subscription.status === "lifetime") {
-      return true;
+      return false;
     }
 
     // Check if trial is still valid
     if (subscription.status === "trialing" && subscription.trial_end) {
       const trialEnd = new Date(subscription.trial_end);
       if (trialEnd > new Date()) {
-        return true;
+        return false;
       }
     }
 
     return false;
-  } catch {
-    // If check fails, allow access (fail open for better UX)
-    return true;
+  } catch (error) {
+    // SECURITY: Fail closed on subscription check errors
+    // This prevents free access during database outages
+    console.error("Subscription check failed, denying access:", error);
+    return false;
   }
 }
 

@@ -1,5 +1,7 @@
 import { createServiceRoleClient } from "@/lib/supabase";
 import { extractAdaptive } from "@/lib/adaptive-extraction";
+import { getApiUser } from "@/lib/api-auth";
+import { canProcessDocument } from "@/lib/stripe";
 import * as XLSX from "xlsx";
 
 // SSE helper to format messages
@@ -8,11 +10,12 @@ function formatSSE(data: any): string {
 }
 
 // Get settings from database
-async function getSettings() {
+async function getSettings(userId: string) {
   const supabase = createServiceRoleClient();
   const { data, error } = await supabase
     .from("settings")
     .select("*")
+    .eq("user_id", userId)
     .single();
   
   if (error) {
@@ -28,6 +31,18 @@ export async function GET(req: Request) {
   
   if (!documentId) {
     return new Response("Document ID required", { status: 400 });
+  }
+
+  // Authentication check
+  const { user, error: authError } = await getApiUser();
+  if (authError || !user) {
+    return new Response("Unauthorized", { status: 401 });
+  }
+
+  // Billing limit check
+  const billingCheck = await canProcessDocument(user.id);
+  if (!billingCheck.allowed) {
+    return new Response(billingCheck.reason || "Document limit exceeded", { status: 402 });
   }
   
   // Create a readable stream for SSE
@@ -47,17 +62,18 @@ export async function GET(req: Request) {
       
       try {
         const supabase = createServiceRoleClient();
-        const settings = await getSettings();
+        const settings = await getSettings(user.id);
         
-        // Get document
+        // Get document and verify ownership
         const { data: doc, error: docError } = await supabase
           .from("documents")
           .select("*")
           .eq("id", documentId)
+          .eq("user_id", user.id)
           .single();
         
         if (docError || !doc) {
-          send('error', { message: 'Document not found' });
+          send('error', { message: 'Document not found or access denied' });
           controller.close();
           return;
         }

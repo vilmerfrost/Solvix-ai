@@ -1,11 +1,22 @@
 import { createServiceRoleClient } from "@/lib/supabase";
 import { NextResponse } from "next/server";
 import { processDocument } from "@/lib/process-document";
+import { getApiUser } from "@/lib/api-auth";
+import { canProcessDocument } from "@/lib/stripe";
 
 export const maxDuration = 300; // 5 minutes max for batch processing
 
 export async function POST(req: Request) {
   try {
+    // Authentication check
+    const { user, error: authError } = await getApiUser();
+    if (authError || !user) {
+      return authError || NextResponse.json(
+        { error: "Unauthorized" },
+        { status: 401 }
+      );
+    }
+
     const { documentIds, modelId, customInstructions } = await req.json();
     
     if (!documentIds || !Array.isArray(documentIds) || documentIds.length === 0) {
@@ -14,6 +25,26 @@ export async function POST(req: Request) {
         { status: 400 }
       );
     }
+
+    // Billing limit check - check if user can process the batch
+    const billingCheck = await canProcessDocument(user.id);
+    if (!billingCheck.allowed) {
+      return NextResponse.json(
+        { error: billingCheck.reason || "Document limit exceeded. Please upgrade your plan." },
+        { status: 402 }
+      );
+    }
+
+    // Check if batch would exceed limit (for plans with limits)
+    if (billingCheck.limit !== "unlimited" && typeof billingCheck.limit === "number" && typeof billingCheck.used === "number") {
+      const remaining = billingCheck.limit - billingCheck.used;
+      if (documentIds.length > remaining) {
+        return NextResponse.json(
+          { error: `Batch size (${documentIds.length}) exceeds remaining monthly limit (${remaining}). Please upgrade your plan or reduce batch size.` },
+          { status: 402 }
+        );
+      }
+    }
     
     console.log(`📦 Batch processing requested for ${documentIds.length} documents`);
     if (modelId) console.log(`   Model: ${modelId}`);
@@ -21,11 +52,12 @@ export async function POST(req: Request) {
     
     const supabase = createServiceRoleClient();
     
-    // Verify all documents exist and are in uploaded status
+    // Verify all documents exist, are in uploaded status, and belong to user
     const { data: docs, error: fetchError } = await supabase
       .from("documents")
       .select("id, status")
-      .in("id", documentIds);
+      .in("id", documentIds)
+      .eq("user_id", user.id);
     
     if (fetchError) {
       console.error("Failed to fetch documents:", fetchError);
@@ -110,4 +142,3 @@ export async function POST(req: Request) {
     );
   }
 }
-

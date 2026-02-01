@@ -3,11 +3,22 @@ import { NextResponse } from "next/server";
 import { processDocument } from "@/lib/process-document";
 import { validateDocumentId, checkRateLimit } from "@/lib/validation";
 import { captureException } from "@/lib/sentry";
+import { getApiUser } from "@/lib/api-auth";
+import { canProcessDocument } from "@/lib/stripe";
 
 export const maxDuration = 300; // 5 minutes max for document processing
 
 export async function POST(req: Request) {
   try {
+    // Authentication check
+    const { user, error: authError } = await getApiUser();
+    if (authError || !user) {
+      return authError || NextResponse.json(
+        { error: "Unauthorized" },
+        { status: 401 }
+      );
+    }
+
     // Rate limiting
     const clientIP = req.headers.get("x-forwarded-for") || "unknown";
     const rateLimit = checkRateLimit(`process-doc:${clientIP}`, 10, 60000);
@@ -15,6 +26,15 @@ export async function POST(req: Request) {
       return NextResponse.json(
         { error: "Rate limit exceeded. Try again later." },
         { status: 429 }
+      );
+    }
+
+    // Billing limit check
+    const billingCheck = await canProcessDocument(user.id);
+    if (!billingCheck.allowed) {
+      return NextResponse.json(
+        { error: billingCheck.reason || "Document limit exceeded. Please upgrade your plan." },
+        { status: 402 }
       );
     }
 
@@ -35,11 +55,12 @@ export async function POST(req: Request) {
     
     const supabase = createServiceRoleClient();
     
-    // Check if document exists
+    // Check if document exists and belongs to user
     const { data: doc, error: docError } = await supabase
       .from("documents")
       .select("*")
       .eq("id", documentId)
+      .eq("user_id", user.id)
       .single();
     
     if (docError || !doc) {
@@ -98,7 +119,7 @@ export async function POST(req: Request) {
     });
     
   } catch (error) {
-    const errorMessage = error instanceof Error ? (error instanceof Error ? error.message : String(error)) : "Failed to process document";
+    const errorMessage = error instanceof Error ? error.message : "Failed to process document";
     console.error("Process document error:", errorMessage);
     
     // Report to Sentry
@@ -112,4 +133,3 @@ export async function POST(req: Request) {
     );
   }
 }
-

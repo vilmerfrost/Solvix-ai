@@ -192,7 +192,7 @@ export async function getOrCreateStripeCustomer(
 }
 
 /**
- * Create checkout session for subscription
+ * Create checkout session for subscription or one-time payment
  */
 export async function createCheckoutSession(
   userId: string,
@@ -202,8 +202,13 @@ export async function createCheckoutSession(
   const stripe = getStripeClient();
   if (!stripe) return null;
 
-  const plan = PLANS[planId];
-  if (!plan || !("stripePriceId" in plan) || !plan.stripePriceId) {
+  // Trial plan cannot be purchased
+  if (planId === "trial") {
+    throw new Error("Trial plan cannot be purchased");
+  }
+
+  const plan = PLANS[planId as keyof typeof PLANS];
+  if (!plan || !plan.stripePriceId) {
     throw new Error("Invalid plan or price not configured");
   }
 
@@ -214,9 +219,14 @@ export async function createCheckoutSession(
 
   const appUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
 
+  // Determine checkout mode based on plan type
+  // Enterprise is a one-time payment, others are subscriptions
+  const isOneTimePayment = "isOneTime" in plan && plan.isOneTime === true;
+  const checkoutMode = isOneTimePayment ? "payment" : "subscription";
+
   const session = await stripe.checkout.sessions.create({
     customer: customerId,
-    mode: "subscription",
+    mode: checkoutMode,
     payment_method_types: ["card"],
     line_items: [
       {
