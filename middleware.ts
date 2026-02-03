@@ -165,17 +165,18 @@ async function checkSubscriptionStatus(supabase: ReturnType<typeof createServerC
 
     // Check if subscription is active
     if (subscription.status === "active" || subscription.status === "lifetime") {
-      return false;
+      return true;
     }
 
     // Check if trial is still valid
     if (subscription.status === "trialing" && subscription.trial_end) {
       const trialEnd = new Date(subscription.trial_end);
       if (trialEnd > new Date()) {
-        return false;
+        return true;
       }
     }
 
+    // Subscription exists but is not active/valid
     return false;
   } catch (error) {
     // SECURITY: Fail closed on subscription check errors
