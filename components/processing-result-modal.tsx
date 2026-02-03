@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
-import { CheckCircle, AlertTriangle, X, FileText, TrendingUp, Scale, List, Key, RefreshCw, Zap, HelpCircle } from "lucide-react";
+import { CheckCircle, AlertTriangle, X, FileText, TrendingUp, Scale, List, Key, RefreshCw, Zap, HelpCircle, Clock, Server, Hourglass, FileWarning } from "lucide-react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 
@@ -79,9 +79,9 @@ export function ProcessingResultModal({ isOpen, onClose, result }: ProcessingRes
                   isError ? "text-red-900" :
                   "text-yellow-900"
                 }`}>
-                  {isApproved && "✅ Godkänt automatiskt!"}
-                  {needsReview && "⚠️ Behöver granskning"}
-                  {isError && "❌ Bearbetning misslyckades"}
+                  {isApproved && "Godkänt automatiskt!"}
+                  {needsReview && "Behöver granskning"}
+                  {isError && "Bearbetning misslyckades"}
                 </h2>
                 <p className="text-sm text-gray-600 mt-1 truncate max-w-xs">
                   {result.filename}
@@ -122,19 +122,19 @@ export function ProcessingResultModal({ isOpen, onClose, result }: ProcessingRes
                 {/* Error Type Badge */}
                 {result.errorType && (
                   <div className="flex items-center gap-2">
-                    <span className={`px-2 py-1 rounded text-xs font-medium ${
+                    <span className={`px-2 py-1 rounded text-xs font-medium flex items-center gap-1 ${
                       result.errorType === 'api_key' ? 'bg-orange-100 text-orange-800' :
                       result.errorType === 'rate_limit' ? 'bg-yellow-100 text-yellow-800' :
                       result.errorType === 'server_error' ? 'bg-red-100 text-red-800' :
                       result.errorType === 'timeout' ? 'bg-blue-100 text-blue-800' :
                       'bg-gray-100 text-gray-800'
                     }`}>
-                      {result.errorType === 'api_key' && '🔑 API-nyckel'}
-                      {result.errorType === 'rate_limit' && '⏱️ Rate limit'}
-                      {result.errorType === 'server_error' && '🖥️ Server-fel'}
-                      {result.errorType === 'timeout' && '⌛ Timeout'}
-                      {result.errorType === 'invalid_response' && '📄 Ogiltigt svar'}
-                      {!['api_key', 'rate_limit', 'server_error', 'timeout', 'invalid_response'].includes(result.errorType || '') && '❓ Okänt fel'}
+                      {result.errorType === 'api_key' && <><Key className="w-3 h-3" /> API-nyckel</>}
+                      {result.errorType === 'rate_limit' && <><Clock className="w-3 h-3" /> Rate limit</>}
+                      {result.errorType === 'server_error' && <><Server className="w-3 h-3" /> Server-fel</>}
+                      {result.errorType === 'timeout' && <><Hourglass className="w-3 h-3" /> Timeout</>}
+                      {result.errorType === 'invalid_response' && <><FileWarning className="w-3 h-3" /> Ogiltigt svar</>}
+                      {!['api_key', 'rate_limit', 'server_error', 'timeout', 'invalid_response'].includes(result.errorType || '') && <><HelpCircle className="w-3 h-3" /> Okänt fel</>}
                     </span>
                   </div>
                 )}

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import { Loader2, ChevronDown, ChevronUp, Bot, Key, AlertCircle, StopCircle } from "lucide-react";
+import { Loader2, ChevronDown, ChevronUp, Bot, Key, AlertCircle, StopCircle, FileText, FileSpreadsheet, Settings2 } from "lucide-react";
 import { BatchResultModal } from "./batch-result-modal";
 import { ModelSelector, useConfiguredProviders } from "./model-selector";
 import Link from "next/link";
@@ -23,6 +23,7 @@ export function BatchProcessButton({ uploadedDocs, onSuccess }: BatchProcessButt
   
   // Model selection state
   const [showAdvanced, setShowAdvanced] = useState(false);
+  const [fileTypeFilter, setFileTypeFilter] = useState<'all' | 'pdf' | 'excel'>('all');
   const [selectedModel, setSelectedModel] = useState('gemini-3-flash');
   const [customInstructions, setCustomInstructions] = useState('');
   const { providers: configuredProviders, loading: loadingProviders } = useConfiguredProviders();
@@ -44,6 +45,13 @@ export function BatchProcessButton({ uploadedDocs, onSuccess }: BatchProcessButt
     loadPreferences();
   }, []);
   
+  const filteredDocs = uploadedDocs.filter(doc => {
+    if (fileTypeFilter === 'all') return true;
+    const isExcel = doc.filename.toLowerCase().endsWith('.xlsx') || doc.filename.toLowerCase().endsWith('.xls');
+    if (fileTypeFilter === 'excel') return isExcel;
+    return !isExcel; // Default to PDF/Image for non-Excel
+  });
+
   const toggleDoc = (docId: string) => {
     const newSelected = new Set(selectedDocs);
     if (newSelected.has(docId)) {
@@ -55,7 +63,7 @@ export function BatchProcessButton({ uploadedDocs, onSuccess }: BatchProcessButt
   };
   
   const selectAll = () => {
-    setSelectedDocs(new Set(uploadedDocs.map(d => d.id)));
+    setSelectedDocs(new Set(filteredDocs.map(d => d.id)));
   };
   
   const deselectAll = () => {
@@ -264,159 +272,247 @@ export function BatchProcessButton({ uploadedDocs, onSuccess }: BatchProcessButt
         </div>
       )}
       
-      <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
-      <div className="flex items-center justify-between mb-3">
+      <div className="bg-white border border-stone-200 rounded-lg shadow-sm mb-6 overflow-hidden">
+      {/* Header & Filters */}
+      <div className="p-4 border-b border-stone-100 bg-stone-50/50 flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <h3 className="font-semibold text-blue-900">
+          <h3 className="font-semibold text-stone-900 flex items-center gap-2">
             Batch-granskning
+            <span className="px-2 py-0.5 rounded-full bg-stone-100 text-stone-600 text-xs font-normal border border-stone-200">
+              {uploadedDocs.length}
+            </span>
           </h3>
-          <p className="text-sm text-blue-700">
-            {uploadedDocs.length} uppladdade dokument väntar på granskning
+          <p className="text-sm text-stone-500 mt-0.5">
+            Välj dokument att bearbeta med AI
           </p>
         </div>
         
-        <div className="flex gap-2">
-          <button
-            onClick={selectAll}
-            className="text-sm text-blue-600 hover:text-blue-800 underline"
-          >
-            Välj alla
-          </button>
-          <span className="text-gray-400">|</span>
-          <button
-            onClick={deselectAll}
-            className="text-sm text-blue-600 hover:text-blue-800 underline"
-          >
-            Avmarkera alla
-          </button>
+        <div className="flex items-center gap-3">
+          {/* File Type Filter */}
+          <div className="flex bg-white rounded-lg p-1 border border-stone-200 shadow-sm">
+             <button 
+               onClick={() => setFileTypeFilter('all')}
+               className={`px-3 py-1.5 text-xs font-medium rounded-md transition-all ${
+                 fileTypeFilter === 'all' 
+                   ? 'bg-stone-900 text-white shadow-sm' 
+                   : 'text-stone-600 hover:bg-stone-50'
+               }`}
+             >
+               Alla
+             </button>
+             <button 
+               onClick={() => setFileTypeFilter('pdf')}
+               className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-md transition-all ${
+                 fileTypeFilter === 'pdf' 
+                   ? 'bg-stone-900 text-white shadow-sm' 
+                   : 'text-stone-600 hover:bg-stone-50'
+               }`}
+               title="Visa endast PDF"
+             >
+               <FileText className="w-3.5 h-3.5" />
+               <span className="hidden sm:inline">PDF</span>
+             </button>
+             <button 
+               onClick={() => setFileTypeFilter('excel')}
+               className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-md transition-all ${
+                 fileTypeFilter === 'excel' 
+                   ? 'bg-stone-900 text-white shadow-sm' 
+                   : 'text-stone-600 hover:bg-stone-50'
+               }`}
+               title="Visa endast Excel"
+             >
+               <FileSpreadsheet className="w-3.5 h-3.5" />
+               <span className="hidden sm:inline">Excel</span>
+             </button>
+          </div>
+
+          <div className="h-8 w-px bg-stone-200 mx-1" />
+
+          <div className="flex gap-1">
+            <button
+              onClick={selectAll}
+              className="px-3 py-1.5 text-xs font-medium text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+            >
+              Välj alla
+            </button>
+            <button
+              onClick={deselectAll}
+              className="px-3 py-1.5 text-xs font-medium text-stone-500 hover:bg-stone-100 rounded-lg transition-colors"
+            >
+              Rensa
+            </button>
+          </div>
         </div>
       </div>
       
       {/* Document checkboxes */}
-      <div className="space-y-2 mb-4 max-h-60 overflow-y-auto">
-        {uploadedDocs.map(doc => (
-          <label 
-            key={doc.id}
-            className="flex items-center gap-3 p-2 hover:bg-blue-100 rounded cursor-pointer transition-colors"
-          >
-            <input
-              type="checkbox"
-              checked={selectedDocs.has(doc.id)}
-              onChange={() => toggleDoc(doc.id)}
-              className="w-4 h-4 text-blue-600 rounded focus:ring-2 focus:ring-blue-500"
-            />
-            <div className="flex-1 min-w-0">
-              <div className="text-sm font-medium text-gray-900 truncate">
-                {doc.filename}
-              </div>
-              <div className="text-xs text-gray-600">
-                {new Date(doc.created_at).toLocaleString('sv-SE')}
-              </div>
-            </div>
-          </label>
-        ))}
+      <div className="max-h-60 overflow-y-auto p-2 space-y-1 bg-stone-50/30">
+        {filteredDocs.length === 0 ? (
+          <div className="py-8 text-center text-stone-500 text-sm">
+            Inga dokument matchar filtret.
+          </div>
+        ) : (
+          filteredDocs.map(doc => {
+            const isExcel = doc.filename.toLowerCase().endsWith('.xlsx') || doc.filename.toLowerCase().endsWith('.xls');
+            return (
+              <label 
+                key={doc.id}
+                className={`
+                  flex items-center gap-3 p-3 rounded-lg cursor-pointer transition-all border
+                  ${selectedDocs.has(doc.id) 
+                    ? 'bg-blue-50/50 border-blue-200 shadow-sm' 
+                    : 'bg-white border-transparent hover:border-stone-200 hover:shadow-sm'
+                  }
+                `}
+              >
+                <input
+                  type="checkbox"
+                  checked={selectedDocs.has(doc.id)}
+                  onChange={() => toggleDoc(doc.id)}
+                  className="w-4 h-4 text-blue-600 rounded focus:ring-2 focus:ring-blue-500 border-gray-300"
+                />
+                <div className={`
+                  flex-shrink-0 w-8 h-8 rounded-lg flex items-center justify-center
+                  ${isExcel ? 'bg-green-50 text-green-600' : 'bg-red-50 text-red-600'}
+                `}>
+                  {isExcel ? <FileSpreadsheet className="w-4 h-4" /> : <FileText className="w-4 h-4" />}
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className="text-sm font-medium text-stone-900 truncate">
+                    {doc.filename}
+                  </div>
+                  <div className="text-xs text-stone-500 flex items-center gap-2">
+                    <span>{new Date(doc.created_at).toLocaleString('sv-SE')}</span>
+                  </div>
+                </div>
+              </label>
+            );
+          })
+        )}
       </div>
       
-      {/* Advanced Options Toggle */}
-      <button
-        onClick={() => setShowAdvanced(!showAdvanced)}
-        className="w-full flex items-center justify-between px-3 py-2 text-sm text-blue-700 hover:bg-blue-100 rounded-lg transition-colors mb-3"
-      >
-        <span className="flex items-center gap-2">
-          <Bot className="w-4 h-4" />
-          Avancerade alternativ
-        </span>
-        {showAdvanced ? (
-          <ChevronUp className="w-4 h-4" />
-        ) : (
-          <ChevronDown className="w-4 h-4" />
-        )}
-      </button>
+      {/* Footer / Actions */}
+      <div className="p-4 border-t border-stone-200 bg-white">
+        {/* Advanced Options Toggle */}
+        <div className="mb-4">
+          <button
+            onClick={() => setShowAdvanced(!showAdvanced)}
+            className={`
+              w-full flex items-center justify-between px-4 py-3 text-sm font-medium rounded-xl transition-all border
+              ${showAdvanced 
+                ? 'bg-stone-50 border-stone-200 text-stone-900 shadow-inner' 
+                : 'bg-white border-stone-200 text-stone-600 hover:border-stone-300 hover:shadow-sm'
+              }
+            `}
+          >
+            <span className="flex items-center gap-2.5">
+              <div className={`p-1.5 rounded-md ${showAdvanced ? 'bg-indigo-100 text-indigo-600' : 'bg-stone-100 text-stone-500'}`}>
+                <Settings2 className="w-4 h-4" />
+              </div>
+              Avancerade inställningar
+            </span>
+            {showAdvanced ? (
+              <ChevronUp className="w-4 h-4 text-stone-400" />
+            ) : (
+              <ChevronDown className="w-4 h-4 text-stone-400" />
+            )}
+          </button>
 
-      {/* Advanced Options Panel */}
-      {showAdvanced && (
-        <div className="mb-4 p-4 bg-white rounded-lg border border-blue-200 space-y-4">
-          {/* API Key Warning */}
-          {!loadingProviders && configuredProviders.length === 0 && (
-            <div className="p-3 bg-yellow-50 border border-yellow-200 rounded-lg flex items-start gap-2">
-              <AlertCircle className="w-5 h-5 text-yellow-600 flex-shrink-0 mt-0.5" />
-              <div>
-                <p className="text-sm font-medium text-yellow-800">Inga API-nycklar konfigurerade</p>
-                <p className="text-xs text-yellow-700 mt-1">
-                  Lägg till din API-nyckel för att använda AI-extrahering.
-                </p>
-                <Link
-                  href="/settings/api-keys"
-                  className="inline-flex items-center gap-1 text-xs text-yellow-800 hover:text-yellow-900 underline mt-2"
-                >
-                  <Key className="w-3 h-3" />
-                  Lägg till API-nyckel
-                </Link>
+          {/* Advanced Options Panel */}
+          <div className={`
+            grid transition-all duration-300 ease-in-out
+            ${showAdvanced ? 'grid-rows-[1fr] opacity-100 mt-4' : 'grid-rows-[0fr] opacity-0'}
+          `}>
+            <div className="overflow-hidden">
+              <div className="p-5 bg-stone-50 rounded-xl border border-stone-200 space-y-5">
+                {/* API Key Warning */}
+                {!loadingProviders && configuredProviders.length === 0 && (
+                  <div className="p-3 bg-amber-50 border border-amber-200 rounded-lg flex items-start gap-3">
+                    <AlertCircle className="w-5 h-5 text-amber-600 flex-shrink-0 mt-0.5" />
+                    <div>
+                      <p className="text-sm font-medium text-amber-900">Inga API-nycklar konfigurerade</p>
+                      <p className="text-xs text-amber-700 mt-1">
+                        Lägg till din API-nyckel för att använda AI-extrahering.
+                      </p>
+                      <Link
+                        href="/settings/api-keys"
+                        className="inline-flex items-center gap-1 text-xs text-amber-800 hover:text-amber-900 underline mt-2 font-medium"
+                      >
+                        <Key className="w-3 h-3" />
+                        Lägg till API-nyckel
+                      </Link>
+                    </div>
+                  </div>
+                )}
+
+                {/* Model Selection */}
+                <div>
+                  <label className="block text-xs font-semibold text-stone-500 uppercase tracking-wider mb-2">
+                    Välj AI-modell
+                  </label>
+                  {loadingProviders ? (
+                    <div className="flex items-center gap-2 text-sm text-stone-500 p-3 bg-white rounded-lg border border-stone-200">
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                      Laddar modeller...
+                    </div>
+                  ) : (
+                    <ModelSelector
+                      selectedModel={selectedModel}
+                      onSelectModel={setSelectedModel}
+                      configuredProviders={configuredProviders}
+                      showPricing={true}
+                      compact={true}
+                    />
+                  )}
+                </div>
+
+                {/* Custom Instructions */}
+                <div>
+                  <label className="block text-xs font-semibold text-stone-500 uppercase tracking-wider mb-2">
+                    Instruktioner till AI
+                  </label>
+                  <textarea
+                    value={customInstructions}
+                    onChange={(e) => setCustomInstructions(e.target.value)}
+                    placeholder="T.ex. 'Ignorera rader med nollvikt' eller 'Materialet är alltid Brännbart om inte annat anges'"
+                    className="w-full px-3 py-2.5 bg-white border border-stone-200 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none resize-none shadow-sm placeholder:text-stone-400"
+                    rows={3}
+                  />
+                  <p className="text-xs text-stone-500 mt-2 flex items-center gap-1.5">
+                    <Bot className="w-3 h-3" />
+                    Skickas med prompten för att styra extraktionen
+                  </p>
+                </div>
               </div>
             </div>
-          )}
-
-          {/* Model Selection */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              AI-modell
-            </label>
-            {loadingProviders ? (
-              <div className="flex items-center gap-2 text-sm text-gray-500">
-                <Loader2 className="w-4 h-4 animate-spin" />
-                Laddar modeller...
-              </div>
-            ) : (
-              <ModelSelector
-                selectedModel={selectedModel}
-                onSelectModel={setSelectedModel}
-                configuredProviders={configuredProviders}
-                showPricing={true}
-                compact={true}
-              />
-            )}
-          </div>
-
-          {/* Custom Instructions */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Anpassade instruktioner (valfritt)
-            </label>
-            <textarea
-              value={customInstructions}
-              onChange={(e) => setCustomInstructions(e.target.value)}
-              placeholder="T.ex. 'Ignorera rader med nollvikt' eller 'Materialet är alltid Brännbart om inte annat anges'"
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none resize-none"
-              rows={3}
-            />
-            <p className="text-xs text-gray-500 mt-1">
-              Dessa instruktioner skickas till AI:n för att anpassa extraktionen.
-            </p>
           </div>
         </div>
-      )}
 
-      {/* Process button */}
-      <button
-        onClick={processBatch}
-        disabled={isProcessing || selectedDocs.size === 0 || (configuredProviders.length === 0 && !loadingProviders)}
-        className={`w-full px-4 py-3 rounded-lg font-medium transition-colors ${
-          isProcessing || selectedDocs.size === 0 || (configuredProviders.length === 0 && !loadingProviders)
-            ? "bg-gray-400 text-gray-200 cursor-not-allowed"
-            : "bg-blue-600 hover:bg-blue-700 text-white"
-        }`}
-      >
-        {isProcessing ? (
-          <span className="flex items-center justify-center gap-2">
-            <Loader2 className="w-5 h-5 animate-spin" />
-            Behandlar {selectedDocs.size} dokument...
-          </span>
-        ) : configuredProviders.length === 0 && !loadingProviders ? (
-          "Lägg till API-nyckel för att granska"
-        ) : (
-          `Granska ${selectedDocs.size > 0 ? selectedDocs.size : 'valda'} dokument`
-        )}
-      </button>
+        {/* Process button */}
+        <button
+          onClick={processBatch}
+          disabled={isProcessing || selectedDocs.size === 0 || (configuredProviders.length === 0 && !loadingProviders)}
+          className={`w-full px-4 py-3.5 rounded-xl font-medium shadow-sm transition-all transform active:scale-[0.99] ${
+            isProcessing || selectedDocs.size === 0 || (configuredProviders.length === 0 && !loadingProviders)
+              ? "bg-stone-100 text-stone-400 border border-stone-200 cursor-not-allowed"
+              : "bg-stone-900 hover:bg-black text-white hover:shadow-md"
+          }`}
+        >
+          {isProcessing ? (
+            <span className="flex items-center justify-center gap-2">
+              <Loader2 className="w-5 h-5 animate-spin" />
+              Behandlar {selectedDocs.size} dokument...
+            </span>
+          ) : configuredProviders.length === 0 && !loadingProviders ? (
+            "Lägg till API-nyckel för att granska"
+          ) : (
+            <span className="flex items-center justify-center gap-2">
+               <Bot className="w-5 h-5" />
+               Starta granskning av {selectedDocs.size > 0 ? selectedDocs.size : 'valda'} dokument
+            </span>
+          )}
+        </button>
+      </div>
       </div>
       
       <BatchResultModal

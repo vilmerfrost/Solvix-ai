@@ -327,80 +327,80 @@ interface StatusBadgeProps {
   className?: string;
 }
 
-const statusConfig = {
-  uploaded: { 
-    bg: "bg-[var(--color-bg-secondary)]", 
-    text: "text-[var(--color-text-secondary)]", 
-    dot: "bg-[var(--color-text-muted)]", 
-    border: "border-[var(--color-border)]",
-    label: "Uppladdad",
-    icon: null
-  },
-  queued: { 
-    bg: "bg-[var(--color-info-bg)]", 
-    text: "text-[var(--color-info-text)]", 
-    dot: "bg-[var(--color-info)]", 
-    border: "border-[var(--color-info-border)]",
-    label: "I kö",
-    icon: null
-  },
-  processing: { 
-    bg: "bg-[var(--color-info-bg)]", 
-    text: "text-[var(--color-info-text)]", 
-    dot: "bg-[var(--color-info)]", 
-    border: "border-[var(--color-info-border)]",
-    label: "Bearbetar",
-    icon: Loader2
-  },
-  needs_review: { 
-    bg: "bg-[var(--color-warning-bg)]", 
-    text: "text-[var(--color-warning-text)]", 
-    dot: "bg-[var(--color-warning)]", 
-    border: "border-[var(--color-warning-border)]",
-    label: "Granska",
-    icon: AlertTriangle
-  },
-  approved: { 
-    bg: "bg-[var(--color-success-bg)]", 
-    text: "text-[var(--color-success-text)]", 
-    dot: "bg-[var(--color-success)]", 
-    border: "border-[var(--color-success-border)]",
-    label: "Godkänd",
-    icon: CheckCircle
-  },
-  verified: { 
-    bg: "bg-[var(--color-success-bg)]", 
-    text: "text-[var(--color-success-text)]", 
-    dot: "bg-[var(--color-success)]", 
-    border: "border-[var(--color-success-border)]",
-    label: "Verifierad",
-    icon: CheckCircle
-  },
-  exported: { 
-    bg: "bg-[var(--color-accent-muted)]", 
-    text: "text-[var(--color-accent-text)]", 
-    dot: "bg-[var(--color-accent)]", 
-    border: "border-[var(--color-accent)]/20",
-    label: "Exporterad",
-    icon: null
-  },
-  error: { 
-    bg: "bg-[var(--color-error-bg)]", 
-    text: "text-[var(--color-error-text)]", 
-    dot: "bg-[var(--color-error)]", 
-    border: "border-[var(--color-error-border)]",
-    label: "Fel",
-    icon: AlertCircle
-  },
-  rejected: { 
-    bg: "bg-[var(--color-bg-secondary)]", 
-    text: "text-[var(--color-text-muted)]", 
-    dot: "bg-[var(--color-text-disabled)]", 
-    border: "border-[var(--color-border)]",
-    label: "Avvisad",
-    icon: null
-  },
-};
+  const statusConfig = {
+    uploaded: { 
+      bg: "bg-white", 
+      text: "text-stone-700", 
+      dot: "bg-stone-400", 
+      border: "border-stone-200 shadow-sm",
+      label: "Uppladdad",
+      icon: null
+    },
+    queued: { 
+      bg: "bg-white", 
+      text: "text-stone-700", 
+      dot: "bg-blue-400", 
+      border: "border-blue-200 shadow-sm",
+      label: "I kö",
+      icon: null
+    },
+    processing: { 
+      bg: "bg-white", 
+      text: "text-stone-700", 
+      dot: "bg-blue-500", 
+      border: "border-blue-200 shadow-sm",
+      label: "Bearbetar",
+      icon: Loader2
+    },
+    needs_review: { 
+      bg: "bg-white", 
+      text: "text-stone-700", 
+      dot: "bg-amber-500", 
+      border: "border-amber-200 shadow-sm",
+      label: "Granska",
+      icon: AlertTriangle
+    },
+    approved: { 
+      bg: "bg-white", 
+      text: "text-stone-700", 
+      dot: "bg-emerald-500", 
+      border: "border-emerald-200 shadow-sm",
+      label: "Godkänd",
+      icon: CheckCircle
+    },
+    verified: { 
+      bg: "bg-white", 
+      text: "text-stone-700", 
+      dot: "bg-emerald-500", 
+      border: "border-emerald-200 shadow-sm",
+      label: "Verifierad",
+      icon: CheckCircle
+    },
+    exported: { 
+      bg: "bg-white", 
+      text: "text-stone-700", 
+      dot: "bg-purple-500", 
+      border: "border-purple-200 shadow-sm",
+      label: "Exporterad",
+      icon: null
+    },
+    error: { 
+      bg: "bg-white", 
+      text: "text-stone-700", 
+      dot: "bg-rose-500", 
+      border: "border-rose-200 shadow-sm",
+      label: "Fel",
+      icon: AlertCircle
+    },
+    rejected: { 
+      bg: "bg-white", 
+      text: "text-stone-700", 
+      dot: "bg-stone-400", 
+      border: "border-stone-200 shadow-sm",
+      label: "Avvisad",
+      icon: null
+    },
+  };
 
 export function StatusBadge({ status, showDot = true, showIcon = false, className = "" }: StatusBadgeProps) {
   const config = statusConfig[status] || statusConfig.uploaded;

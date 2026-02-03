@@ -143,10 +143,10 @@ export function GranskaButton({ documentId, filename, onSuccess }: GranskaButton
         <button
           onClick={handleGranska}
           disabled={isProcessing}
-          className={`flex-1 w-full py-2.5 px-4 rounded-lg text-sm font-medium transition-colors text-center ${
+          className={`flex-1 w-full py-2.5 px-4 rounded-lg text-sm font-medium transition-all text-center border ${
             isProcessing
-              ? "bg-gray-400 text-gray-200 cursor-not-allowed"
-              : "bg-blue-600 hover:bg-blue-700 text-white"
+              ? "bg-stone-50 border-stone-200 text-stone-400 cursor-not-allowed"
+              : "bg-white border-stone-200 text-stone-700 hover:text-stone-900 hover:border-stone-300 hover:shadow-sm"
           }`}
         >
           {isProcessing ? (
@@ -164,7 +164,7 @@ export function GranskaButton({ documentId, filename, onSuccess }: GranskaButton
           <button
             onClick={handleCancel}
             disabled={isCancelling}
-            className="p-2 rounded-lg bg-red-600 hover:bg-red-700 text-white transition-colors disabled:bg-red-400"
+            className="p-2 rounded-lg bg-white border border-red-200 text-red-600 hover:bg-red-50 hover:border-red-300 transition-colors disabled:opacity-50 shadow-sm"
             title="Avbryt bearbetning"
           >
             {isCancelling ? (
