@@ -3,6 +3,9 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { ArrowUp, Check, X, ArrowRight, FileText, Zap, Shield, Database, Upload, FileSpreadsheet } from "lucide-react";
+import { motion } from "framer-motion";
+import { SpotlightCard } from "./ui/spotlight-card";
+import { TiltCard } from "./ui/tilt-card";
 
 interface LandingPageProps {
   user: any;
@@ -83,7 +86,12 @@ export function LandingPage({ user }: LandingPageProps) {
 
       {/* Hero Section */}
       <section className="relative pt-24 pb-32 px-6 lg:px-8 overflow-hidden">
-        <div className="max-w-4xl mx-auto text-center relative z-10">
+        <motion.div 
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.8, ease: "easeOut" }}
+          className="max-w-4xl mx-auto text-center relative z-10"
+        >
           {/* Badge */}
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/[0.05] border border-white/[0.08] text-xs font-medium text-white/70 mb-8 hover:bg-white/[0.08] transition-colors cursor-default">
             <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
@@ -140,7 +148,7 @@ export function LandingPage({ user }: LandingPageProps) {
               <span className="text-white/40 group-hover:text-white/60 transition-colors">supported</span>
             </div>
           </div>
-        </div>
+        </motion.div>
 
         {/* Hero Visual - Clean Terminal/Dashboard Preview */}
         <div className="max-w-5xl mx-auto mt-20 relative perspective-1000">
@@ -149,7 +157,7 @@ export function LandingPage({ user }: LandingPageProps) {
           
           <div className="absolute inset-0 bg-gradient-to-t from-zinc-950 via-transparent to-transparent z-10 pointer-events-none" />
           
-          <div className="bg-[#111113] rounded-2xl border border-white/[0.06] overflow-hidden shadow-2xl shadow-black/50 transform transition-transform hover:scale-[1.01] duration-500">
+          <TiltCard className="rounded-2xl border border-white/[0.06] overflow-hidden shadow-2xl shadow-black/50 bg-[#111113]">
             {/* Window Chrome */}
             <div className="flex items-center gap-2 px-4 py-3 bg-[#0d0d0f] border-b border-white/[0.06]">
               <div className="flex gap-1.5">
@@ -221,7 +229,7 @@ export function LandingPage({ user }: LandingPageProps) {
                 </div>
               </div>
             </div>
-          </div>
+          </TiltCard>
         </div>
       </section>
 
@@ -302,16 +310,36 @@ export function LandingPage({ user }: LandingPageProps) {
       {/* Features Section */}
       <section id="features" className="relative py-32 px-6 lg:px-8 border-t border-white/[0.04]">
         <div className="max-w-7xl mx-auto">
-          <div className="max-w-2xl mb-16">
+          <motion.div 
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.6 }}
+            className="max-w-2xl mb-16"
+          >
             <h2 className="text-3xl sm:text-4xl font-bold text-white mb-4">
               Everything you need for waste data management
             </h2>
             <p className="text-lg text-white/50">
               From document upload to structured Excel export, Vextra handles the entire workflow.
             </p>
-          </div>
+          </motion.div>
 
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <motion.div 
+            variants={{
+              hidden: { opacity: 0 },
+              show: {
+                opacity: 1,
+                transition: {
+                  staggerChildren: 0.1
+                }
+              }
+            }}
+            initial="hidden"
+            whileInView="show"
+            viewport={{ once: true }}
+            className="grid md:grid-cols-2 lg:grid-cols-3 gap-6"
+          >
             {[
               {
                 title: "Multi-model AI",
@@ -344,18 +372,17 @@ export function LandingPage({ user }: LandingPageProps) {
                 icon: <Upload className="w-6 h-6" />
               },
             ].map((feature, i) => (
-              <div 
-                key={i} 
-                className="group p-6 rounded-2xl bg-zinc-900/50 border border-white/10 hover:border-white/20 transition-all hover:scale-[1.02] hover:shadow-xl hover:shadow-black/20"
-              >
-                <div className="w-12 h-12 rounded-xl bg-white/[0.05] flex items-center justify-center mb-4 text-white/60 group-hover:text-white group-hover:bg-indigo-500/20 transition-colors">
-                  {feature.icon}
-                </div>
-                <h3 className="text-lg font-semibold text-white/90 mb-2">{feature.title}</h3>
-                <p className="text-sm text-white/40 leading-relaxed group-hover:text-white/60 transition-colors">{feature.description}</p>
-              </div>
+              <motion.div variants={{ hidden: { opacity: 0, y: 20 }, show: { opacity: 1, y: 0 } }} key={i}>
+                <SpotlightCard className="h-full p-6 rounded-2xl">
+                  <div className="w-12 h-12 rounded-xl bg-white/[0.05] flex items-center justify-center mb-4 text-white/60 group-hover:text-white group-hover:bg-indigo-500/20 transition-colors">
+                    {feature.icon}
+                  </div>
+                  <h3 className="text-lg font-semibold text-white/90 mb-2">{feature.title}</h3>
+                  <p className="text-sm text-white/40 leading-relaxed group-hover:text-white/60 transition-colors">{feature.description}</p>
+                </SpotlightCard>
+              </motion.div>
             ))}
-          </div>
+          </motion.div>
         </div>
       </section>
 
