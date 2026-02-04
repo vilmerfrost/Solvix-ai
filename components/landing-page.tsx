@@ -24,12 +24,9 @@ export function LandingPage({ user }: LandingPageProps) {
   };
 
   return (
-    <div className="min-h-screen bg-[#0a0a0b] text-white antialiased selection:bg-indigo-500/30">
-      {/* Subtle gradient background */}
-      <div className="fixed inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute top-0 left-1/4 w-[800px] h-[600px] bg-indigo-600/8 rounded-full blur-[120px]" />
-        <div className="absolute bottom-0 right-1/4 w-[600px] h-[400px] bg-purple-600/6 rounded-full blur-[100px]" />
-      </div>
+    <div className="min-h-screen bg-zinc-950 text-white antialiased selection:bg-indigo-500/30">
+      {/* Grid background */}
+      <div className="fixed inset-0 z-0 pointer-events-none bg-[linear-gradient(to_right,#27272a_1px,transparent_1px),linear-gradient(to_bottom,#27272a_1px,transparent_1px)] bg-[size:24px_24px] opacity-10" />
 
       {/* Navigation */}
       <nav className="relative z-50 border-b border-white/[0.06] backdrop-blur-sm bg-[#0a0a0b]/80 sticky top-0">
@@ -94,7 +91,7 @@ export function LandingPage({ user }: LandingPageProps) {
           </div>
 
           {/* Headline */}
-          <h1 className="text-5xl sm:text-6xl lg:text-7xl font-bold tracking-tight mb-6">
+          <h1 className="text-5xl sm:text-6xl lg:text-7xl font-bold tracking-tighter mb-6">
             <span className="text-white">Document extraction</span>
             <br />
             <span className="bg-gradient-to-r from-indigo-400 via-purple-400 to-pink-400 bg-clip-text text-transparent">
@@ -147,7 +144,10 @@ export function LandingPage({ user }: LandingPageProps) {
 
         {/* Hero Visual - Clean Terminal/Dashboard Preview */}
         <div className="max-w-5xl mx-auto mt-20 relative perspective-1000">
-          <div className="absolute inset-0 bg-gradient-to-t from-[#0a0a0b] via-transparent to-transparent z-10 pointer-events-none" />
+          {/* Localized purple glow behind hero image */}
+          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[300px] bg-purple-600/20 rounded-full blur-[80px] -z-10" />
+          
+          <div className="absolute inset-0 bg-gradient-to-t from-zinc-950 via-transparent to-transparent z-10 pointer-events-none" />
           
           <div className="bg-[#111113] rounded-2xl border border-white/[0.06] overflow-hidden shadow-2xl shadow-black/50 transform transition-transform hover:scale-[1.01] duration-500">
             {/* Window Chrome */}
@@ -346,7 +346,7 @@ export function LandingPage({ user }: LandingPageProps) {
             ].map((feature, i) => (
               <div 
                 key={i} 
-                className="group p-6 rounded-2xl bg-white/[0.02] border border-white/[0.04] hover:bg-white/[0.04] hover:border-white/[0.1] transition-all hover:scale-[1.02] hover:shadow-xl hover:shadow-black/20"
+                className="group p-6 rounded-2xl bg-zinc-900/50 border border-white/10 hover:border-white/20 transition-all hover:scale-[1.02] hover:shadow-xl hover:shadow-black/20"
               >
                 <div className="w-12 h-12 rounded-xl bg-white/[0.05] flex items-center justify-center mb-4 text-white/60 group-hover:text-white group-hover:bg-indigo-500/20 transition-colors">
                   {feature.icon}
