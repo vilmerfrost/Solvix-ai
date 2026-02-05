@@ -1036,8 +1036,9 @@ export default function SettingsPage() {
                             <p className="text-sm font-medium text-yellow-900">
                               Ingen container begränsning konfigurerad
                             </p>
-                            <p className="text-xs text-yellow-700 mt-1">
-                              💡 Konfigurera Azure-anslutning ovan eller sätt miljövariabler
+                            <p className="text-xs text-yellow-700 mt-1 flex items-center gap-1">
+                              <AlertCircle className="w-3 h-3" />
+                              Konfigurera Azure-anslutning ovan eller sätt miljövariabler
                             </p>
                           </>
                         )}

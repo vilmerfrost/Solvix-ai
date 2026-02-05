@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { Loader2, Info, AlertTriangle, CheckCircle2 } from "lucide-react";
 import { useToast } from "@/components/toast";
+import { RichModelSelect } from "@/components/ui/rich-select";
 
 interface ModelPreferencesData {
   defaultPdfModel: "mistral-ocr" | "claude-vision" | "gemini-vision";
@@ -33,7 +34,6 @@ export function ModelPreferences() {
       const response = await fetch("/api/user/preferences");
       if (response.ok) {
         const data = await response.json();
-        // Merge with defaults in case fields are missing
         setPreferences((prev) => ({ ...prev, ...data }));
       }
     } catch (error) {
@@ -88,15 +88,15 @@ export function ModelPreferences() {
             <label className="block text-sm font-medium text-gray-700">
               PDF & Bildanalys (OCR)
             </label>
-            <select
+            <RichModelSelect
               value={preferences.defaultPdfModel}
-              onChange={(e) => setPreferences({ ...preferences, defaultPdfModel: e.target.value as any })}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
-            >
-              <option value="mistral-ocr">Mistral OCR (Rekommenderad)</option>
-              <option value="claude-vision">Claude 3.5 Sonnet</option>
-              <option value="gemini-vision">Gemini 1.5 Pro</option>
-            </select>
+              onChange={(value) => setPreferences({ ...preferences, defaultPdfModel: value as any })}
+              options={[
+                { value: "mistral-ocr", label: "Mistral OCR", provider: "mistral", tier: "balanced", price: "~10 öre/dok", available: true },
+                { value: "claude-vision", label: "Claude 3.5 Sonnet", provider: "anthropic", tier: "premium", price: "~32 öre/dok", available: true },
+                { value: "gemini-vision", label: "Gemini 1.5 Pro", provider: "google", tier: "premium", price: "~21 öre/dok", available: true },
+              ]}
+            />
             <p className="text-xs text-gray-500">
               Används för att läsa text och struktur från PDF-filer och bilder.
             </p>
@@ -106,15 +106,15 @@ export function ModelPreferences() {
             <label className="block text-sm font-medium text-gray-700">
               Excel Extraktion
             </label>
-            <select
+            <RichModelSelect
               value={preferences.defaultExcelModel}
-              onChange={(e) => setPreferences({ ...preferences, defaultExcelModel: e.target.value as any })}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
-            >
-              <option value="gemini-flash">Gemini 2.0 Flash (Snabbast)</option>
-              <option value="claude-haiku">Claude 3 Haiku</option>
-              <option value="openai-gpt">GPT-4o Mini</option>
-            </select>
+              onChange={(value) => setPreferences({ ...preferences, defaultExcelModel: value as any })}
+              options={[
+                { value: "gemini-flash", label: "Gemini 2.0 Flash", provider: "google", tier: "fast", price: "~5 öre/dok", available: true },
+                { value: "claude-haiku", label: "Claude 3 Haiku", provider: "anthropic", tier: "fast", price: "~10 öre/dok", available: true },
+                { value: "openai-gpt", label: "GPT-4o Mini", provider: "openai", tier: "fast", price: "~18 öre/dok", available: true },
+              ]}
+            />
             <p className="text-xs text-gray-500">
               Används för att analysera och extrahera data från Excel-filer.
             </p>

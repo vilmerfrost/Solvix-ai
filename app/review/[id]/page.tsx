@@ -265,8 +265,8 @@ export default async function ReviewPage({
   // Generate AI summary
   const hasCriticalIssues = issues.some((issue: string) => issue.includes("KRITISKT"));
   const aiSummary = hasCriticalIssues
-    ? `⚠️ Dokument med ${lineItems.length} rader från ${uniqueAddresses} adresser till ${uniqueReceivers} mottagare. ${issues.filter((i: string) => i.includes("KRITISKT")).length} kritiska problem måste åtgärdas.`
-    : `✓ Dokument med ${lineItems.length} rader från ${uniqueAddresses} adresser till ${uniqueReceivers} mottagare (${Array.from(new Set(lineItems.map((i: any) => i.receiver?.value || extractedData.receiver?.value).filter(Boolean))).join(", ")}). All obligatorisk data komplett.`;
+    ? `Dokument med ${lineItems.length} rader från ${uniqueAddresses} adresser till ${uniqueReceivers} mottagare. ${issues.filter((i: string) => i.includes("KRITISKT")).length} kritiska problem måste åtgärdas.`
+    : `Dokument med ${lineItems.length} rader från ${uniqueAddresses} adresser till ${uniqueReceivers} mottagare (${Array.from(new Set(lineItems.map((i: any) => i.receiver?.value || extractedData.receiver?.value).filter(Boolean))).join(", ")}). All obligatorisk data komplett.`;
 
   // Parse issues to find rows to highlight
   const highlightedRows = new Set<number>();
@@ -352,12 +352,12 @@ export default async function ReviewPage({
       <div className="max-w-7xl mx-auto px-4 sm:px-6 py-8">
         {/* AI SUMMARY */}
         <div className={`mb-6 p-4 rounded-xl border ${
-          aiSummary.startsWith('✓') 
+          !hasCriticalIssues 
             ? 'bg-[var(--color-success-bg)] border-[var(--color-success-border)]' 
             : 'bg-[var(--color-warning-bg)] border-[var(--color-warning-border)]'
         }`}>
           <div className="flex items-start gap-3">
-            {aiSummary.startsWith('✓') ? (
+            {!hasCriticalIssues ? (
               <CheckCircle className="w-5 h-5 text-[var(--color-success)] mt-0.5 flex-shrink-0" />
             ) : (
               <AlertCircle className="w-5 h-5 text-[var(--color-warning)] mt-0.5 flex-shrink-0" />

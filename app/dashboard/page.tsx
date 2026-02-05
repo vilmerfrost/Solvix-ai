@@ -209,11 +209,13 @@ export default async function Dashboard({
   const verificationRate = processedDocsCount > 0 ? (verifiedCount / processedDocsCount) * 100 : 0;
   
   const totalConfidence = documents?.reduce((sum, d) => {
-    const conf = d.extracted_data?._validation?.confidence || (d.extracted_data?._validation?.completeness ? d.extracted_data?._validation?.completeness / 100 : 0);
+    let conf = d.extracted_data?._validation?.confidence || (d.extracted_data?._validation?.completeness ? d.extracted_data?._validation?.completeness / 100 : 0);
+    // Normalize to 0-1 range if it appears to be 0-100
+    if (conf > 1) conf = conf / 100;
     return sum + (conf || 0);
   }, 0) || 0;
   
-  const avgConfidence = processedDocsCount > 0 ? (totalConfidence / processedDocsCount) * 100 : 0;
+  const avgConfidence = processedDocsCount > 0 ? Math.min((totalConfidence / processedDocsCount) * 100, 100) : 0;
 
   return (
     <div className="min-h-screen bg-[var(--color-bg)]">
@@ -467,9 +469,25 @@ export default async function Dashboard({
               <div>
                 <p className="text-xs text-stone-500 font-medium uppercase tracking-wide">Aktiva Modeller</p>
                 <div className="flex -space-x-2 mt-2">
-                  <div className="w-8 h-8 rounded-full bg-blue-100 border-2 border-white flex items-center justify-center text-xs font-bold text-blue-700" title="Gemini">G</div>
-                  <div className="w-8 h-8 rounded-full bg-green-100 border-2 border-white flex items-center justify-center text-xs font-bold text-green-700" title="OpenAI">O</div>
-                  <div className="w-8 h-8 rounded-full bg-orange-100 border-2 border-white flex items-center justify-center text-xs font-bold text-orange-700" title="Anthropic">A</div>
+                  <div className="w-8 h-8 rounded-full bg-white border-2 border-white shadow-sm flex items-center justify-center p-1.5" title="Gemini">
+                    <svg viewBox="0 0 24 24" className="w-full h-full" fill="currentColor">
+                      <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4" />
+                      <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853" />
+                      <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05" />
+                      <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335" />
+                    </svg>
+                  </div>
+                  <div className="w-8 h-8 rounded-full bg-green-50 border-2 border-white shadow-sm flex items-center justify-center p-1.5" title="OpenAI">
+                    <svg viewBox="0 0 24 24" className="w-full h-full text-green-700" fill="currentColor">
+                      <path d="M22.2819 9.8211a5.9847 5.9847 0 0 0-.5157-4.9108 6.0462 6.0462 0 0 0-6.5098-2.9A6.0651 6.0651 0 0 0 4.9807 4.1818a5.9847 5.9847 0 0 0-3.9977 2.9 6.0462 6.0462 0 0 0 .7427 7.0966 5.98 5.98 0 0 0 .511 4.9107 6.051 6.051 0 0 0 6.5146 2.9001A5.9847 5.9847 0 0 0 13.2599 24a6.0557 6.0557 0 0 0 5.7718-4.2058 5.9894 5.9894 0 0 0 3.9977-2.9001 6.0557 6.0557 0 0 0-.7475-7.0729zm-9.022 12.6081a4.4755 4.4755 0 0 1-2.8764-1.0408l.1419-.0804 4.7783-2.7582a.7948.7948 0 0 0 .3927-.6813v-6.7369l2.02 1.1686a.071.071 0 0 1 .038.052v5.5826a4.504 4.504 0 0 1-4.4945 4.4944zm-9.6607-4.1254a4.4708 4.4708 0 0 1-.5346-3.0137l.142.0852 4.783 2.7582a.7712.7712 0 0 0 .7806 0l5.8428-3.3685v2.3324a.0804.0804 0 0 1-.0332.0615L9.74 19.9502a4.4992 4.4992 0 0 1-6.1408-1.6464z" />
+                    </svg>
+                  </div>
+                  <div className="w-8 h-8 rounded-full bg-orange-50 border-2 border-white shadow-sm flex items-center justify-center p-1.5" title="Anthropic">
+                    <svg viewBox="0 0 24 24" className="w-full h-full text-orange-700" fill="currentColor">
+                      <path d="M17.4224 4.37895C17.4876 4.26789 17.4876 4.12579 17.4224 4.01474L16.223 1.96842C16.1627 1.86579 16.0512 1.8 15.9351 1.8H13.5366C13.4205 1.8 13.309 1.86579 13.2486 1.96842L12.0492 4.01474C11.9841 4.12579 11.9841 4.26789 12.0492 4.37895L13.2486 6.42526C13.309 6.52789 13.4205 6.59368 13.5366 6.59368H15.9351C16.0512 6.59368 16.1627 6.52789 16.223 6.42526L17.4224 4.37895Z" />
+                      <path d="M21.2329 10.8789C21.2981 10.7679 21.2981 10.6258 21.2329 10.5147L20.0336 8.46842C19.9733 8.36579 19.8617 8.3 19.7457 8.3H17.3472C17.2311 8.3 17.1196 8.36579 17.0592 8.46842L15.8599 10.5147C15.7947 10.6258 15.7947 10.7679 15.8599 10.8789L17.0592 12.9253C17.1196 13.0279 17.2311 13.0937 17.3472 13.0937H19.7457C19.8617 13.0937 19.9733 13.0279 20.0336 12.9253L21.2329 10.8789Z" />
+                    </svg>
+                  </div>
                 </div>
               </div>
             </div>
@@ -490,21 +508,10 @@ export default async function Dashboard({
             </div>
 
             {needsReviewDocs.length === 0 ? (
-              <div className="bg-white rounded-lg border-2 border-dashed border-yellow-300 p-16 text-center">
-                <div className="inline-flex items-center justify-center w-16 h-16 bg-yellow-50 rounded-full mb-4">
-                  <FileText className="w-8 h-8 text-yellow-600" />
-                </div>
-                <h3 className="text-xl font-semibold text-stone-900 mb-2">
-                  {config.language === 'sv' ? 'Inga dokument behöver granskning' : 
-                   config.language === 'en' ? 'No documents need review' :
-                   config.language === 'no' ? 'Ingen dokumenter trenger gjennomgang' :
-                   'Ei tarkistettavia asiakirjoja'}
-                </h3>
-                <p className="text-stone-600">
-                  {config.language === 'sv' ? 'Alla dokument är granskade eller väntar på bearbetning.' : 
-                   config.language === 'en' ? 'All documents are reviewed or awaiting processing.' :
-                   config.language === 'no' ? 'Alle dokumenter er gjennomgått eller venter på behandling.' :
-                   'Kaikki asiakirjat on tarkistettu tai odottavat käsittelyä.'}
+              <div className="bg-stone-50 rounded-lg border border-stone-200 p-4 text-center">
+                <p className="text-stone-500 text-sm flex items-center justify-center gap-2">
+                  <CheckCircle2 className="w-4 h-4 text-green-500" />
+                  {config.language === 'sv' ? 'Alla dokument är granskade.' : 'All documents reviewed.'}
                 </p>
               </div>
             ) : (
@@ -536,8 +543,15 @@ export default async function Dashboard({
                             className="font-medium text-stone-900 text-sm truncate mb-1"
                             title={doc.filename}
                           >
-                            {truncateFilename(doc.filename, 30)}
+                            {/* Prefer original filename if available, otherwise show simplified filename */}
+                            {doc.metadata?.original_name || doc.metadata?.originalFileName || truncateFilename(doc.filename, 30).replace(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}[_-]?/i, '')}
                           </h3>
+                          {/* Show UUID/Full filename as caption if modified */}
+                          {(doc.metadata?.original_name || doc.metadata?.originalFileName || doc.filename.match(/^[0-9a-f]{8}-/i)) && (
+                            <p className="text-[10px] text-stone-400 font-mono truncate">
+                              {truncateFilename(doc.filename, 40)}
+                            </p>
+                          )}
                           <p className="text-xs text-stone-500" title={formatDate(doc.created_at)}>
                             <RelativeTime date={doc.created_at} />
                           </p>
@@ -716,6 +730,11 @@ export default async function Dashboard({
                 const iconColorClass = isExcel ? "text-green-600" : "text-stone-600";
                 const iconBgClass = isExcel ? "bg-green-50" : "bg-stone-100";
 
+                // Determine processing status and stall check
+                const isStalled = doc.status === 'uploaded' && (new Date().getTime() - new Date(doc.created_at).getTime() > 24 * 60 * 60 * 1000);
+                const displayStatus = isStalled ? 'error' : doc.status;
+                const statusLabel = isStalled ? (config.language === 'sv' ? 'Avstannad' : 'Stalled') : undefined;
+
                 return (
                   <div
                     key={doc.id}
@@ -726,15 +745,24 @@ export default async function Dashboard({
                       <div className="flex items-start justify-between gap-3 mb-3">
                         <div className="flex items-start gap-3 flex-1 min-w-0">
                           <div className={`flex-shrink-0 w-10 h-10 ${iconBgClass} rounded-lg flex items-center justify-center`}>
-                            <FileIcon className={`w-5 h-5 ${iconColorClass}`} />
+                            {doc.status === 'processing' ? (
+                              <div className="w-5 h-5 border-2 border-indigo-600 border-t-transparent rounded-full animate-spin" />
+                            ) : (
+                              <FileIcon className={`w-5 h-5 ${iconColorClass}`} />
+                            )}
                           </div>
                           <div className="flex-1 min-w-0">
                             <h3 
                               className="font-medium text-stone-900 text-sm truncate mb-1"
                               title={doc.filename}
                             >
-                              {truncateFilename(doc.filename, 30)}
+                              {doc.metadata?.original_name || doc.metadata?.originalFileName || truncateFilename(doc.filename, 30).replace(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}[_-]?/i, '')}
                             </h3>
+                            {(doc.metadata?.original_name || doc.metadata?.originalFileName || doc.filename.match(/^[0-9a-f]{8}-/i)) && (
+                              <p className="text-[10px] text-stone-400 font-mono truncate">
+                                {truncateFilename(doc.filename, 40)}
+                              </p>
+                            )}
                             <p className="text-xs text-stone-500" title={formatDate(doc.created_at)}>
                               <RelativeTime date={doc.created_at} />
                             </p>
@@ -742,7 +770,7 @@ export default async function Dashboard({
                         </div>
                         <div className="flex items-center gap-2">
                           {/* Status Badge */}
-                          <StatusBadge status={doc.status} showIcon={true} />
+                          <StatusBadge status={displayStatus} label={statusLabel} showIcon={true} />
                           {/* Delete Button - only show for non-exported documents */}
                           {doc.status !== 'exported' && (
                             <DeleteDocumentButton

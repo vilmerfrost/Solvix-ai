@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { Check } from "lucide-react";
 
 interface PaginatedTableProps {
   lineItems: any[];
@@ -144,8 +145,9 @@ export function PaginatedTable({ lineItems, columns, highlightedRows }: Paginate
       
       {!hasMore && lineItems.length > ROWS_PER_PAGE && (
         <div className="flex flex-col items-center gap-3 py-6">
-          <div className="text-sm text-green-600 font-medium">
-            ✓ Visar alla {lineItems.length} rader
+          <div className="text-sm text-green-600 font-medium flex items-center gap-2">
+            <Check className="w-4 h-4" />
+            Visar alla {lineItems.length} rader
           </div>
           
           <button
