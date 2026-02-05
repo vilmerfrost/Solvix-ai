@@ -119,6 +119,9 @@ export interface HallucinationIssue {
 // SETTINGS TYPES
 // ============================================================================
 
+export type DefaultPdfModel = 'mistral-ocr' | 'claude-vision' | 'gemini-vision';
+export type DefaultExcelModel = 'gemini-flash' | 'claude-haiku' | 'openai-gpt';
+
 export interface UserSettings {
   user_id: string;
   auto_approve_threshold: number;
@@ -126,6 +129,11 @@ export interface UserSettings {
   preferred_model?: string;
   custom_instructions?: string;
   known_receivers?: string[];
+  default_pdf_model?: DefaultPdfModel;
+  default_excel_model?: DefaultExcelModel;
+  enable_verification?: boolean;
+  enable_reconciliation?: boolean;
+  reconciliation_threshold?: number;
 }
 
 export type MaterialSynonyms = Record<string, string[]>;
@@ -195,7 +203,93 @@ export interface BatchProcessResult {
 // AI MODEL TYPES
 // ============================================================================
 
-export type AIProvider = 'google' | 'openai' | 'anthropic';
+export type AIProvider = 'google' | 'openai' | 'anthropic' | 'mistral' | 'openrouter';
+
+// Extended extraction result with confidence and source text
+export interface MultiModelExtractionResult {
+  success: boolean;
+  items: LineItem[];
+  confidence: number;
+  sourceText?: string;
+  model: string;
+  provider: AIProvider;
+  tokensUsed: TokenUsage;
+  cost: number;
+  processingTimeMs: number;
+  error?: string;
+}
+
+// Quality assessment result from document router
+export interface QualityAssessment {
+  documentType: 'pdf' | 'excel' | 'image' | 'unknown';
+  complexity: 'simple' | 'moderate' | 'complex';
+  recommendedRoute: 'mistral-ocr' | 'gemini-flash';
+  confidence: number;
+  reasoning: string;
+  detectedLanguage?: string;
+  estimatedRows?: number;
+  hasTabularData: boolean;
+  hasScannedContent: boolean;
+}
+
+// Verification result from Haiku
+export interface VerificationResult {
+  verified: boolean;
+  confidence: number;
+  issues: VerificationIssue[];
+  itemsVerified: number;
+  itemsFlagged: number;
+  processingTimeMs: number;
+}
+
+export interface VerificationIssue {
+  itemIndex: number;
+  field: string;
+  extractedValue: unknown;
+  issue: string;
+  severity: 'warning' | 'error';
+  suggestion?: string;
+}
+
+// Reconciliation result from Sonnet
+export interface ReconciliationResult {
+  success: boolean;
+  items: LineItem[];
+  originalConfidence: number;
+  newConfidence: number;
+  itemsReconciled: number;
+  processingTimeMs: number;
+}
+
+// Processing result from document processor
+export interface DocumentProcessingResult {
+  success: boolean;
+  items: LineItem[];
+  confidence: number;
+  verification?: VerificationResult;
+  modelPath: string;
+  log: string[];
+  runId: string;
+  totalTokens: number;
+  estimatedCostUSD: number;
+}
+
+// API Key provider type (synonym for AIProvider, kept for clarity)
+export type ApiKeyProvider = AIProvider;
+
+export interface ApiKeyRow {
+  id: string;
+  user_id: string;
+  provider: ApiKeyProvider;
+  encrypted_api_key?: string | null;
+  iv?: string | null;
+  auth_tag?: string | null;
+  key_version?: number | null;
+  key_label?: string | null;
+  last_validated_at?: string | null;
+  created_at?: string;
+  updated_at?: string;
+}
 
 export interface AIModelConfig {
   id: string;
@@ -220,6 +314,54 @@ export interface OCRAccuracy {
   digital: number;
   scanned: number;
   handwritten: number;
+}
+
+// ============================================================================
+// DATABASE ROW TYPES
+// ============================================================================
+
+export interface SettingsRow {
+  id: string;
+  user_id: string;
+  default_pdf_model: DefaultPdfModel;
+  default_excel_model: DefaultExcelModel;
+  enable_verification: boolean;
+  enable_reconciliation: boolean;
+  reconciliation_threshold: number;
+  created_at?: string;
+  updated_at?: string;
+}
+
+export interface ExtractionRunRow {
+  id: string;
+  document_id: string;
+  user_id: string;
+  model_path?: string | null;
+  quality_assessment?: Record<string, unknown> | null;
+  extraction_result?: Record<string, unknown> | null;
+  reconciliation_result?: Record<string, unknown> | null;
+  verification_result?: Record<string, unknown> | null;
+  started_at: string;
+  completed_at?: string | null;
+  duration_ms?: number | null;
+  total_tokens?: number | null;
+  estimated_cost_usd?: string | null;
+  created_at: string;
+}
+
+export type ModelUsageProvider = ApiKeyProvider;
+
+export interface ModelUsageRow {
+  id: string;
+  user_id: string;
+  extraction_run_id?: string | null;
+  provider: ModelUsageProvider;
+  model: string;
+  input_tokens?: number | null;
+  output_tokens?: number | null;
+  total_tokens?: number | null;
+  estimated_cost_usd?: string | null;
+  created_at: string;
 }
 
 // ============================================================================

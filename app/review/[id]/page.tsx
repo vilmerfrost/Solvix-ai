@@ -10,6 +10,7 @@ import {
   Save,
   ArrowRight
 } from "lucide-react";
+import { ExtractionRunViewer } from "@/components/extraction-run-viewer";
 import { ReverifyButton } from "@/components/reverify-button";
 import { ExcelViewer } from "@/components/excel-viewer";
 import { ReviewForm } from "@/components/review-form";
@@ -267,6 +268,16 @@ export default async function ReviewPage({
     ? `⚠️ Dokument med ${lineItems.length} rader från ${uniqueAddresses} adresser till ${uniqueReceivers} mottagare. ${issues.filter((i: string) => i.includes("KRITISKT")).length} kritiska problem måste åtgärdas.`
     : `✓ Dokument med ${lineItems.length} rader från ${uniqueAddresses} adresser till ${uniqueReceivers} mottagare (${Array.from(new Set(lineItems.map((i: any) => i.receiver?.value || extractedData.receiver?.value).filter(Boolean))).join(", ")}). All obligatorisk data komplett.`;
 
+  // Parse issues to find rows to highlight
+  const highlightedRows = new Set<number>();
+  issues.forEach(issue => {
+    const match = issue.match(/Rad (\d+)/);
+    if (match && match[1]) {
+      // Row numbers in issues are 1-based, convert to 0-based index
+      highlightedRows.add(parseInt(match[1]) - 1);
+    }
+  });
+
   return (
     <div className="min-h-screen bg-[var(--color-bg)]">
       {/* Header */}
@@ -357,6 +368,14 @@ export default async function ReviewPage({
             </div>
           </div>
         </div>
+
+        {/* EXTRACTION PIPELINE */}
+        {doc.extraction_run_id && (
+          <div className="mb-6 bg-white rounded-xl border border-gray-200 p-6">
+             <h2 className="text-lg font-semibold text-[var(--color-text-primary)] mb-4">Bearbetningshistorik</h2>
+             <ExtractionRunViewer runId={doc.extraction_run_id} />
+          </div>
+        )}
 
         {/* DOCUMENT METADATA */}
         {extractedData.documentMetadata && (
@@ -635,6 +654,7 @@ export default async function ReviewPage({
             <PaginatedTable 
               lineItems={lineItems}
               columns={allColumns}
+              highlightedRows={Array.from(highlightedRows)}
             />
           </div>
         )}

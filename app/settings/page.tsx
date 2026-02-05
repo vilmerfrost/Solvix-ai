@@ -132,6 +132,9 @@ function FolderTree({
   );
 }
 
+import { ApiKeysForm } from "@/components/settings/api-keys-form";
+import { ModelPreferences } from "@/components/settings/model-preferences";
+
 export default function SettingsPage() {
   const router = useRouter();
   const [settings, setSettings] = useState<Settings | null>(null);
@@ -868,204 +871,16 @@ export default function SettingsPage() {
                   </div>
                 </div>
 
-                {/* Hallucinationskontroll (Verification) */}
+                {/* Model Preferences */}
                 <div className="bg-white rounded-lg border border-gray-200 p-6">
-                  <div className="flex items-start gap-3 mb-4">
-                    <svg className="w-5 h-5 text-purple-600 mt-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
-                    </svg>
-                    <div className="flex-1">
-                      <h2 className="text-xl font-bold text-gray-900 mb-2">
-                        Hallucinationskontroll
-                      </h2>
-                      <p className="text-sm text-gray-600">
-                        AI:n verifierar extraherade data mot originaldokumentet för att upptäcka felaktiga värden (hallucinationer).
-                      </p>
-                    </div>
-                  </div>
-
-                  {/* Enable Toggle */}
-                  <div className="mb-6">
-                    <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg border border-gray-200">
-                      <div>
-                        <p className="font-medium text-gray-900">Aktivera verifiering</p>
-                        <p className="text-sm text-gray-600">
-                          Extra LLM-anrop för att dubbelkontrollera extraherade värden
-                        </p>
-                      </div>
-                      <button
-                        onClick={() => setEnableVerification(!enableVerification)}
-                        className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
-                          enableVerification ? 'bg-purple-600' : 'bg-gray-300'
-                        }`}
-                      >
-                        <span
-                          className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
-                            enableVerification ? 'translate-x-6' : 'translate-x-1'
-                          }`}
-                        />
-                      </button>
-                    </div>
-                  </div>
-
-                  {/* Verification Threshold (only shown if enabled) */}
-                  {enableVerification && (
-                    <div className="mb-6 p-4 bg-purple-50 border border-purple-200 rounded-lg">
-                      <div className="mb-4">
-                        <div className="flex items-center justify-between mb-2">
-                          <span className="text-sm text-gray-600">Verifiera när konfidensen är under:</span>
-                          <span className="text-xl font-bold text-purple-700">{verificationThreshold}%</span>
-                        </div>
-                        
-                        <input
-                          type="range"
-                          min="50"
-                          max="100"
-                          value={verificationThreshold}
-                          onChange={(e) => setVerificationThreshold(parseInt(e.target.value))}
-                          className="w-full h-2 bg-purple-200 rounded-lg appearance-none cursor-pointer accent-purple-600"
-                        />
-                        
-                        <div className="flex justify-between mt-1">
-                          <span className="text-xs text-gray-500">Mer verifiering (50%)</span>
-                          <span className="text-xs text-gray-500">Mindre verifiering (100%)</span>
-                        </div>
-                      </div>
-                      
-                      <div className="p-3 bg-white rounded-lg border border-purple-100">
-                        <p className="text-xs text-gray-600">
-                          <strong>Hur det fungerar:</strong> Efter extraktion skickas resultatet tillbaka till AI:n 
-                          tillsammans med originaldokumentet. AI:n verifierar att varje värde (datum, adress, vikt, material) 
-                          faktiskt finns i dokumentet och inte är påhittat.
-                        </p>
-                      </div>
-                      
-                      <div className="mt-3 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
-                        <p className="text-xs text-yellow-800">
-                          <strong>⚠️ Kostnad:</strong> Verifiering använder extra API-anrop (~$0.001/chunk). 
-                          Rekommenderas för kritiska dokument eller när konfidensen är låg.
-                        </p>
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Status indicator */}
-                  <div className={`p-4 rounded-lg ${
-                    enableVerification 
-                      ? 'bg-purple-50 border border-purple-200' 
-                      : 'bg-gray-50 border border-gray-200'
-                  }`}>
-                    <div className="flex items-center gap-2">
-                      {enableVerification ? (
-                        <>
-                          <svg className="w-5 h-5 text-purple-700" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
-                          </svg>
-                          <p className="text-sm font-medium text-purple-700">
-                            Hallucinationskontroll aktiv
-                          </p>
-                        </>
-                      ) : (
-                        <>
-                          <svg className="w-5 h-5 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 12H4" />
-                          </svg>
-                          <p className="text-sm font-medium text-gray-600">
-                            Hallucinationskontroll avstängd
-                          </p>
-                        </>
-                      )}
-                    </div>
-                    {enableVerification && (
-                      <p className="text-xs text-purple-600 mt-2">
-                        Extraktioner med under {verificationThreshold}% konfidens verifieras automatiskt mot källdokumentet
-                      </p>
-                    )}
-                  </div>
-
-                  <button
-                    onClick={saveVerificationSettings}
-                    disabled={saving}
-                    className="w-full mt-4 py-2.5 bg-purple-600 hover:bg-purple-700 text-white rounded-lg font-medium transition-colors disabled:opacity-50"
-                  >
-                    {saving ? "Sparar..." : "Spara verifieringsinställningar"}
-                  </button>
+                  <h2 className="text-xl font-bold text-gray-900 mb-6">Modellinställningar & Kvalitet</h2>
+                  <ModelPreferences />
                 </div>
 
-                {/* API Keys & Model Selection */}
+                {/* API Keys */}
                 <div className="bg-white rounded-lg border border-gray-200 p-6">
-                  <div className="flex items-start gap-3 mb-4">
-                    <Bot className="w-5 h-5 text-blue-600 mt-1" />
-                    <div className="flex-1">
-                      <h2 className="text-xl font-bold text-gray-900 mb-2">
-                        AI-modeller & API-nycklar
-                      </h2>
-                      <p className="text-sm text-gray-600">
-                        Välj vilken AI-modell som ska användas för dokumentextraktion och hantera dina API-nycklar.
-                      </p>
-                    </div>
-                  </div>
-
-                  <div className="space-y-4">
-                    {/* Model Selection Info */}
-                    <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
-                      <div className="flex items-center gap-2 text-blue-700 mb-2">
-                        <Zap className="w-4 h-4" />
-                        <p className="text-sm font-medium">Multi-Model OCR</p>
-                      </div>
-                      <p className="text-xs text-blue-600">
-                        Välj mellan Google Gemini 3, OpenAI GPT-5.2 eller Anthropic Claude 4.5 för att extrahera data från dina dokument. 
-                        Varje modell har olika styrkor - Gemini rekommenderas för digitala PDFer, GPT-5.2 för handskrivna dokument.
-                      </p>
-                    </div>
-
-                    {/* Quick Actions */}
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                      <Link
-                        href="/settings/api-keys"
-                        className="flex items-center justify-between p-4 bg-gray-50 hover:bg-gray-100 border border-gray-200 rounded-lg transition-colors"
-                      >
-                        <div className="flex items-center gap-3">
-                          <Key className="w-5 h-5 text-gray-600" />
-                          <div>
-                            <p className="font-medium text-gray-900">API-nycklar</p>
-                            <p className="text-xs text-gray-500">Lägg till dina AI-leverantörsnycklar</p>
-                          </div>
-                        </div>
-                        <ExternalLink className="w-4 h-4 text-gray-400" />
-                      </Link>
-
-                      <Link
-                        href="/dashboard"
-                        className="flex items-center justify-between p-4 bg-gray-50 hover:bg-gray-100 border border-gray-200 rounded-lg transition-colors"
-                      >
-                        <div className="flex items-center gap-3">
-                          <Bot className="w-5 h-5 text-gray-600" />
-                          <div>
-                            <p className="font-medium text-gray-900">Välj modell</p>
-                            <p className="text-xs text-gray-500">Välj modell vid bearbetning</p>
-                          </div>
-                        </div>
-                        <ExternalLink className="w-4 h-4 text-gray-400" />
-                      </Link>
-                    </div>
-
-                    {/* Provider Status */}
-                    <div className="p-4 bg-gray-50 border border-gray-200 rounded-lg">
-                      <p className="text-xs text-gray-500 mb-2">Tillgängliga leverantörer</p>
-                      <div className="flex items-center gap-4">
-                        <span className="flex items-center gap-1 text-sm">
-                          <span className="text-lg">🔷</span> Google Gemini
-                        </span>
-                        <span className="flex items-center gap-1 text-sm">
-                          <span className="text-lg">🟢</span> OpenAI
-                        </span>
-                        <span className="flex items-center gap-1 text-sm">
-                          <span className="text-lg">🟠</span> Anthropic
-                        </span>
-                      </div>
-                    </div>
-                  </div>
+                  <h2 className="text-xl font-bold text-gray-900 mb-6">API-nycklar & Leverantörer</h2>
+                  <ApiKeysForm />
                 </div>
               </div>
             )}

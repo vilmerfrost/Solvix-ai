@@ -1,7 +1,7 @@
 import { createServiceRoleClient } from "@/lib/supabase";
 import { requireAuth } from "@/lib/auth";
 import Link from "next/link";
-import { FileText, CheckCircle2, AlertCircle, Activity, RefreshCw, ArrowLeft, Download, Settings, Home, Upload, FileSpreadsheet } from "lucide-react";
+import { FileText, CheckCircle2, AlertCircle, Activity, RefreshCw, ArrowLeft, Download, Settings, Home, Upload, FileSpreadsheet, Shield, Brain, Bot } from "lucide-react";
 import { StatusBadge } from "@/components/ui";
 import { AutoFetchButton } from "@/components/auto-fetch-button";
 import { ResetDocumentsButton } from "@/components/reset-documents-button";
@@ -197,6 +197,23 @@ export default async function Dashboard({
         .reduce((sum, d) => sum + (d.extracted_data._validation.completeness || 0), 0) / 
         documents.filter(d => d.extracted_data?._validation?.completeness).length
     : 0;
+
+  // Calculate advanced stats for AI Pipeline
+  const processedDocsCount = documents?.filter(d => d.status === 'approved' || d.status === 'exported' || d.status === 'needs_review').length || 0;
+  
+  const verifiedCount = documents?.filter(d => {
+    const issues = d.extracted_data?._validation?.issues || [];
+    return (d.status === 'approved' || d.status === 'exported' || d.status === 'needs_review') && issues.length === 0;
+  }).length || 0;
+  
+  const verificationRate = processedDocsCount > 0 ? (verifiedCount / processedDocsCount) * 100 : 0;
+  
+  const totalConfidence = documents?.reduce((sum, d) => {
+    const conf = d.extracted_data?._validation?.confidence || (d.extracted_data?._validation?.completeness ? d.extracted_data?._validation?.completeness / 100 : 0);
+    return sum + (conf || 0);
+  }, 0) || 0;
+  
+  const avgConfidence = processedDocsCount > 0 ? (totalConfidence / processedDocsCount) * 100 : 0;
 
   return (
     <div className="min-h-screen bg-[var(--color-bg)]">
@@ -413,6 +430,51 @@ export default async function Dashboard({
             </p>
           </div>
         </div>
+
+        {/* Quality Metrics */}
+        {processedDocsCount > 0 && (
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+            <div className="bg-white rounded-lg border border-stone-200 p-4 flex items-center gap-4 shadow-sm">
+              <div className="p-3 bg-purple-50 rounded-full text-purple-600">
+                <Shield className="w-6 h-6" />
+              </div>
+              <div>
+                <p className="text-xs text-stone-500 font-medium uppercase tracking-wide">Verifieringsgrad</p>
+                <div className="flex items-baseline gap-2">
+                  <span className="text-2xl font-bold text-stone-900">{verificationRate.toFixed(0)}%</span>
+                  <span className="text-xs text-stone-400">felfria</span>
+                </div>
+              </div>
+            </div>
+            
+            <div className="bg-white rounded-lg border border-stone-200 p-4 flex items-center gap-4 shadow-sm">
+              <div className="p-3 bg-blue-50 rounded-full text-blue-600">
+                <Brain className="w-6 h-6" />
+              </div>
+              <div>
+                <p className="text-xs text-stone-500 font-medium uppercase tracking-wide">Snittkonfidens</p>
+                <div className="flex items-baseline gap-2">
+                  <span className="text-2xl font-bold text-stone-900">{avgConfidence.toFixed(0)}%</span>
+                  <span className="text-xs text-stone-400">säkerhet</span>
+                </div>
+              </div>
+            </div>
+
+            <div className="bg-white rounded-lg border border-stone-200 p-4 flex items-center gap-4 shadow-sm">
+              <div className="p-3 bg-indigo-50 rounded-full text-indigo-600">
+                <Bot className="w-6 h-6" />
+              </div>
+              <div>
+                <p className="text-xs text-stone-500 font-medium uppercase tracking-wide">Aktiva Modeller</p>
+                <div className="flex -space-x-2 mt-2">
+                  <div className="w-8 h-8 rounded-full bg-blue-100 border-2 border-white flex items-center justify-center text-xs font-bold text-blue-700" title="Gemini">G</div>
+                  <div className="w-8 h-8 rounded-full bg-green-100 border-2 border-white flex items-center justify-center text-xs font-bold text-green-700" title="OpenAI">O</div>
+                  <div className="w-8 h-8 rounded-full bg-orange-100 border-2 border-white flex items-center justify-center text-xs font-bold text-orange-700" title="Anthropic">A</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* PRIORITY: Documents Needing Review - SHOW FIRST */}
         {activeTab === "active" && (!statusFilter || statusFilter === 'needs_review') && (

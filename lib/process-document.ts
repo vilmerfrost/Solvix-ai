@@ -3,11 +3,16 @@
  * Can be called directly from any route without HTTP requests
  * Supports both Excel and PDF files with model selection
  * 
- * PDF extraction now routes through the extraction router,
- * supporting all providers (Gemini, GPT, Claude) based on user's selection.
+ * NEW: Multi-model extraction pipeline with:
+ * - Quality Assessment (Gemini Flash)
+ * - PDF extraction (Mistral OCR → Mistral Large)
+ * - Excel extraction (Gemini Flash)
+ * - Reconciliation (Claude Sonnet) when confidence < 80%
+ * - Verification (Claude Haiku) - ALWAYS ON
  */
 
 import { createServiceRoleClient } from "@/lib/supabase";
+import { processDocumentMultiModel } from "@/lib/document-processor";
 import { extractAdaptive } from "@/lib/adaptive-extraction";
 import { extractWithRetryAndFallback, getUserPreferredModel } from "@/lib/extraction/router";
 import { ExtractionRequest } from "@/lib/extraction/types";
@@ -61,6 +66,8 @@ export interface ProcessResult {
 export interface ProcessOptions {
   modelId?: string;
   customInstructions?: string;
+  /** Use new multi-model pipeline (Mistral OCR + Gemini + Haiku verification) */
+  useMultiModelPipeline?: boolean;
 }
 
 /**
@@ -253,7 +260,65 @@ export async function processDocument(
     
     let extractedData: ExtractedDocumentData;
     
-    if (isExcel) {
+    // NEW: Use multi-model pipeline if enabled
+    if (options.useMultiModelPipeline) {
+      console.log(`   🚀 Using new multi-model extraction pipeline`);
+      
+      const multiModelResult = await processDocumentMultiModel(
+        Buffer.from(arrayBuffer),
+        doc.filename,
+        doc.id,
+        doc.user_id,
+        settings as UserSettings
+      );
+      
+      if (!multiModelResult.success) {
+        throw new Error(multiModelResult.log.join('\n') || "Multi-model extraction failed");
+      }
+      
+      // Transform result to ExtractedDocumentData format
+      const totalWeight = multiModelResult.items.reduce((sum, item) => sum + (item.weightKg || 0), 0);
+      const uniqueAddresses = new Set(multiModelResult.items.map(item => item.location)).size;
+      const uniqueMaterials = new Set(multiModelResult.items.map(item => item.material)).size;
+      const uniqueReceivers = new Set(multiModelResult.items.map(item => item.receiver)).size;
+      
+      extractedData = {
+        lineItems: multiModelResult.items,
+        metadata: {
+          totalRows: multiModelResult.items.length,
+          extractedRows: multiModelResult.items.length,
+          processedRows: multiModelResult.items.length,
+          model: multiModelResult.modelPath,
+          provider: 'multi-model',
+          tokensUsed: { input: multiModelResult.totalTokens, output: 0 },
+          cost: multiModelResult.estimatedCostUSD,
+          confidence: multiModelResult.confidence,
+        },
+        totalWeightKg: totalWeight,
+        totalCostSEK: multiModelResult.estimatedCostUSD * 10.5, // USD to SEK
+        documentType: "waste_report",
+        uniqueAddresses,
+        uniqueReceivers,
+        uniqueMaterials,
+        _validation: {
+          completeness: multiModelResult.confidence * 100,
+          confidence: multiModelResult.confidence * 100,
+          issues: multiModelResult.verification?.issues.map(i => i.issue) || [],
+        },
+        _verification: multiModelResult.verification ? {
+          verified: multiModelResult.verification.verified,
+          verificationTime: multiModelResult.verification.processingTimeMs,
+          hallucinations: multiModelResult.verification.issues.map(i => ({
+            rowIndex: i.itemIndex,
+            field: i.field,
+            extracted: i.extractedValue as unknown,
+            issue: i.issue,
+            severity: i.severity as 'warning' | 'error',
+          })),
+        } : undefined,
+        _processingLog: multiModelResult.log,
+      };
+    } else if (isExcel) {
       console.log(`   📊 Excel file - using adaptive extraction`);
       
       const workbook = XLSX.read(arrayBuffer);

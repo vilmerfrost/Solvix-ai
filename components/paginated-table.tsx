@@ -5,9 +5,10 @@ import { useState } from "react";
 interface PaginatedTableProps {
   lineItems: any[];
   columns: string[];
+  highlightedRows?: number[];
 }
 
-export function PaginatedTable({ lineItems, columns }: PaginatedTableProps) {
+export function PaginatedTable({ lineItems, columns, highlightedRows }: PaginatedTableProps) {
   const [displayCount, setDisplayCount] = useState(50);
   const ROWS_PER_PAGE = 50;
   
@@ -71,9 +72,10 @@ export function PaginatedTable({ lineItems, columns }: PaginatedTableProps) {
               {visibleRows.map((row, idx) => {
                 const value = getValue(row, columns[0]); // Check first column for structure
                 const isWrapped = value && typeof value === 'object' && 'value' in value;
+                const isHighlighted = highlightedRows?.includes(idx);
                 
                 return (
-                  <tr key={idx} className="hover:bg-gray-50">
+                  <tr key={idx} className={`hover:bg-gray-50 ${isHighlighted ? "bg-yellow-50 border-l-4 border-l-yellow-400" : ""}`}>
                     <td className="px-4 py-3 text-sm text-gray-500">{idx + 1}</td>
                     {columns.map(col => {
                       const field = row[col];
