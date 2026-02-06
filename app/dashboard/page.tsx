@@ -1,5 +1,6 @@
 import { createServiceRoleClient } from "@/lib/supabase";
 import { requireAuth } from "@/lib/auth";
+import { redirect } from "next/navigation";
 import Link from "next/link";
 import { FileText, CheckCircle2, AlertCircle, Activity, RefreshCw, ArrowLeft, Download, Settings, Home, Upload, FileSpreadsheet, Shield, Brain, Bot } from "lucide-react";
 import { StatusBadge } from "@/components/ui";
@@ -31,6 +32,22 @@ export default async function Dashboard({
   const userId = user.id;
   
   const supabase = createServiceRoleClient();
+  
+  // Check if user has completed onboarding + get feature flags
+  const { data: userSettings } = await supabase
+    .from("settings")
+    .select("onboarding_complete, industry, features_enabled")
+    .eq("user_id", userId)
+    .single();
+  
+  // Redirect to onboarding if not complete (skip for legacy 'default' user)
+  if (userId !== 'default' && (!userSettings?.onboarding_complete || !userSettings?.industry)) {
+    redirect("/onboarding");
+  }
+  
+  const userFeatures = (userSettings?.features_enabled as Record<string, boolean>) || {};
+  const showAzure = userFeatures.azure_integration ?? false;
+  
   const params = await searchParams;
   const activeTab = params.tab || "active";
   const statusFilter = params.status;
@@ -238,7 +255,7 @@ export default async function Dashboard({
 
             {/* Right: Action buttons */}
             <div className="flex items-center gap-3">
-              {activeTab === "active" && approvedDocs.length > 0 && (
+              {showAzure && activeTab === "active" && approvedDocs.length > 0 && (
                 <ExportToAzureButton 
                   selectedDocuments={approvedDocs.map(d => d.id)}
                 />
@@ -701,10 +718,15 @@ export default async function Dashboard({
                      config.language === 'en' ? 'Exported documents will appear here' :
                      config.language === 'no' ? 'Eksporterte dokumenter vises her' :
                      'Viedyt asiakirjat näkyvät täällä')
-                  : (config.language === 'sv' ? 'Börja med att synka dokument från Azure' : 
-                     config.language === 'en' ? 'Start by syncing documents from Azure' :
-                     config.language === 'no' ? 'Start med å synkronisere dokumenter fra Azure' :
-                     'Aloita synkronoimalla asiakirjat Azuresta')}
+                  : showAzure
+                    ? (config.language === 'sv' ? 'Börja med att synka dokument från Azure' : 
+                       config.language === 'en' ? 'Start by syncing documents from Azure' :
+                       config.language === 'no' ? 'Start med å synkronisere dokumenter fra Azure' :
+                       'Aloita synkronoimalla asiakirjat Azuresta')
+                    : (config.language === 'sv' ? 'Ladda upp dokument för att komma igång' :
+                       config.language === 'en' ? 'Upload documents to get started' :
+                       config.language === 'no' ? 'Last opp dokumenter for å komme i gang' :
+                       'Lataa asiakirjoja aloittaaksesi')}
               </p>
               {activeTab === "active" && (
                 <div className="flex gap-2 mt-4">
@@ -909,7 +931,7 @@ export default async function Dashboard({
                             )}
                           </div>
                           <div className="flex gap-2">
-                            {doc.extracted_data?.azure_export_url && (
+                            {showAzure && doc.extracted_data?.azure_export_url && (
                               <a
                                 href={doc.extracted_data.azure_export_url}
                                 target="_blank"

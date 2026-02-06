@@ -118,7 +118,7 @@ export async function middleware(request: NextRequest) {
   if (!process.env.WHITELABEL_MODE) {
     const isSubscribed = await checkSubscriptionStatus(supabase, user.id);
     
-    if (!isSubscribed && !pathname.startsWith("/subscription-required") && !pathname.startsWith("/pricing") && !pathname.startsWith("/settings/billing")) {
+    if (!isSubscribed && !pathname.startsWith("/subscription-required") && !pathname.startsWith("/pricing") && !pathname.startsWith("/settings/billing") && !pathname.startsWith("/onboarding") && !pathname.startsWith("/api/onboarding")) {
       return NextResponse.redirect(new URL("/subscription-required", request.url));
     }
   }

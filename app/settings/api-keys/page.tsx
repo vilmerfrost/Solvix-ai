@@ -37,11 +37,25 @@ export default function APIKeysPage() {
   const [showKey, setShowKey] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
+  const [hasManagedKeys, setHasManagedKeys] = useState(false);
 
   // Fetch providers on load
   useEffect(() => {
     fetchProviders();
+    checkManagedKeys();
   }, []);
+
+  const checkManagedKeys = async () => {
+    try {
+      const response = await fetch("/api/user/api-keys/managed-status");
+      const data = await response.json();
+      if (data.hasManagedKeys) {
+        setHasManagedKeys(true);
+      }
+    } catch {
+      // Silently fail — managed keys check is non-critical
+    }
+  };
 
   const fetchProviders = async () => {
     try {
@@ -180,6 +194,25 @@ export default function APIKeysPage() {
       </div>
 
       <div className="max-w-4xl mx-auto px-6 py-8">
+        {/* Platform Managed Keys Banner */}
+        {hasManagedKeys && !providers.some((p) => p.hasKey) && (
+          <div className="mb-6 p-4 bg-emerald-50 border border-emerald-200 rounded-xl">
+            <div className="flex items-start gap-3">
+              <Shield className="w-5 h-5 text-emerald-600 mt-0.5 flex-shrink-0" />
+              <div>
+                <h3 className="font-medium text-emerald-900">
+                  Hanterade AI-nycklar aktiva
+                </h3>
+                <p className="text-sm text-emerald-700 mt-1">
+                  Du använder Vextras hanterade AI-nycklar. Dokument bearbetas
+                  utan att du behöver egna API-nycklar. Du kan valfritt lägga
+                  till egna nycklar nedan för full kontroll.
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Security Notice */}
         <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-8 flex items-start gap-3">
           <Shield className="w-5 h-5 text-blue-600 mt-0.5 flex-shrink-0" />

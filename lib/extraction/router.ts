@@ -10,9 +10,11 @@ import { ExtractionRequest, ExtractionResult, ExtractionAdapter } from "./types"
 import { createGeminiAdapter } from "./adapters/gemini";
 import { createOpenAIAdapter } from "./adapters/openai";
 import { createAnthropicAdapter } from "./adapters/anthropic";
+import { createMistralAdapter } from "./adapters/mistral";
 
 /**
  * Get the user's preferred model from settings
+ * Falls back to platform default when user has no preference
  */
 export async function getUserPreferredModel(userId: string): Promise<string> {
   const supabase = createServiceRoleClient();
@@ -23,7 +25,13 @@ export async function getUserPreferredModel(userId: string): Promise<string> {
     .eq("user_id", userId)
     .single();
   
-  return settings?.preferred_model || 'gemini-3-flash';
+  if (settings?.preferred_model) {
+    return settings.preferred_model;
+  }
+  
+  // Fall back to platform default model
+  const { getPlatformDefaultModel } = await import("@/lib/platform-keys");
+  return getPlatformDefaultModel();
 }
 
 /**
@@ -43,8 +51,10 @@ export async function getUserCustomInstructions(userId: string): Promise<string 
 
 /**
  * Get the decrypted API key for a provider
+ * Priority: 1) User's own BYOK key, 2) Platform managed key (if eligible)
  */
 export async function getAPIKeyForProvider(provider: AIProvider, userId: string): Promise<string | null> {
+  // Priority 1: Check for user's own BYOK key
   const supabase = createServiceRoleClient();
   
   const { data: keyData } = await supabase
@@ -54,15 +64,26 @@ export async function getAPIKeyForProvider(provider: AIProvider, userId: string)
     .eq("provider", provider)
     .single();
   
-  if (!keyData || !keyData.is_valid) {
-    return null;
+  if (keyData?.is_valid && keyData.encrypted_key) {
+    try {
+      const decrypted = decryptAPIKey(keyData.encrypted_key);
+      if (decrypted) return decrypted;
+    } catch {
+      // Fall through to platform key
+    }
   }
   
-  try {
-    return decryptAPIKey(keyData.encrypted_key);
-  } catch {
-    return null;
+  // Priority 2: Check for platform managed key
+  const { hasPlatformKey, getPlatformKey, isEligibleForManagedKeys } = await import("@/lib/platform-keys");
+  
+  if (hasPlatformKey(provider)) {
+    const eligible = await isEligibleForManagedKeys(userId);
+    if (eligible) {
+      return getPlatformKey(provider);
+    }
   }
+  
+  return null;
 }
 
 /**
@@ -77,17 +98,34 @@ export async function getAPIKeyForModel(modelId: string, userId: string): Promis
 
 /**
  * Check which providers have valid API keys configured
+ * Includes both BYOK keys and platform-managed keys
  */
 export async function getConfiguredProviders(userId: string): Promise<AIProvider[]> {
   const supabase = createServiceRoleClient();
   
+  // Get user's own keys
   const { data: keys } = await supabase
     .from("user_api_keys")
     .select("provider")
     .eq("user_id", userId)
     .eq("is_valid", true);
   
-  return (keys || []).map(k => k.provider as AIProvider);
+  const userProviders = (keys || []).map(k => k.provider as AIProvider);
+  
+  // Add platform-managed providers
+  const { hasPlatformKey, isEligibleForManagedKeys } = await import("@/lib/platform-keys");
+  const eligible = await isEligibleForManagedKeys(userId);
+  
+  if (eligible) {
+    const allProviders: AIProvider[] = ['google', 'openai', 'anthropic', 'mistral'];
+    for (const provider of allProviders) {
+      if (hasPlatformKey(provider) && !userProviders.includes(provider)) {
+        userProviders.push(provider);
+      }
+    }
+  }
+  
+  return userProviders;
 }
 
 /**
@@ -119,6 +157,8 @@ function createAdapter(modelId: string): ExtractionAdapter {
       return createOpenAIAdapter(modelId);
     case 'anthropic':
       return createAnthropicAdapter(modelId);
+    case 'mistral':
+      return createMistralAdapter(modelId);
     default:
       throw new Error(`Unsupported provider: ${model.provider}`);
   }
@@ -173,7 +213,22 @@ export async function extractWithModel(
   // Create the appropriate adapter and extract
   try {
     const adapter = createAdapter(actualModelId);
-    return await adapter.extract(request, apiKey);
+    const result = await adapter.extract(request, apiKey);
+    
+    // Track platform key usage if this was a managed key
+    const { getPlatformKey, trackPlatformKeyUsage } = await import("@/lib/platform-keys");
+    const platformKey = getPlatformKey(model.provider);
+    if (platformKey && apiKey === platformKey && result.success) {
+      await trackPlatformKeyUsage(
+        userId,
+        model.provider,
+        actualModelId,
+        result.tokensUsed,
+        result.cost
+      ).catch(err => console.error('[PLATFORM KEY] Tracking failed:', err));
+    }
+    
+    return result;
   } catch (error) {
     return {
       success: false,
@@ -183,7 +238,7 @@ export async function extractWithModel(
       tokensUsed: { input: 0, output: 0 },
       cost: 0,
       processingTimeMs: 0,
-      error: error instanceof Error ? (error instanceof Error ? error.message : String(error)) : 'Extraction failed'
+      error: error instanceof Error ? error.message : 'Extraction failed'
     };
   }
 }
@@ -318,9 +373,10 @@ export function getErrorMessage(errorType: ErrorDetail['errorType'], provider: s
  * Model fallback order based on cost/speed tradeoffs
  */
 const FALLBACK_ORDER: Record<AIProvider, AIProvider[]> = {
-  'anthropic': ['google', 'openai'],
-  'google': ['anthropic', 'openai'],
-  'openai': ['google', 'anthropic'],
+  'anthropic': ['google', 'mistral', 'openai'],
+  'google': ['mistral', 'anthropic', 'openai'],
+  'openai': ['google', 'mistral', 'anthropic'],
+  'mistral': ['google', 'anthropic', 'openai'],
 };
 
 /**
@@ -331,6 +387,7 @@ function getDefaultModelForProvider(provider: AIProvider): string {
     case 'google': return 'gemini-3-flash';
     case 'anthropic': return 'claude-haiku-4.5';
     case 'openai': return 'gpt-5.2-chat';
+    case 'mistral': return 'pixtral-large';
     default: return 'gemini-3-flash';
   }
 }

@@ -38,3 +38,4 @@ export {
 export { createGeminiAdapter } from './adapters/gemini';
 export { createOpenAIAdapter } from './adapters/openai';
 export { createAnthropicAdapter } from './adapters/anthropic';
+export { createMistralAdapter } from './adapters/mistral';

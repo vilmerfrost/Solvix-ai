@@ -6,7 +6,7 @@
  * Prices in SEK (1 USD ≈ 10.5 SEK)
  */
 
-export type AIProvider = 'google' | 'openai' | 'anthropic';
+export type AIProvider = 'google' | 'openai' | 'anthropic' | 'mistral';
 
 // Conversion rate
 const USD_TO_SEK = 10.5;
@@ -85,6 +85,14 @@ export const PROVIDERS: Record<AIProvider, ProviderInfo> = {
     apiKeyUrl: 'https://console.anthropic.com/settings/keys',
     apiKeyPrefix: 'sk-ant-',
     description: 'Claude models - great for complex reasoning'
+  },
+  mistral: {
+    id: 'mistral',
+    name: 'Mistral AI',
+    logo: '🔶',
+    apiKeyUrl: 'https://console.mistral.ai/api-keys',
+    apiKeyPrefix: '',
+    description: 'Mistral models - excellent OCR with Pixtral vision'
   }
 };
 
@@ -338,7 +346,74 @@ export const AVAILABLE_MODELS: AIModelWithTier[] = [
     recommended: false,
     supportsVision: true,
     ocrAccuracy: { digital: 92, scanned: 78, handwritten: 90 }
-  }
+  },
+
+  // ============================================
+  // MISTRAL MODELS
+  // ============================================
+  {
+    id: 'pixtral-large',
+    name: 'Pixtral Large',
+    provider: 'mistral',
+    apiModelId: 'pixtral-large-latest',
+    tier: 'balanced',
+    tierLabel: '⚖️ Balanserad',
+    speedRating: 3,
+    qualityRating: 5,
+    description: 'Mistrals flaggskepps-visionmodell. Utmärkt OCR för PDF-dokument.',
+    strengths: [
+      'Överlägsen PDF OCR',
+      'Stark dokumentförståelse',
+      'Multimodal med hög precision',
+      'Bra på komplexa tabeller'
+    ],
+    weaknesses: [
+      'Dyrare än Flash-modeller',
+      'Långsammare än Gemini Flash'
+    ],
+    pricing: {
+      inputUSD: 2,
+      outputUSD: 6,
+      inputSEK: 21,
+      outputSEK: 63
+    },
+    estimatedCostPerDoc: calcDocCost(2, 6),
+    contextWindow: 128000,
+    recommended: false,
+    supportsVision: true,
+    ocrAccuracy: { digital: 96, scanned: 90, handwritten: 80 }
+  },
+  {
+    id: 'mistral-small',
+    name: 'Mistral Small',
+    provider: 'mistral',
+    apiModelId: 'mistral-small-latest',
+    tier: 'fast',
+    tierLabel: '🚀 Snabb',
+    speedRating: 5,
+    qualityRating: 3,
+    description: 'Snabb och billig. Bra för enklare dokument och Excel-filer.',
+    strengths: [
+      'Mycket snabb',
+      'Låg kostnad',
+      'Bra för enkel text'
+    ],
+    weaknesses: [
+      'Begränsad visionkapacitet',
+      'Sämre på handskrift'
+    ],
+    pricing: {
+      inputUSD: 0.1,
+      outputUSD: 0.3,
+      inputSEK: 1.05,
+      outputSEK: 3.15
+    },
+    estimatedCostPerDoc: calcDocCost(0.1, 0.3),
+    contextWindow: 32000,
+    recommended: false,
+    supportsVision: false,
+    ocrAccuracy: { digital: 88, scanned: 70, handwritten: 55 }
+  },
 ];
 
 // Helper functions

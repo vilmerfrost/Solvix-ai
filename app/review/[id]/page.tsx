@@ -1,4 +1,6 @@
 import { createServiceRoleClient } from "@/lib/supabase";
+import { requireAuth } from "@/lib/auth";
+import { getHiddenFields } from "@/config/industries";
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import { 
@@ -28,12 +30,22 @@ export default async function ReviewPage({
 }: {
   params: Promise<{ id: string }>;
 }) {
+  const user = await requireAuth();
   const supabase = createServiceRoleClient();
   const { id } = await params;
   
   // Get tenant configuration
   const config = await getTenantConfigFromDB();
   const strings = getUIStrings(config);
+
+  // Get user's industry for column filtering
+  const { data: userSettings } = await supabase
+    .from("settings")
+    .select("industry")
+    .eq("user_id", user.id)
+    .single();
+  
+  const hiddenFields = getHiddenFields(userSettings?.industry || 'general');
 
   // Fetch document
   const { data: doc } = await supabase
@@ -212,11 +224,14 @@ export default async function ReviewPage({
   }
 
   const { mandatory, optional } = detectExistingColumns(lineItems);
-  const allColumns = [...mandatory, ...optional];
+  // Filter columns based on user's industry (hide waste-specific fields for non-waste users)
+  const filteredMandatory = mandatory.filter(col => !hiddenFields.includes(col));
+  const filteredOptional = optional.filter(col => !hiddenFields.includes(col));
+  const allColumns = [...filteredMandatory, ...filteredOptional];
 
-  // Check if columns exist for display (after optional is defined)
-  const hasCost = optional.includes("cost") || optional.includes("costSEK") || extractedData.cost?.value;
-  const hasCo2 = optional.includes("co2Saved") || optional.includes("co2");
+  // Check if columns exist for display (after filtering)
+  const hasCost = filteredOptional.includes("cost") || filteredOptional.includes("costSEK") || extractedData.cost?.value;
+  const hasCo2 = filteredOptional.includes("co2Saved") || filteredOptional.includes("co2");
 
   // Primary key validation (Adress + Mottagare + Material + Datum)
   const primaryKeys = new Map<string, number[]>();
@@ -452,7 +467,7 @@ export default async function ReviewPage({
                 Kolumner ({allColumns.length})
               </h3>
               <div className="flex flex-wrap gap-2">
-                {mandatory.map(col => (
+                {filteredMandatory.map(col => (
                   <span 
                     key={col}
                     className="px-3 py-1 bg-indigo-600 text-white text-sm rounded-full font-medium"
@@ -466,7 +481,7 @@ export default async function ReviewPage({
                      col === "receiver" ? "Mottagare" : col}
                   </span>
                 ))}
-                {optional.map(col => (
+                {filteredOptional.map(col => (
                   <span 
                     key={col}
                     className="px-3 py-1 bg-purple-100 border border-purple-300 text-purple-700 text-sm rounded-full"
@@ -701,8 +716,12 @@ export default async function ReviewPage({
                       <th className="px-4 py-3 text-left text-xs font-medium uppercase">Material</th>
                       <th className="px-4 py-3 text-left text-xs font-medium uppercase">Kvantitet</th>
                       <th className="px-4 py-3 text-left text-xs font-medium uppercase">Enhet</th>
-                      <th className="px-4 py-3 text-left text-xs font-medium uppercase">Leveransställe</th>
-                      <th className="px-4 py-3 text-left text-xs font-medium uppercase">Farligt avfall</th>
+                      {!hiddenFields.includes('receiver') && (
+                        <th className="px-4 py-3 text-left text-xs font-medium uppercase">Leveransställe</th>
+                      )}
+                      {!hiddenFields.includes('isHazardous') && (
+                        <th className="px-4 py-3 text-left text-xs font-medium uppercase">Farligt avfall</th>
+                      )}
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-gray-200">
@@ -716,14 +735,18 @@ export default async function ReviewPage({
                           {row.weightKg.toLocaleString('sv-SE', { minimumFractionDigits: 0, maximumFractionDigits: 2 })}
                         </td>
                         <td className="px-4 py-3 text-sm">{row.unit}</td>
-                        <td className="px-4 py-3 text-sm">{row.receiver}</td>
-                        <td className="px-4 py-3 text-sm">
-                          {row.isHazardous ? (
-                            <span className="px-2 py-1 bg-red-100 text-red-800 rounded text-xs font-medium">Ja</span>
-                          ) : (
-                            <span className="text-stone-500">Nej</span>
-                          )}
-                        </td>
+                        {!hiddenFields.includes('receiver') && (
+                          <td className="px-4 py-3 text-sm">{row.receiver}</td>
+                        )}
+                        {!hiddenFields.includes('isHazardous') && (
+                          <td className="px-4 py-3 text-sm">
+                            {row.isHazardous ? (
+                              <span className="px-2 py-1 bg-red-100 text-red-800 rounded text-xs font-medium">Ja</span>
+                            ) : (
+                              <span className="text-stone-500">Nej</span>
+                            )}
+                          </td>
+                        )}
                       </tr>
                     ))}
                   </tbody>

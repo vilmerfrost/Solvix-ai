@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { createBrowserClient } from "@supabase/ssr";
+import { useFeatures } from "@/lib/hooks/use-features";
 import { 
   ArrowLeft, 
   Package, 
@@ -137,6 +138,7 @@ import { ModelPreferences } from "@/components/settings/model-preferences";
 
 export default function SettingsPage() {
   const router = useRouter();
+  const { features } = useFeatures();
   const [settings, setSettings] = useState<Settings | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -616,17 +618,19 @@ export default function SettingsPage() {
           <div className="lg:col-span-1">
             <div className="bg-white rounded-lg border border-gray-200 p-4">
               <nav className="space-y-2">
-                <button
-                  onClick={() => setActiveSection("material")}
-                  className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-colors text-left ${
-                    activeSection === "material"
-                      ? "bg-blue-50 text-blue-700 border border-blue-200"
-                      : "text-gray-700 hover:bg-gray-50"
-                  }`}
-                >
-                  <Package className="w-5 h-5" />
-                  <span className="font-medium">Material & Synonymer</span>
-                </button>
+                {features.material_synonyms && (
+                  <button
+                    onClick={() => setActiveSection("material")}
+                    className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-colors text-left ${
+                      activeSection === "material"
+                        ? "bg-blue-50 text-blue-700 border border-blue-200"
+                        : "text-gray-700 hover:bg-gray-50"
+                    }`}
+                  >
+                    <Package className="w-5 h-5" />
+                    <span className="font-medium">Material & Synonymer</span>
+                  </button>
+                )}
 
                 <button
                   onClick={() => setActiveSection("ai")}
@@ -652,17 +656,19 @@ export default function SettingsPage() {
                   <span className="font-medium">Export & Rapporter</span>
                 </button>
 
-                <button
-                  onClick={() => setActiveSection("azure")}
-                  className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-colors text-left ${
-                    activeSection === "azure"
-                      ? "bg-blue-50 text-blue-700 border border-blue-200"
-                      : "text-gray-700 hover:bg-gray-50"
-                  }`}
-                >
-                  <Cloud className="w-5 h-5" />
-                  <span className="font-medium">Azure & GUIDs</span>
-                </button>
+                {features.azure_integration && (
+                  <button
+                    onClick={() => setActiveSection("azure")}
+                    className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-colors text-left ${
+                      activeSection === "azure"
+                        ? "bg-blue-50 text-blue-700 border border-blue-200"
+                        : "text-gray-700 hover:bg-gray-50"
+                    }`}
+                  >
+                    <Cloud className="w-5 h-5" />
+                    <span className="font-medium">Azure & GUIDs</span>
+                  </button>
+                )}
 
                 {/* Divider */}
                 <div className="border-t border-gray-200 my-3" />
@@ -706,7 +712,7 @@ export default function SettingsPage() {
           {/* Content Area */}
           <div className="lg:col-span-3">
             {/* Material & Synonymer Section */}
-            {activeSection === "material" && (
+            {activeSection === "material" && features.material_synonyms && (
               <div className="bg-white rounded-lg border border-gray-200 p-6">
                 <h2 className="text-xl font-bold text-gray-900 mb-2">
                   Materialbibliotek
@@ -950,7 +956,7 @@ export default function SettingsPage() {
             )}
 
             {/* Azure & GUIDs Section */}
-            {activeSection === "azure" && (
+            {activeSection === "azure" && features.azure_integration && (
               <div className="space-y-6">
                 {/* Azure Connection Management */}
                 <div className="bg-white rounded-lg border border-gray-200 p-6">

@@ -61,15 +61,17 @@ export async function POST(request: Request) {
     const { provider, apiKey } = body;
 
     // Validate provider
-    if (!provider || !['google', 'openai', 'anthropic'].includes(provider)) {
+    if (!provider || !['google', 'openai', 'anthropic', 'mistral'].includes(provider)) {
       return NextResponse.json(
         { success: false, error: "Invalid provider" },
         { status: 400 }
       );
     }
 
-    // Validate API key format
-    const formatValidation = validateKeyFormat(apiKey, provider as AIProvider);
+    // Validate API key format (mistral has no prefix validation, skip format check)
+    const formatValidation = provider === 'mistral' 
+      ? { isValid: true } as { isValid: boolean; error?: string }
+      : validateKeyFormat(apiKey, provider as 'google' | 'openai' | 'anthropic');
     if (!formatValidation.isValid) {
       return NextResponse.json(
         { success: false, error: formatValidation.error },
@@ -124,7 +126,7 @@ export async function DELETE(request: Request) {
     const { searchParams } = new URL(request.url);
     const provider = searchParams.get('provider');
 
-    if (!provider || !['google', 'openai', 'anthropic'].includes(provider)) {
+    if (!provider || !['google', 'openai', 'anthropic', 'mistral'].includes(provider)) {
       return NextResponse.json(
         { success: false, error: "Invalid provider" },
         { status: 400 }
