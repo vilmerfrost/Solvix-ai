@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Inter, Playfair_Display } from "next/font/google";
+import { Inter, Playfair_Display, Plus_Jakarta_Sans, JetBrains_Mono } from "next/font/google";
 import "./globals.css";
 import { ToastProvider } from "@/components/toast";
 import { PostHogProvider } from "@/components/posthog-provider";
@@ -9,6 +9,16 @@ const inter = Inter({ subsets: ["latin"], variable: "--font-inter" });
 const playfair = Playfair_Display({ 
   subsets: ["latin"], 
   variable: "--font-playfair"
+});
+const plusJakarta = Plus_Jakarta_Sans({
+  subsets: ["latin"],
+  variable: "--font-plus-jakarta",
+  display: "swap",
+});
+const jetbrainsMono = JetBrains_Mono({
+  subsets: ["latin"],
+  variable: "--font-jetbrains",
+  display: "swap",
 });
 
 export async function generateMetadata(): Promise<Metadata> {
@@ -36,8 +46,8 @@ export default function RootLayout({
   const htmlLang = getHtmlLang(config);
   
   return (
-    <html lang={htmlLang}>
-      <body className={`${inter.variable} ${playfair.variable} font-sans antialiased bg-stone-50 text-stone-900`}>
+    <html lang={htmlLang} className="dark">
+      <body className={`${inter.variable} ${playfair.variable} ${plusJakarta.variable} ${jetbrainsMono.variable} font-sans antialiased bg-[#0A0A0A] text-[#F5F5F5]`}>
         <PostHogProvider>
           <ToastProvider>
             {children}

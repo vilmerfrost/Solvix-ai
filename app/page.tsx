@@ -1,11 +1,25 @@
-// Server-side authentication check
-export const dynamic = "force-dynamic";
+import { Navbar } from "@/components/landing/Navbar";
+import { Hero } from "@/components/landing/Hero";
+import { SocialProof } from "@/components/landing/SocialProof";
+import { HowItWorks } from "@/components/landing/HowItWorks";
+import { BeforeAfter } from "@/components/landing/BeforeAfter";
+import { Pricing } from "@/components/landing/Pricing";
+import { FAQ } from "@/components/landing/FAQ";
+import { FinalCTA } from "@/components/landing/FinalCTA";
+import { Footer } from "@/components/landing/Footer";
 
-import { getAuthUser } from "@/lib/auth";
-import { LandingPage } from "@/components/landing-page";
-
-export default async function Home() {
-  const user = await getAuthUser();
-  // No redirect - always show landing page, but pass user state
-  return <LandingPage user={user} />;
+export default function LandingPage() {
+  return (
+    <main className="min-h-screen bg-[#0A0A0A]">
+      <Navbar />
+      <Hero />
+      <SocialProof />
+      <HowItWorks />
+      <BeforeAfter />
+      <Pricing />
+      <FAQ />
+      <FinalCTA />
+      <Footer />
+    </main>
+  );
 }

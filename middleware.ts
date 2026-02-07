@@ -29,9 +29,9 @@ const PUBLIC_EXACT_PATHS = ["/"];
 
 // Check if path starts with any public path or is an exact match
 function isPublicPath(pathname: string): boolean {
-  // Check exact matches first
+  // Check exact matches first - these are truly public
   if (PUBLIC_EXACT_PATHS.includes(pathname)) {
-    return false;
+    return true;
   }
   // Then check prefix matches
   return PUBLIC_PATHS.some(path => pathname.startsWith(path));
