@@ -38,7 +38,16 @@ function isPublicPath(pathname: string): boolean {
 }
 
 export async function middleware(request: NextRequest) {
-  const { pathname } = request.nextUrl;
+  const { pathname, searchParams } = request.nextUrl;
+
+  // SPECIAL CASE: Handle OAuth callback at root path
+  // OAuth providers sometimes redirect to /?code=... instead of /auth/callback
+  if (pathname === "/" && searchParams.has("code")) {
+    const code = searchParams.get("code");
+    const callbackUrl = new URL("/auth/callback", request.url);
+    callbackUrl.searchParams.set("code", code!);
+    return NextResponse.redirect(callbackUrl);
+  }
 
   // Skip middleware for public paths
   if (isPublicPath(pathname)) {
