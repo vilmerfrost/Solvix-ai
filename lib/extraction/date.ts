@@ -1,14 +1,5 @@
-// src/lib/extraction/date.ts
-export function parseSwedishNumber(value: unknown): number | null {
-  if (value == null) return null;
-  if (typeof value === "number" && Number.isFinite(value)) return value;
-  if (typeof value !== "string") return null;
-
-  // "185,00" -> 185.00
-  const cleaned = value.trim().replace(/\s+/g, "").replace(",", ".");
-  const n = Number(cleaned);
-  return Number.isFinite(n) ? n : null;
-}
+// Re-export enhanced Swedish number parser
+export { parseSwedishNumber } from "@/lib/swedish-formats";
 
 /**
  * Parse a period range and extract the END date

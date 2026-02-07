@@ -511,6 +511,33 @@ export default async function Dashboard({
           </div>
         )}
 
+        {/* Documents Needing Attention Callout */}
+        {activeTab === "active" && needsReviewTotal > 0 && (
+          <div className="mb-6 p-4 bg-amber-50 border border-amber-200 rounded-xl flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 bg-amber-100 rounded-lg flex items-center justify-center">
+                <AlertCircle className="w-5 h-5 text-amber-600" />
+              </div>
+              <div>
+                <p className="font-medium text-slate-900">
+                  {needsReviewTotal} dokument behöver granskning
+                </p>
+                <p className="text-sm text-slate-500">
+                  AI:n flaggade osäkra fält — klicka för att granska
+                </p>
+              </div>
+            </div>
+            {needsReviewDocs[0]?.id && (
+              <Link
+                href={`/review/${needsReviewDocs[0].id}`}
+                className="px-4 py-2 bg-amber-600 text-white text-sm font-medium rounded-lg hover:bg-amber-700 transition-colors"
+              >
+                Granska nu
+              </Link>
+            )}
+          </div>
+        )}
+
         {/* PRIORITY: Documents Needing Review - SHOW FIRST */}
         {activeTab === "active" && (!statusFilter || statusFilter === 'needs_review') && (
           <div id="needs-review-section" className="mb-8">
@@ -701,38 +728,41 @@ export default async function Dashboard({
 
           {recentDocs.length === 0 ? (
             <div className="bg-white rounded-lg border-2 border-dashed border-stone-300 p-16 text-center">
-              <div className="inline-flex items-center justify-center w-16 h-16 bg-blue-50 rounded-full mb-4">
-                <FileText className="w-8 h-8 text-indigo-600" />
-              </div>
-              <h3 className="text-xl font-semibold text-stone-900 mb-2">
-                {activeTab === "archive" 
-                  ? (config.language === 'sv' ? 'Inga arkiverade dokument ännu' : 
+              {activeTab === "archive" ? (
+                <>
+                  <div className="inline-flex items-center justify-center w-16 h-16 bg-blue-50 rounded-full mb-4">
+                    <FileText className="w-8 h-8 text-indigo-600" />
+                  </div>
+                  <h3 className="text-xl font-semibold text-stone-900 mb-2">
+                    {config.language === 'sv' ? 'Inga arkiverade dokument ännu' : 
                      config.language === 'en' ? 'No archived documents yet' :
                      config.language === 'no' ? 'Ingen arkiverte dokumenter ennå' :
-                     'Ei arkistoituja asiakirjoja vielä')
-                  : strings.noDocuments}
-              </h3>
-              <p className="text-stone-600 mb-6">
-                {activeTab === "archive"
-                  ? (config.language === 'sv' ? 'Exporterade dokument visas här' : 
+                     'Ei arkistoituja asiakirjoja vielä'}
+                  </h3>
+                  <p className="text-stone-600 mb-6">
+                    {config.language === 'sv' ? 'Exporterade dokument visas här' : 
                      config.language === 'en' ? 'Exported documents will appear here' :
                      config.language === 'no' ? 'Eksporterte dokumenter vises her' :
-                     'Viedyt asiakirjat näkyvät täällä')
-                  : showAzure
-                    ? (config.language === 'sv' ? 'Börja med att synka dokument från Azure' : 
-                       config.language === 'en' ? 'Start by syncing documents from Azure' :
-                       config.language === 'no' ? 'Start med å synkronisere dokumenter fra Azure' :
-                       'Aloita synkronoimalla asiakirjat Azuresta')
-                    : (config.language === 'sv' ? 'Ladda upp dokument för att komma igång' :
-                       config.language === 'en' ? 'Upload documents to get started' :
-                       config.language === 'no' ? 'Last opp dokumenter for å komme i gang' :
-                       'Lataa asiakirjoja aloittaaksesi')}
-              </p>
-              {activeTab === "active" && (
-                <div className="flex gap-2 mt-4">
-                  <AutoFetchButton />
-                  <ResetDocumentsButton />
-                </div>
+                     'Viedyt asiakirjat näkyvät täällä'}
+                  </p>
+                </>
+              ) : (
+                <>
+                  <div className="w-16 h-16 bg-emerald-100 rounded-2xl flex items-center justify-center mx-auto mb-6">
+                    <Upload className="w-8 h-8 text-emerald-600" />
+                  </div>
+                  <h3 className="text-xl font-semibold text-slate-900 mb-2">
+                    Inga mallar. Inga inställningar. Bara dra in din fil.
+                  </h3>
+                  <p className="text-slate-500 max-w-md mx-auto mb-8">
+                    Ladda upp en PDF, Excel eller bild — Vextra extraherar data automatiskt. 
+                    Inget att konfigurera, det funkar direkt.
+                  </p>
+                  <div className="flex gap-2 justify-center mt-4">
+                    <AutoFetchButton />
+                    <ResetDocumentsButton />
+                  </div>
+                </>
               )}
             </div>
           ) : (
@@ -904,6 +934,9 @@ export default async function Dashboard({
                       )}
                       {doc.status === 'approved' && (
                         <div className="space-y-2">
+                          <span className="text-xs text-emerald-600 font-medium block mb-1">
+                            ✓ Auto-godkänd — ingen granskning behövs
+                          </span>
                           <Link
                             href={`/review/${doc.id}`}
                             className="block w-full py-2.5 px-4 bg-white border border-stone-200 hover:border-stone-300 hover:shadow-sm text-stone-700 hover:text-stone-900 text-sm font-medium rounded-lg transition-all text-center flex items-center justify-center gap-2"

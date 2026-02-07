@@ -14,6 +14,7 @@ const PUBLIC_PATHS = [
   "/api/health",
   "/api/webhooks",
   "/api/cron",
+  "/api/inbox/webhook",
   "/terms",
   "/privacy",
   "/pricing",

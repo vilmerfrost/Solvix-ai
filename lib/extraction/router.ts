@@ -228,6 +228,25 @@ export async function extractWithModel(
       ).catch(err => console.error('[PLATFORM KEY] Tracking failed:', err));
     }
     
+    // Enrich with Swedish metadata if raw response available
+    if (result.success && result.rawResponse) {
+      try {
+        const { detectSwedishFormats } = await import("@/lib/swedish-formats");
+        const meta = detectSwedishFormats(result.rawResponse);
+        result.swedishMetadata = {
+          orgNr: meta.orgNr.length > 0 ? meta.orgNr : undefined,
+          plusgiro: meta.plusgiro.length > 0 ? meta.plusgiro : undefined,
+          bankgiro: meta.bankgiro.length > 0 ? meta.bankgiro : undefined,
+          ocrReferences: meta.ocrReferences.length > 0 ? meta.ocrReferences : undefined,
+          vatNumbers: meta.vatNumbers.length > 0 ? meta.vatNumbers : undefined,
+          vatRate: meta.vatInfo.rate,
+          vatAmount: meta.vatInfo.amount,
+        };
+      } catch (err) {
+        console.warn("[Swedish Formats] Detection failed:", err);
+      }
+    }
+    
     return result;
   } catch (error) {
     return {

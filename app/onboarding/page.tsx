@@ -70,6 +70,22 @@ export default function OnboardingPage() {
           ))}
         </div>
 
+        {/* Feature Callouts */}
+        <div className="mt-8 grid grid-cols-3 gap-4 max-w-lg mx-auto mb-10">
+          <div className="text-center">
+            <div className="text-2xl mb-1">&#x26A1;</div>
+            <p className="text-xs text-slate-400">Ingen setup</p>
+          </div>
+          <div className="text-center">
+            <div className="text-2xl mb-1">&#x1F3AF;</div>
+            <p className="text-xs text-slate-400">97% accuracy</p>
+          </div>
+          <div className="text-center">
+            <div className="text-2xl mb-1">&#x1F512;</div>
+            <p className="text-xs text-slate-400">Krypterad data</p>
+          </div>
+        </div>
+
         {/* Continue Button */}
         <div className="flex justify-center">
           <button

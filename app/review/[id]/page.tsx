@@ -365,6 +365,84 @@ export default async function ReviewPage({
       </div>
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 py-8">
+        {/* CONFIDENCE SUMMARY BANNER */}
+        {(() => {
+          // Calculate confidence summary from line items
+          let totalFields = 0;
+          let highConfidence = 0;
+          let mediumConfidence = 0;
+          let lowConfidence = 0;
+          
+          const checkConf = (field: any) => {
+            if (!field || typeof field !== 'object' || !('confidence' in field)) return;
+            totalFields++;
+            const conf = field.confidence;
+            if (conf >= 0.9) highConfidence++;
+            else if (conf >= 0.6) mediumConfidence++;
+            else lowConfidence++;
+          };
+          
+          // Check document-level fields
+          checkConf(extractedData.date);
+          checkConf(extractedData.supplier);
+          checkConf(extractedData.address);
+          checkConf(extractedData.receiver);
+          checkConf(extractedData.material);
+          checkConf(extractedData.weightKg);
+          checkConf(extractedData.cost);
+          
+          // Check line item fields
+          if (Array.isArray(lineItems)) {
+            for (const item of lineItems) {
+              checkConf(item.material);
+              checkConf(item.weightKg);
+              checkConf(item.address);
+              checkConf(item.receiver);
+            }
+          }
+          
+          if (totalFields === 0) return null;
+          
+          return (
+            <div className={`mb-6 p-4 rounded-xl border ${
+              lowConfidence > 0 
+                ? 'bg-rose-50 border-rose-200' 
+                : mediumConfidence > 0 
+                  ? 'bg-amber-50 border-amber-200'
+                  : 'bg-emerald-50 border-emerald-200'
+            }`}>
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  {lowConfidence > 0 ? (
+                    <AlertTriangle className="w-5 h-5 text-rose-600" />
+                  ) : mediumConfidence > 0 ? (
+                    <AlertCircle className="w-5 h-5 text-amber-600" />
+                  ) : (
+                    <CheckCircle className="w-5 h-5 text-emerald-600" />
+                  )}
+                  <div>
+                    <p className="font-medium text-slate-900">
+                      {lowConfidence > 0 
+                        ? `${lowConfidence} fält behöver granskas`
+                        : mediumConfidence > 0
+                          ? `${mediumConfidence} fält har medelhög säkerhet`
+                          : 'Alla fält har hög säkerhet'}
+                    </p>
+                    <p className="text-sm text-slate-500">
+                      {highConfidence} säkra · {mediumConfidence} osäkra · {lowConfidence} behöver granskning
+                    </p>
+                  </div>
+                </div>
+                {lowConfidence === 0 && mediumConfidence === 0 && (
+                  <span className="px-3 py-1 bg-emerald-100 text-emerald-700 text-xs font-semibold rounded-full">
+                    Redo att godkänna
+                  </span>
+                )}
+              </div>
+            </div>
+          );
+        })()}
+
         {/* AI SUMMARY */}
         <div className={`mb-6 p-4 rounded-xl border ${
           !hasCriticalIssues 
@@ -682,6 +760,47 @@ export default async function ReviewPage({
             nextDocId={nextDocId}
           />
         </div>
+
+        {/* SWEDISH METADATA */}
+        {extractedData.swedishMetadata && (
+          <div className="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+            <h4 className="text-sm font-medium text-blue-900 mb-2 flex items-center gap-2">
+              Svenska format identifierade
+            </h4>
+            <div className="grid grid-cols-2 gap-2 text-sm">
+              {extractedData.swedishMetadata.orgNr?.map((nr: string) => (
+                <div key={nr} className="text-blue-700">
+                  <span className="text-blue-400">Org.nr:</span> {nr}
+                </div>
+              ))}
+              {extractedData.swedishMetadata.plusgiro?.map((pg: string) => (
+                <div key={pg} className="text-blue-700">
+                  <span className="text-blue-400">Plusgiro:</span> {pg}
+                </div>
+              ))}
+              {extractedData.swedishMetadata.bankgiro?.map((bg: string) => (
+                <div key={bg} className="text-blue-700">
+                  <span className="text-blue-400">Bankgiro:</span> {bg}
+                </div>
+              ))}
+              {extractedData.swedishMetadata.ocrReferences?.map((ocr: string) => (
+                <div key={ocr} className="text-blue-700">
+                  <span className="text-blue-400">OCR:</span> {ocr}
+                </div>
+              ))}
+              {extractedData.swedishMetadata.vatRate && (
+                <div className="text-blue-700">
+                  <span className="text-blue-400">Moms:</span> {extractedData.swedishMetadata.vatRate}%
+                </div>
+              )}
+              {extractedData.swedishMetadata.vatAmount && (
+                <div className="text-blue-700">
+                  <span className="text-blue-400">Momsbelopp:</span> {extractedData.swedishMetadata.vatAmount.toLocaleString('sv-SE')} kr
+                </div>
+              )}
+            </div>
+          </div>
+        )}
 
         {/* === EXPORT PREVIEW === */}
         {/* Shows EXACTLY what will be in the Excel file uploaded to Azure */}

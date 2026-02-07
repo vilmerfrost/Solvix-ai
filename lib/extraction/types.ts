@@ -40,6 +40,17 @@ export interface ExtractionResult {
   processingTimeMs: number;
   error?: string;
   rawResponse?: string;
+  
+  /** Swedish-specific metadata detected in the document */
+  swedishMetadata?: {
+    orgNr?: string[];
+    plusgiro?: string[];
+    bankgiro?: string[];
+    ocrReferences?: string[];
+    vatNumbers?: string[];
+    vatRate?: number | null;
+    vatAmount?: number | null;
+  };
 }
 
 export interface DocumentStructure {

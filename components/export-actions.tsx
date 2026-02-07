@@ -1,6 +1,6 @@
 "use client";
 
-import { Download, FileSpreadsheet, Archive, CheckCircle2, Loader2 } from "lucide-react";
+import { Download, FileSpreadsheet, Archive, CheckCircle2, Loader2, ChevronDown } from "lucide-react";
 import * as XLSX from "xlsx";
 import { archiveAllDocuments, verifyAllDocuments } from "@/app/actions";
 import { useState } from "react";
@@ -8,6 +8,8 @@ import { useState } from "react";
 export function ExportActions({ documents }: { documents: any[] }) {
   const [isArchiving, setIsArchiving] = useState(false);
   const [isVerifying, setIsVerifying] = useState(false);
+  const [exportFormat, setExportFormat] = useState<'standard' | 'fortnox'>('standard');
+  const [showFormatMenu, setShowFormatMenu] = useState(false);
   
   const getVal = (field: any) => {
     if (!field) return "";
@@ -284,24 +286,76 @@ export function ExportActions({ documents }: { documents: any[] }) {
     d.status === "queued"
   ).length;
 
+  const handleExportFortnox = async () => {
+    if (!documents.length) return alert("Ingen data att exportera!");
+    
+    try {
+      const { createFortnoxExcel } = await import("@/lib/fortnox-export");
+      const buffer = createFortnoxExcel(documents);
+      
+      const blob = new Blob([new Uint8Array(buffer)], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.setAttribute("download", `Fortnox-Import-${new Date().toISOString().split("T")[0]}.xlsx`);
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+    } catch (err) {
+      console.error('Fortnox export failed:', err);
+      alert('Fortnox-export misslyckades. Försök igen.');
+    }
+  };
+
   return (
     <div className="flex gap-2 items-center">
-      {/* EXPORT KNAPPAR */}
-      <button 
-        onClick={handleExportExcel}
-        className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white border border-green-700 rounded-lg text-sm font-bold hover:bg-green-500 transition-colors shadow-sm active:scale-95"
-      >
-        <FileSpreadsheet className="w-4 h-4" />
-        Excel
-      </button>
-
-      <button 
-        onClick={handleExportCsv}
-        className="flex items-center gap-2 px-3 py-2 bg-white border border-slate-300 rounded-lg text-slate-600 text-sm font-medium hover:bg-slate-50 transition-colors shadow-sm"
-      >
-        <Download className="w-4 h-4" />
-        CSV
-      </button>
+      {/* EXPORT DROPDOWN */}
+      <div className="relative">
+        <div className="flex">
+          <button 
+            onClick={exportFormat === 'fortnox' ? handleExportFortnox : handleExportExcel}
+            className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white border border-green-700 rounded-l-lg text-sm font-bold hover:bg-green-500 transition-colors shadow-sm active:scale-95"
+          >
+            <FileSpreadsheet className="w-4 h-4" />
+            {exportFormat === 'fortnox' ? 'Fortnox Excel' : 'Excel'}
+          </button>
+          <button
+            onClick={() => setShowFormatMenu(!showFormatMenu)}
+            className="px-2 py-2 bg-green-700 text-white border-l border-green-800 rounded-r-lg hover:bg-green-600"
+          >
+            <ChevronDown className="w-4 h-4" />
+          </button>
+        </div>
+        
+        {showFormatMenu && (
+          <div className="absolute right-0 top-full mt-1 w-48 bg-white border border-slate-200 rounded-lg shadow-lg z-10">
+            <button
+              onClick={() => { setExportFormat('standard'); setShowFormatMenu(false); }}
+              className="w-full text-left px-4 py-2 text-sm hover:bg-slate-50 rounded-t-lg flex items-center gap-2"
+            >
+              <FileSpreadsheet className="w-4 h-4 text-green-600" />
+              Standard Excel
+              {exportFormat === 'standard' && <span className="ml-auto text-green-600">&#10003;</span>}
+            </button>
+            <button
+              onClick={() => { setExportFormat('fortnox'); setShowFormatMenu(false); }}
+              className="w-full text-left px-4 py-2 text-sm hover:bg-slate-50 flex items-center gap-2"
+            >
+              <FileSpreadsheet className="w-4 h-4 text-blue-600" />
+              Fortnox-format
+              {exportFormat === 'fortnox' && <span className="ml-auto text-green-600">&#10003;</span>}
+            </button>
+            <button
+              onClick={() => { handleExportCsv(); setShowFormatMenu(false); }}
+              className="w-full text-left px-4 py-2 text-sm hover:bg-slate-50 rounded-b-lg flex items-center gap-2"
+            >
+              <Download className="w-4 h-4 text-slate-600" />
+              CSV
+            </button>
+          </div>
+        )}
+      </div>
       
       {/* AVSKILJARE */}
       <div className="w-px h-6 bg-slate-300 mx-1"></div>

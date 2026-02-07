@@ -231,7 +231,10 @@ export function UploadZone() {
             {isDragActive ? "Släpp filerna här..." : "Dra och släpp filer"}
           </p>
           <p className="text-sm text-slate-400 font-light">
-             PDF eller Excel • Obegränsat antal
+             PDF eller Excel &bull; Obegränsat antal
+          </p>
+          <p className="text-xs text-slate-400 mt-2">
+            Fungerar med alla format — PDF, Excel, skannade bilder, handskrivna dokument
           </p>
         </div>
       </div>

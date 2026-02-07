@@ -27,7 +27,8 @@ import {
   ExternalLink,
   CreditCard,
   Shield,
-  LogOut
+  LogOut,
+  Mail
 } from "lucide-react";
 
 interface AzureInputFolder {
@@ -184,10 +185,20 @@ export default function SettingsPage() {
 
   // Active sidebar item
   const [activeSection, setActiveSection] = useState("material");
+  
+  // User ID for inbox
+  const [userId, setUserId] = useState<string | null>(null);
 
-  // Fetch settings on mount
+  // Fetch settings on mount + get user ID
   useEffect(() => {
     fetchSettings();
+    const supabase = createBrowserClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+    );
+    supabase.auth.getUser().then(({ data }) => {
+      if (data.user) setUserId(data.user.id);
+    });
   }, []);
 
   const fetchSettings = async () => {
@@ -555,6 +566,24 @@ export default function SettingsPage() {
     }
   };
 
+  const handleEnableInbox = async () => {
+    if (!userId) return;
+    const code = Math.random().toString(36).substring(2, 10);
+    const supabase = createBrowserClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+    );
+    const { error } = await supabase
+      .from("settings")
+      .update({ inbox_enabled: true, inbox_code: code, inbox_auto_process: true })
+      .eq("user_id", userId);
+    if (!error) {
+      window.location.reload();
+    } else {
+      setMessage({ type: 'error', text: 'Kunde inte aktivera e-postinkorg' });
+    }
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
@@ -669,6 +698,18 @@ export default function SettingsPage() {
                     <span className="font-medium">Azure & GUIDs</span>
                   </button>
                 )}
+
+                <button
+                  onClick={() => setActiveSection("email")}
+                  className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-colors text-left ${
+                    activeSection === "email"
+                      ? "bg-blue-50 text-blue-700 border border-blue-200"
+                      : "text-gray-700 hover:bg-gray-50"
+                  }`}
+                >
+                  <Mail className="w-5 h-5" />
+                  <span className="font-medium">E-postinkorg</span>
+                </button>
 
                 {/* Divider */}
                 <div className="border-t border-gray-200 my-3" />
@@ -1371,6 +1412,65 @@ export default function SettingsPage() {
                       Format: [uuid]_[timestamp]_[datum].pdf
                     </p>
                   </div>
+                </div>
+              </div>
+            )}
+
+            {/* Email Inbox Section */}
+            {activeSection === "email" && (
+              <div className="space-y-6">
+                <div className="bg-white rounded-lg border border-gray-200 p-6">
+                  <div className="flex items-start gap-3 mb-4">
+                    <Mail className="w-5 h-5 text-blue-600 mt-1" />
+                    <div className="flex-1">
+                      <h2 className="text-xl font-bold text-gray-900 mb-2">E-postinkorg</h2>
+                      <p className="text-sm text-gray-600">
+                        Vidarebefordra dokument till din unika e-postadress för automatisk bearbetning.
+                      </p>
+                    </div>
+                  </div>
+
+                  {(settings as any)?.inbox_enabled ? (
+                    <div className="space-y-4">
+                      <div className="p-4 bg-emerald-50 border border-emerald-200 rounded-lg">
+                        <p className="text-sm font-medium text-emerald-900 mb-2">Din inkorgsadress:</p>
+                        <div className="flex items-center gap-2">
+                          <code className="flex-1 px-3 py-2 bg-white border border-emerald-300 rounded-lg text-sm font-mono text-emerald-800">
+                            docs@inbox.vextra.ai
+                          </code>
+                          <button
+                            onClick={() => navigator.clipboard.writeText('docs@inbox.vextra.ai')}
+                            className="px-3 py-2 bg-emerald-600 text-white rounded-lg text-sm hover:bg-emerald-700"
+                          >
+                            Kopiera
+                          </button>
+                        </div>
+                        <p className="text-xs text-emerald-600 mt-2">
+                          Skriv <strong>VEXT-{(settings as any)?.inbox_code}</strong> i ämnesraden så att vi vet att det är din fil.
+                        </p>
+                      </div>
+
+                      <div className="p-4 bg-slate-50 border border-slate-200 rounded-lg">
+                        <p className="text-sm font-medium text-slate-700 mb-2">Så funkar det:</p>
+                        <ol className="text-sm text-slate-600 space-y-1 list-decimal list-inside">
+                          <li>Vidarebefordra mail med PDF/Excel-bilagor till adressen ovan</li>
+                          <li>Skriv <strong>VEXT-{(settings as any)?.inbox_code}</strong> i ämnesraden</li>
+                          <li>Vextra extraherar data automatiskt och visar resultatet i dashboarden</li>
+                        </ol>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="text-center py-8">
+                      <Mail className="w-12 h-12 text-slate-300 mx-auto mb-4" />
+                      <p className="text-slate-500 mb-4">E-postinkorgen är inte aktiverad</p>
+                      <button
+                        onClick={handleEnableInbox}
+                        className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                      >
+                        Aktivera e-postinkorg
+                      </button>
+                    </div>
+                  )}
                 </div>
               </div>
             )}
