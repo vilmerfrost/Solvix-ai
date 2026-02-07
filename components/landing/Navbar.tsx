@@ -36,7 +36,7 @@ export function Navbar() {
       <div className="max-w-6xl mx-auto px-6 lg:px-8">
         <div className="flex items-center justify-between h-16 md:h-20">
           {/* Logo */}
-          <Link href="/landing" className="flex items-center gap-1">
+          <Link href="/" className="flex items-center gap-1">
             <span className="text-xl md:text-2xl font-bold tracking-tight text-[#F5F5F5]">
               Vextra
             </span>
@@ -69,7 +69,7 @@ export function Navbar() {
 
           {/* CTA Button */}
           <Link
-            href="https://app.vextra.ai"
+            href="/signup"
             className="px-4 py-2 text-sm font-medium bg-[#00E599] text-[#0A0A0A] rounded-lg hover:bg-[#00E599]/90 transition-all"
           >
             Testa gratis

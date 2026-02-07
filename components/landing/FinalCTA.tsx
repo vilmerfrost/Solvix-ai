@@ -42,7 +42,7 @@ export function FinalCTA() {
           className="flex flex-col items-center gap-4"
         >
           <Link
-            href="https://app.vextra.ai"
+            href="/signup"
             className="group inline-flex items-center gap-2 px-8 py-4 bg-[#00E599] text-[#0A0A0A] font-semibold rounded-xl hover:bg-[#00E599]/90 transition-all shadow-[0_0_40px_rgba(0,229,153,0.3)] hover:shadow-[0_0_60px_rgba(0,229,153,0.4)]"
           >
             Ladda upp din första fil

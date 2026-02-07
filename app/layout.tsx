@@ -46,8 +46,8 @@ export default function RootLayout({
   const htmlLang = getHtmlLang(config);
   
   return (
-    <html lang={htmlLang} className="dark">
-      <body className={`${inter.variable} ${playfair.variable} ${plusJakarta.variable} ${jetbrainsMono.variable} font-sans antialiased bg-[#0A0A0A] text-[#F5F5F5]`}>
+    <html lang={htmlLang}>
+      <body className={`${inter.variable} ${playfair.variable} ${plusJakarta.variable} ${jetbrainsMono.variable} antialiased`}>
         <PostHogProvider>
           <ToastProvider>
             {children}

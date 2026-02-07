@@ -18,7 +18,7 @@ const plans = [
     ],
     cta: "Kom igång gratis",
     highlighted: false,
-    href: "https://app.vextra.ai",
+    href: "/signup",
   },
   {
     name: "Pro",
@@ -36,7 +36,7 @@ const plans = [
     extra: "Överskjutande: 1,50 kr/fil",
     cta: "Starta 7 dagars gratis test",
     highlighted: true,
-    href: "https://app.vextra.ai",
+    href: "/signup",
   },
   {
     name: "Enterprise",

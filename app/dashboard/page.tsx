@@ -32,7 +32,9 @@ export default async function Dashboard({
   const user = await requireAuth();
   const userId = user.id;
   
-  const supabase = createServiceRoleClient();
+  // CRITICAL: Use createServerComponentClient() instead of createServiceRoleClient()
+  // This enforces Row Level Security and ensures users only see their own data
+  const supabase = await createServerComponentClient();
   
   // Check if user has completed onboarding + get feature flags
   const { data: userSettings } = await supabase

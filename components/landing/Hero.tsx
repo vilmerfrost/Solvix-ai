@@ -63,7 +63,7 @@ export function Hero() {
           className="max-w-xl mx-auto mb-10"
         >
           <Link
-            href="https://app.vextra.ai"
+            href="/signup"
             className="group block relative"
           >
             <div className="relative p-8 md:p-12 rounded-2xl border-2 border-dashed border-[#8A8A9A]/30 bg-[#1A1A2E]/50 backdrop-blur-sm transition-all duration-300 group-hover:border-[#00E599] group-hover:bg-[#1A1A2E]/80 group-hover:shadow-[0_0_40px_rgba(0,229,153,0.15)]">
