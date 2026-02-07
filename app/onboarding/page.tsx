@@ -1,15 +1,39 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import { Check, ArrowRight, Loader2 } from "lucide-react";
 import { INDUSTRIES, type IndustryConfig } from "@/config/industries";
+import { createBrowserClient } from "@supabase/ssr";
 
 export default function OnboardingPage() {
   const router = useRouter();
   const [selectedIndustry, setSelectedIndustry] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
+
+  useEffect(() => {
+    async function checkOnboarding() {
+      const supabase = createBrowserClient(
+        process.env.NEXT_PUBLIC_SUPABASE_URL!,
+        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+      );
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        router.push("/login");
+        return;
+      }
+      const { data: settings } = await supabase
+        .from("settings")
+        .select("onboarding_complete, industry")
+        .eq("user_id", user.id)
+        .single();
+      if (settings?.onboarding_complete && settings?.industry) {
+        router.push("/dashboard");
+      }
+    }
+    checkOnboarding();
+  }, [router]);
 
   const handleSubmit = async () => {
     if (!selectedIndustry) return;

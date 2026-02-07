@@ -2,7 +2,7 @@ import { createServiceRoleClient } from "@/lib/supabase";
 import { requireAuth } from "@/lib/auth";
 import { redirect } from "next/navigation";
 import Link from "next/link";
-import { FileText, CheckCircle2, AlertCircle, Activity, RefreshCw, ArrowLeft, Download, Settings, Home, Upload, FileSpreadsheet, Shield, Brain, Bot } from "lucide-react";
+import { FileText, CheckCircle2, AlertCircle, Activity, RefreshCw, ArrowLeft, Download, Settings, Home, Upload, FileSpreadsheet, Shield, Brain, Bot, LogOut } from "lucide-react";
 import { StatusBadge } from "@/components/ui";
 import { AutoFetchButton } from "@/components/auto-fetch-button";
 import { ResetDocumentsButton } from "@/components/reset-documents-button";
@@ -19,6 +19,7 @@ import { truncateFilename } from "@/lib/filename-utils";
 import { DeleteDocumentButton } from "@/components/delete-document-button";
 import { Pagination } from "@/components/pagination";
 import { getTenantConfigFromDB, getUIStrings } from "@/config/tenant";
+import { createServerComponentClient } from "@/lib/supabase";
 
 export const dynamic = "force-dynamic";
 
@@ -276,6 +277,18 @@ export default async function Dashboard({
                 <Settings className="w-4 h-4" />
                 <span>{strings.settings}</span>
               </Link>
+
+              <form action={async () => {
+                "use server";
+                const supabase = await createServerComponentClient();
+                await supabase.auth.signOut();
+                redirect("/login");
+              }}>
+                <button type="submit" className="flex items-center gap-2 px-4 py-2 bg-red-50 border border-red-200 text-red-700 rounded-lg hover:bg-red-100 transition-all text-sm font-medium">
+                  <LogOut className="w-4 h-4" />
+                  Logga ut
+                </button>
+              </form>
 
               <ResetDocumentsButton />
               <AutoFetchButton />

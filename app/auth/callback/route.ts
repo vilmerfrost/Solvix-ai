@@ -64,8 +64,8 @@ export async function GET(request: Request) {
         }
       }
       
-      // Default redirect to dashboard
-      return NextResponse.redirect(`${origin}${next}`);
+      // Default redirect to dashboard - let middleware handle onboarding redirect
+      return NextResponse.redirect(`${origin}/dashboard`);
     }
   }
 

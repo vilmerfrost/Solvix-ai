@@ -115,6 +115,19 @@ export async function middleware(request: NextRequest) {
     return NextResponse.redirect(new URL("/dashboard", request.url));
   }
 
+  // Check onboarding status - redirect to /onboarding if not complete
+  if (!pathname.startsWith("/onboarding") && !pathname.startsWith("/api/onboarding")) {
+    const { data: settings } = await supabase
+      .from("settings")
+      .select("onboarding_complete, industry")
+      .eq("user_id", user.id)
+      .single();
+
+    if (user.id !== 'default' && (!settings?.onboarding_complete || !settings?.industry)) {
+      return NextResponse.redirect(new URL("/onboarding", request.url));
+    }
+  }
+
   // Check subscription status for SaaS mode
   if (!process.env.WHITELABEL_MODE) {
     const isSubscribed = await checkSubscriptionStatus(supabase, user.id);
