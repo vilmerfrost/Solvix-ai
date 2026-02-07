@@ -20,6 +20,7 @@ import { DeleteDocumentButton } from "@/components/delete-document-button";
 import { Pagination } from "@/components/pagination";
 import { getTenantConfigFromDB, getUIStrings } from "@/config/tenant";
 import { createServerComponentClient } from "@/lib/supabase";
+import { UploadZone } from "@/components/upload-zone";
 
 export const dynamic = "force-dynamic";
 
@@ -382,6 +383,11 @@ export default async function Dashboard({
 
       {/* Stats Cards */}
       <div className="max-w-7xl mx-auto px-6 py-8">
+        {/* Upload Zone - Drag & Drop */}
+        <div className="mb-8">
+          <UploadZone />
+        </div>
+
         {/* Batch Processing UI */}
         {uploadedDocs.length > 0 && (
           <BatchProcessButton uploadedDocs={uploadedDocs} />

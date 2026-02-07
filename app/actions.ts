@@ -148,59 +148,43 @@ function extractJsonFromResponse(text: string) {
   }
 }
 
-// --- UPLOAD AND ENQUEUE DOCUMENT WITH BETTER ERROR HANDLING ---
+// --- UPLOAD AND ENQUEUE DOCUMENT ---
+// Uses the same multi-model pipeline as Azure sync
 export async function uploadAndEnqueueDocument(formData: FormData) {
     const supabase = createServiceRoleClient();
-    const user = { id: "00000000-0000-0000-0000-000000000000" }; 
+    
+    // Get real authenticated user
+    const { requireAuth } = await import("@/lib/auth");
+    const user = await requireAuth();
+    
     const file = formData.get("file") as File;
     
-    // Validate file presence
-    if (!file) {
-      throw new Error("Ingen fil hittades i uppladdningen.");
-    }
+    // Validate file
+    if (!file) throw new Error("Ingen fil hittades i uppladdningen.");
+    if (file.size === 0) throw new Error("Filen är tom (0 bytes).");
     
-    // Validate file size
-    if (file.size === 0) {
-      throw new Error("Filen är tom (0 bytes). Kontrollera att filen innehåller data.");
-    }
-    
-    // Validate file size limit (50 MB)
     const MAX_SIZE = 50 * 1024 * 1024;
     if (file.size > MAX_SIZE) {
-      const sizeMB = (file.size / (1024 * 1024)).toFixed(1);
-      throw new Error(`Filen är för stor (${sizeMB} MB). Max storlek är 50 MB.`);
+      throw new Error(`Filen är för stor (${(file.size / (1024 * 1024)).toFixed(1)} MB). Max 50 MB.`);
     }
     
-    // Validate file extension
     const fileExtension = file.name.split(".").pop()?.toLowerCase();
-    const allowedExtensions = ["pdf", "xlsx", "xls"];
-    if (!fileExtension || !allowedExtensions.includes(fileExtension)) {
-      throw new Error(`Filtypen "${fileExtension || 'okänd'}" stöds inte. Endast PDF och Excel (.xlsx, .xls) är tillåtna.`);
+    if (!fileExtension || !["pdf", "xlsx", "xls"].includes(fileExtension)) {
+      throw new Error(`Filtypen "${fileExtension || 'okänd'}" stöds inte. Endast PDF och Excel.`);
     }
     
-    // Generate storage path
+    // Upload to storage (user-scoped path)
     const storagePath = `${user.id}/${Date.now()}-${crypto.randomUUID()}.${fileExtension}`;
-    
-    // Upload to storage
     const { error: uploadError } = await supabase.storage
       .from(STORAGE_BUCKET)
       .upload(storagePath, file, { cacheControl: "3600", upsert: false });
     
     if (uploadError) {
       console.error("Storage upload error:", uploadError);
-      if (uploadError.message?.includes("duplicate")) {
-        throw new Error("En fil med samma namn finns redan. Byt namn på filen och försök igen.");
-      }
-      if (uploadError.message?.includes("size")) {
-        throw new Error("Filen är för stor för lagring. Försök med en mindre fil.");
-      }
-      if (uploadError.message?.includes("quota")) {
-        throw new Error("Lagringsutrymmet är fullt. Kontakta support.");
-      }
-      throw new Error("Kunde inte ladda upp filen till lagring. Försök igen.");
+      throw new Error("Kunde inte ladda upp filen. Försök igen.");
     }
     
-    // Save to database
+    // Save to database with real user ID
     const { data: document, error: documentError } = await supabase
       .from("documents")
       .insert({ 
@@ -214,21 +198,16 @@ export async function uploadAndEnqueueDocument(formData: FormData) {
     
     if (documentError) {
       console.error("Database insert error:", documentError);
-      // Try to clean up the uploaded file
       await supabase.storage.from(STORAGE_BUCKET).remove([storagePath]).catch(() => {});
-      
-      if (documentError.message?.includes("duplicate")) {
-        throw new Error("Ett dokument med samma namn finns redan i systemet.");
-      }
-      throw new Error("Kunde inte spara dokumentet i databasen. Försök igen.");
+      throw new Error("Kunde inte spara dokumentet. Försök igen.");
     }
     
-    // Process document (don't fail the upload if processing fails)
-    try { 
-      await processDocument(document.id); 
+    // Process using the REAL multi-model pipeline (same as Azure sync)
+    try {
+      const { processDocument: processDocumentMultiStep } = await import("@/lib/process-document");
+      await processDocumentMultiStep(document.id);
     } catch (error) { 
-      console.error("Process Error (upload succeeded):", error); 
-      // Don't throw - the file is uploaded, processing can be retried
+      console.error("Process Error (upload succeeded):", error);
     }
     
     revalidatePath("/");
