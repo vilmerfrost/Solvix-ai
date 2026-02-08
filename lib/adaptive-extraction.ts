@@ -263,7 +263,7 @@ JSON OUTPUT (no markdown, no backticks):
     const startTime = Date.now();
     
     const response = await anthropic.messages.create({
-      model: "anthropic/claude-sonnet-4.5",
+      model: "claude-sonnet-4-5",
       max_tokens: 2048,
       temperature: 0,
       messages: [{ role: "user", content: analysisPrompt }]
@@ -469,7 +469,7 @@ CRITICAL:
   
   try {
     const haikuResponse = await anthropic.messages.create({
-      model: "anthropic/claude-haiku-4.5",
+      model: "claude-haiku-4-5",
       max_tokens: maxTokens,
       temperature: 0,
       messages: [{ role: "user", content: prompt }]
@@ -570,7 +570,7 @@ CRITICAL:
   
   try {
     const sonnetResponse = await anthropic.messages.create({
-      model: "anthropic/claude-sonnet-4.5",
+      model: "claude-sonnet-4-5",
       max_tokens: maxTokens,
       temperature: 0,
       messages: [{ role: "user", content: prompt }]
@@ -727,7 +727,7 @@ OUTPUT FORMAT (JSON only, no markdown):
 
   try {
     const response = await anthropic.messages.create({
-      model: "anthropic/claude-haiku-4.5",
+      model: "claude-haiku-4-5",
       max_tokens: 4096,
       temperature: 0,
       messages: [{ role: "user", content: verificationPrompt }]
