@@ -1,6 +1,6 @@
 "use client";
 
-import { Upload, Lock, Zap } from "lucide-react";
+import { Upload, Lock, Zap, Shield } from "lucide-react";
 import Link from "next/link";
 
 export function Hero() {
