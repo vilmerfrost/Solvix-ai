@@ -119,7 +119,7 @@ Extract ALL ${chunkRows.length} rows from this chunk!`;
 
     try {
       const response = await anthropic.messages.create({
-        model: "claude-sonnet-4-5-20250929",
+        model: "anthropic/claude-sonnet-4.5",
         max_tokens: 8192,
         messages: [{ role: "user", content: prompt }]
       });

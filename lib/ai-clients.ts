@@ -23,14 +23,14 @@ export const MODELS = {
   EXCEL_EXTRACTION: "google/gemini-3-flash-preview",
   
   // PDF extraction via Mistral
-  PDF_OCR: "mistral-ocr-latest",
-  PDF_STRUCTURING: "mistral-large-latest",
+  PDF_OCR: "mistralai/mistral-large",
+  PDF_STRUCTURING: "mistralai/mistral-large",
   
   // Verification (always on)
-  VERIFICATION: "claude-haiku-4-5-20251001",
+  VERIFICATION: "anthropic/claude-haiku-4.5",
   
   // Reconciliation (when confidence < 80%)
-  RECONCILIATION: "claude-sonnet-4-5-20250929",
+  RECONCILIATION: "anthropic/claude-sonnet-4.5",
 } as const;
 
 export const THRESHOLDS = {

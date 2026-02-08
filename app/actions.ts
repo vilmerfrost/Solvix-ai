@@ -350,7 +350,7 @@ async function processDocument(documentId: string) {
 
       // PDF processing continues here (only reached for non-Excel files)
       const message = await anthropic.messages.create({
-        model: "claude-sonnet-4-5-20250929",
+        model: "anthropic/claude-sonnet-4.5",
         max_tokens: 4096,
         messages: [
           {
@@ -560,7 +560,7 @@ export async function reVerifyDocument(documentId: string, customInstructions?: 
 
       // PDF processing continues here (only reached for non-Excel files)
       const message = await anthropic.messages.create({
-        model: "claude-sonnet-4-5-20250929",
+        model: "anthropic/claude-sonnet-4.5",
         max_tokens: 4096,
         messages: [
           {

@@ -331,10 +331,10 @@ Extract ALL ${chunkRows.length} rows from this chunk!`;
     for (let attempt = 0; attempt < 2; attempt++) {
       try {
         const model = attempt === 0 
-          ? "claude-haiku-4-5-20251001"  // Try Haiku first
-          : "claude-sonnet-4-20250514";  // Fallback to Sonnet
+          ? "anthropic/claude-haiku-4.5"  // Try Haiku first
+          : "anthropic/claude-sonnet-4.5";  // Fallback to Sonnet
         
-        console.log(`   🔄 Attempt ${attempt + 1}/2: Using ${model === "claude-haiku-4-5-20251001" ? "Haiku" : "Sonnet"}`);
+        console.log(`   🔄 Attempt ${attempt + 1}/2: Using ${model === "anthropic/claude-haiku-4.5" ? "Haiku" : "Sonnet"}`);
         
         const response = await anthropic.messages.create({
           model: model as any,
@@ -570,7 +570,7 @@ async function extractFromPDF(
 
     try {
       const invoiceResponse = await userAnthropicClient.messages.create({
-        model: "claude-sonnet-4-5-20250929",
+        model: "anthropic/claude-sonnet-4.5",
         max_tokens: 16384,
         messages: [{
           role: "user",
@@ -688,7 +688,7 @@ Extract ALL material rows from the table. Return JSON only!`;
   try {
     log(`📤 Calling Claude Sonnet for PDF OCR...`, 'info');
     const response = await userAnthropicClient.messages.create({
-      model: "claude-sonnet-4-5-20250929", // Use Sonnet for better PDF OCR quality
+      model: "anthropic/claude-sonnet-4.5", // Use Sonnet for better PDF OCR quality
       max_tokens: 16384,
       messages: [
         {
