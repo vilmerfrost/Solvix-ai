@@ -50,7 +50,7 @@ export async function GET(request: Request) {
           const now = new Date();
           const trialEnd = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000); // 7 days from now
           
-          await supabase
+          const { error: insertError } = await supabase
             .from("subscriptions")
             .insert({
               user_id: user.id,
@@ -60,7 +60,11 @@ export async function GET(request: Request) {
               trial_end: trialEnd.toISOString(),
             });
           
-          console.log(`[Auth] Created 7-day trial for user ${user.id}`);
+          if (insertError) {
+            console.error(`[Auth] Failed to create trial for user ${user.id}:`, insertError);
+          } else {
+            console.log(`[Auth] Created 7-day trial for user ${user.id}`);
+          }
         }
       }
       
