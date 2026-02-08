@@ -1,63 +1,69 @@
 "use client";
 
-import { Upload, Brain, Download } from "lucide-react";
+import { Upload, Cpu, CheckSquare, Database, ArrowRight } from "lucide-react";
 
 export function HowItWorks() {
+  const steps = [
+    {
+      id: "01",
+      title: "INGEST",
+      icon: <Upload className="w-6 h-6" />,
+      desc: "Multi-channel ingestion (Email, API, SFTP). Stödjer PDF, PNG, TIFF, XLSX."
+    },
+    {
+      id: "02",
+      title: "VISION",
+      icon: <Cpu className="w-6 h-6" />,
+      desc: "OCR + Gemini 1.5 Pro pipeline identifierar layout, handstil och tabeller."
+    },
+    {
+      id: "03",
+      title: "VALIDATE",
+      icon: <CheckSquare className="w-6 h-6" />,
+      desc: "Logikmotor verifierar summor, datum och momssatser mot era regler."
+    },
+    {
+      id: "04",
+      title: "SYNC",
+      icon: <Database className="w-6 h-6" />,
+      desc: "Strukturerad JSON/Excel pushas till ERP (Fortnox, Visma, SAP) på <1s."
+    }
+  ];
+
   return (
-    <section className="py-24 px-6 bg-white" id="hur-det-funkar">
-      <div className="max-w-7xl mx-auto">
-        {/* Header */}
-        <div className="text-center mb-16">
-          <h2 className="text-3xl font-black mb-4 text-slate-900">
-            Så fungerar det
+    <section className="py-24 px-6 border-b border-neutral-200 bg-white" id="hur-det-funkar">
+      <div className="max-w-[1400px] mx-auto">
+        <div className="mb-16 max-w-2xl">
+          <h2 className="text-4xl font-bold tracking-tighter text-neutral-900 mb-4">
+            PIPELINE ARKITEKTUR
           </h2>
-          <p className="text-slate-500">
-            Tre enkla steg för att automatisera din dokumenthantering
+          <p className="text-lg text-neutral-600 font-mono">
+            // Full automation från rådata till affärssystem
           </p>
         </div>
 
-        {/* Steps */}
-        <div className="grid md:grid-cols-3 gap-12">
-          {/* Step 1 */}
-          <div className="flex flex-col items-center">
-            <div className="w-20 h-20 bg-[#4A90E2]/10 rounded-2xl flex items-center justify-center mb-6">
-              <Upload className="w-10 h-10 text-[#4A90E2]" />
-            </div>
-            <h3 className="text-xl font-bold mb-3 text-slate-900">
-              1. Ladda upp
-            </h3>
-            <p className="text-slate-500 text-center leading-relaxed">
-              Ladda upp följesedlar som PDF eller bild. Vi stödjer alla vanliga
-              format från stora leverantörer.
-            </p>
-          </div>
+        <div className="relative">
+          {/* Connecting Line (Desktop) */}
+          <div className="hidden lg:block absolute top-12 left-0 right-0 h-0.5 bg-neutral-200 z-0"></div>
 
-          {/* Step 2 */}
-          <div className="flex flex-col items-center">
-            <div className="w-20 h-20 bg-[#4A90E2]/10 rounded-2xl flex items-center justify-center mb-6">
-              <Brain className="w-10 h-10 text-[#4A90E2]" />
-            </div>
-            <h3 className="text-xl font-bold mb-3 text-slate-900">
-              2. AI extraherar
-            </h3>
-            <p className="text-slate-500 text-center leading-relaxed">
-              Vår specialtränade AI läser av data som vikter, material, datum och
-              avsändare med 97% noggrannhet.
-            </p>
-          </div>
-
-          {/* Step 3 */}
-          <div className="flex flex-col items-center">
-            <div className="w-20 h-20 bg-[#4A90E2]/10 rounded-2xl flex items-center justify-center mb-6">
-              <Download className="w-10 h-10 text-[#4A90E2]" />
-            </div>
-            <h3 className="text-xl font-bold mb-3 text-slate-900">
-              3. Exportera
-            </h3>
-            <p className="text-slate-500 text-center leading-relaxed">
-              Granska resultatet och exportera direkt till Excel, CSV eller via
-              API till ert affärssystem.
-            </p>
+          <div className="grid lg:grid-cols-4 gap-8">
+            {steps.map((step, i) => (
+              <div key={i} className="relative z-10 bg-white group">
+                <div className="w-24 h-24 border-2 border-neutral-900 bg-white flex items-center justify-center mb-6 shadow-[4px_4px_0px_0px_rgba(23,23,23,1)] transition-transform group-hover:-translate-y-1 group-hover:shadow-[6px_6px_0px_0px_rgba(23,23,23,1)]">
+                  {step.icon}
+                </div>
+                <div className="flex items-center gap-2 mb-2">
+                  <span className="font-mono text-sm font-bold text-neutral-400">Step {step.id}</span>
+                  <div className="h-px bg-neutral-200 flex-1"></div>
+                </div>
+                <h3 className="text-xl font-bold text-neutral-900 mb-3 tracking-tight">
+                  {step.title}
+                </h3>
+                <p className="text-sm text-neutral-600 leading-relaxed font-medium">
+                  {step.desc}
+                </p>
+              </div>
+            ))}
           </div>
         </div>
       </div>

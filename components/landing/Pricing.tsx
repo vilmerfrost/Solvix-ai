@@ -1,122 +1,127 @@
 "use client";
 
 import Link from "next/link";
-import { Check, Sparkles } from "lucide-react";
+import { Check } from "lucide-react";
 
 export function Pricing() {
+  const plans = [
+    {
+      name: "FREE",
+      price: "0 SEK",
+      period: "/ månad",
+      desc: "För utvärdering & små volymer.",
+      features: [
+        "10 dokument / mån",
+        "Standard AI-motor (Gemini Flash)",
+        "Excel-export",
+        "Email support",
+      ],
+      cta: "Starta gratis",
+      href: "/signup",
+      highlight: false
+    },
+    {
+      name: "PRO",
+      price: "1 499 SEK",
+      period: "/ månad",
+      desc: "För växande logistikbolag.",
+      features: [
+        "500 dokument / mån",
+        "Prioriterad Kö (Tier 1)",
+        "Avancerad Validering (Claude 3.5)",
+        "Anpassade Excel-mallar",
+      ],
+      cta: "Välj Pro",
+      href: "/signup",
+      highlight: true
+    },
+    {
+      name: "ENTERPRISE",
+      price: "OFFERT",
+      period: "",
+      desc: "För stora flöden & integration.",
+      features: [
+        "Obegränsad volym",
+        "API & Webhook Access",
+        "Dedikerad Instans",
+        "SLA & Account Manager",
+      ],
+      cta: "Kontakta oss",
+      href: "mailto:sales@vextra.ai",
+      highlight: false
+    }
+  ];
+
   return (
-    <section className="py-24 px-6 bg-white" id="prissattning">
-      <div className="max-w-7xl mx-auto">
-        {/* Header */}
-        <div className="text-center mb-16">
-          <h2 className="text-3xl font-black mb-4 text-slate-900">
-            Prissättning
-          </h2>
-          <p className="text-slate-500">Välj en plan som passar er verksamhet</p>
+    <section className="py-24 px-6 bg-white border-b border-neutral-200" id="prissattning">
+      <div className="max-w-[1400px] mx-auto">
+        <div className="flex flex-col md:flex-row justify-between items-end mb-16 border-b-2 border-neutral-900 pb-8">
+          <div>
+            <h2 className="text-4xl font-bold tracking-tighter text-neutral-900 mb-2">
+              LICENSMODELLER
+            </h2>
+            <p className="text-neutral-500 font-mono text-sm">
+              Transparent prissättning utan dolda avgifter.
+            </p>
+          </div>
+          <div className="hidden md:block font-mono text-xs text-neutral-400">
+            PRICING_TABLE_V2.1
+          </div>
         </div>
 
-        {/* Pricing Grid */}
-        <div className="grid md:grid-cols-3 gap-8 max-w-6xl mx-auto">
-          {/* Free Plan */}
-          <div className="p-8 bg-white rounded-2xl border border-slate-200 flex flex-col">
-            <h3 className="text-xl font-bold mb-2 text-slate-900">Gratis</h3>
-            <p className="text-slate-500 text-sm mb-6">För dig som vill testa</p>
-            <div className="mb-8">
-              <span className="text-4xl font-black text-slate-900">0 kr</span>
-              <span className="text-slate-500">/mån</span>
-            </div>
-            <ul className="space-y-4 mb-8 flex-1">
-              <li className="flex items-center gap-2 text-sm">
-                <Check className="w-5 h-5 text-[#4A90E2]" />
-                <span className="text-slate-600">10 dokument / mån</span>
-              </li>
-              <li className="flex items-center gap-2 text-sm">
-                <Check className="w-5 h-5 text-[#4A90E2]" />
-                <span className="text-slate-600">Standard AI-motor</span>
-              </li>
-              <li className="flex items-center gap-2 text-sm">
-                <Check className="w-5 h-5 text-[#4A90E2]" />
-                <span className="text-slate-600">Excel-export</span>
-              </li>
-            </ul>
-            <Link
-              href="/signup"
-              className="w-full py-3 rounded-lg border border-[#4A90E2] text-[#4A90E2] font-bold text-center hover:bg-[#4A90E2]/5 transition-colors"
+        <div className="grid lg:grid-cols-3 gap-8">
+          {plans.map((plan, i) => (
+            <div 
+              key={i} 
+              className={`flex flex-col border-2 ${
+                plan.highlight 
+                  ? "border-neutral-900 bg-neutral-50 shadow-[8px_8px_0px_0px_rgba(23,23,23,1)] scale-[1.02] z-10" 
+                  : "border-neutral-200 bg-white hover:border-neutral-400 transition-colors"
+              }`}
             >
-              Starta gratis
-            </Link>
-          </div>
+              <div className="p-8 border-b border-inherit">
+                <div className="flex justify-between items-start mb-4">
+                  <h3 className="font-mono font-bold text-lg tracking-widest">{plan.name}</h3>
+                  {plan.highlight && (
+                    <span className="bg-neutral-900 text-white text-[10px] font-bold px-2 py-1 uppercase tracking-wider">
+                      Rekommenderad
+                    </span>
+                  )}
+                </div>
+                <div className="mb-2">
+                  <span className="text-4xl font-black text-neutral-900 tracking-tight">{plan.price}</span>
+                  <span className="text-neutral-500 font-mono text-sm ml-2">{plan.period}</span>
+                </div>
+                <p className="text-sm text-neutral-600 font-medium">
+                  {plan.desc}
+                </p>
+              </div>
 
-          {/* Pro Plan (Featured) */}
-          <div className="p-8 bg-[#F0F7FF] rounded-2xl border-2 border-[#4A90E2] flex flex-col relative scale-105 shadow-xl">
-            <div className="absolute -top-4 left-1/2 -translate-x-1/2 bg-[#4A90E2] text-white px-4 py-1 rounded-full text-xs font-bold uppercase tracking-widest flex items-center gap-1">
-              <Sparkles className="w-3 h-3" />
-              Populärast
-            </div>
-            <h3 className="text-xl font-bold mb-2 text-slate-900">Pro</h3>
-            <p className="text-slate-500 text-sm mb-6">För växande bolag</p>
-            <div className="mb-8">
-              <span className="text-4xl font-black text-slate-900">1 499 kr</span>
-              <span className="text-slate-500">/mån</span>
-            </div>
-            <ul className="space-y-4 mb-8 flex-1">
-              <li className="flex items-center gap-2 text-sm">
-                <Check className="w-5 h-5 text-[#4A90E2]" />
-                <span className="text-slate-600">500 dokument / mån</span>
-              </li>
-              <li className="flex items-center gap-2 text-sm">
-                <Check className="w-5 h-5 text-[#4A90E2]" />
-                <span className="text-slate-600">Prioriterad extrahering</span>
-              </li>
-              <li className="flex items-center gap-2 text-sm">
-                <Check className="w-5 h-5 text-[#4A90E2]" />
-                <span className="text-slate-600">E-postsupport</span>
-              </li>
-              <li className="flex items-center gap-2 text-sm">
-                <Check className="w-5 h-5 text-[#4A90E2]" />
-                <span className="text-slate-600">Custom Excel-mallar</span>
-              </li>
-            </ul>
-            <Link
-              href="/signup"
-              className="w-full py-3 rounded-lg bg-[#4A90E2] text-white font-bold text-center hover:shadow-lg transition-all"
-            >
-              Välj Pro
-            </Link>
-          </div>
+              <div className="p-8 flex-1">
+                <ul className="space-y-4">
+                  {plan.features.map((feature, f) => (
+                    <li key={f} className="flex items-start gap-3 text-sm text-neutral-700">
+                      <Check className="w-4 h-4 text-neutral-900 mt-0.5 flex-shrink-0" />
+                      <span className="font-medium">{feature}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
 
-          {/* Enterprise Plan */}
-          <div className="p-8 bg-white rounded-2xl border border-slate-200 flex flex-col">
-            <h3 className="text-xl font-bold mb-2 text-slate-900">Enterprise</h3>
-            <p className="text-slate-500 text-sm mb-6">För stora flöden</p>
-            <div className="mb-8">
-              <span className="text-4xl font-black text-slate-900">Offert</span>
+              <div className="p-8 pt-0 mt-auto">
+                <Link
+                  href={plan.href}
+                  className={`block w-full py-4 text-center font-bold tracking-wide transition-all ${
+                    plan.highlight
+                      ? "bg-neutral-900 text-white hover:bg-neutral-800"
+                      : "bg-white border-2 border-neutral-200 text-neutral-900 hover:border-neutral-900"
+                  }`}
+                >
+                  {plan.cta}
+                </Link>
+              </div>
             </div>
-            <ul className="space-y-4 mb-8 flex-1">
-              <li className="flex items-center gap-2 text-sm">
-                <Check className="w-5 h-5 text-[#4A90E2]" />
-                <span className="text-slate-600">Obegränsat antal dokument</span>
-              </li>
-              <li className="flex items-center gap-2 text-sm">
-                <Check className="w-5 h-5 text-[#4A90E2]" />
-                <span className="text-slate-600">API-integration</span>
-              </li>
-              <li className="flex items-center gap-2 text-sm">
-                <Check className="w-5 h-5 text-[#4A90E2]" />
-                <span className="text-slate-600">Dedikerad Account Manager</span>
-              </li>
-              <li className="flex items-center gap-2 text-sm">
-                <Check className="w-5 h-5 text-[#4A90E2]" />
-                <span className="text-slate-600">On-premise alternativ</span>
-              </li>
-            </ul>
-            <Link
-              href="mailto:sales@vextra.ai"
-              className="w-full py-3 rounded-lg border border-slate-900 text-slate-900 font-bold text-center hover:bg-slate-900/5 transition-colors"
-            >
-              Kontakta oss
-            </Link>
-          </div>
+          ))}
         </div>
       </div>
     </section>

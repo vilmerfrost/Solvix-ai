@@ -1,30 +1,34 @@
 "use client";
 
 import Link from "next/link";
+import { ArrowRight } from "lucide-react";
 
 export function FinalCTA() {
   return (
-    <section className="py-24 px-6 text-center bg-white">
-      <div className="max-w-4xl mx-auto bg-[#4A90E2] rounded-3xl p-16 text-white shadow-2xl shadow-[#4A90E2]/30">
-        <h2 className="text-4xl font-black mb-6">
-          Sluta mata in data manuellt
+    <section className="py-32 px-6 bg-neutral-900 text-white relative overflow-hidden">
+      {/* Grid Pattern Overlay */}
+      <div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.05)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.05)_1px,transparent_1px)] bg-[size:40px_40px]"></div>
+      
+      <div className="max-w-4xl mx-auto text-center relative z-10">
+        <h2 className="text-5xl md:text-7xl font-bold tracking-tighter mb-8 leading-[0.9]">
+          REDO ATT <span className="text-neutral-500">AUTOMATISERA?</span>
         </h2>
-        <p className="text-lg opacity-90 mb-10 max-w-xl mx-auto">
-          Bli en del av hundratals logistikföretag som redan har effektiviserat
-          sin administration med Vextra.ai.
+        <p className="text-xl text-neutral-400 mb-12 max-w-2xl mx-auto font-light leading-relaxed">
+          Sluta slösa tid på manuell datainmatning. Bli en del av de logistikföretag som väljer effektivitet.
         </p>
-        <div className="flex flex-col sm:flex-row gap-4 justify-center">
+        <div className="flex flex-col sm:flex-row gap-6 justify-center">
           <Link
             href="/signup"
-            className="bg-white text-[#4A90E2] px-8 py-4 rounded-xl font-black text-lg hover:scale-105 transition-transform"
+            className="bg-white text-neutral-900 px-10 py-5 text-lg font-bold tracking-wide hover:bg-neutral-200 transition-all flex items-center justify-center gap-3 group"
           >
-            Kom igång gratis
+            SKAPA KONTO GRATIS
+            <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
           </Link>
           <Link
             href="mailto:sales@vextra.ai"
-            className="bg-[#4A90E2]/20 border border-white/30 text-white px-8 py-4 rounded-xl font-bold text-lg hover:bg-[#4A90E2]/30 transition-colors"
+            className="px-10 py-5 text-lg font-bold tracking-wide border-2 border-neutral-700 text-white hover:border-white transition-all hover:bg-white/5"
           >
-            Boka en demo
+            BOKA TEKNISK DEMO
           </Link>
         </div>
       </div>

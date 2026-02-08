@@ -4,104 +4,67 @@ import Link from "next/link";
 
 export function Footer() {
   return (
-    <footer className="bg-white border-t border-slate-200 py-16 px-6">
-      <div className="max-w-7xl mx-auto">
-        {/* Main Footer Content */}
-        <div className="grid md:grid-cols-4 gap-12 mb-16">
-          {/* Company Info */}
-          <div className="col-span-2">
-            <div className="flex items-center gap-2 mb-6">
-              <div className="w-6 h-6 bg-[#4A90E2] rounded-lg flex items-center justify-center">
-                <span className="text-white font-bold text-xs">V</span>
+    <footer className="bg-neutral-50 border-t border-neutral-200 py-20 px-6">
+      <div className="max-w-[1400px] mx-auto">
+        <div className="grid md:grid-cols-12 gap-12 mb-20">
+          <div className="md:col-span-4">
+            <Link href="/" className="flex items-center gap-2 mb-6 group">
+              <div className="w-6 h-6 bg-neutral-900 flex items-center justify-center text-white font-black text-xs tracking-tighter">
+                V
               </div>
-              <span className="text-lg font-bold tracking-tight text-slate-900">
-                Vextra.ai
+              <span className="text-lg font-bold tracking-tighter text-neutral-900">
+                VEXTRA.AI
               </span>
-            </div>
-            <p className="text-slate-500 text-sm max-w-sm mb-6 leading-relaxed">
-              Intelligent dokumentextrahering för den moderna logistikbranschen.
-              Baserat i Stockholm, levererat till hela världen.
+            </Link>
+            <p className="text-neutral-500 font-medium text-sm leading-relaxed max-w-sm mb-8">
+              Automatisering av logistikdata för företag som värdesätter precision. 
+              Byggd i Stockholm.
             </p>
             <div className="flex gap-4">
-              <a
-                href="https://linkedin.com"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="w-10 h-10 bg-slate-50 rounded-full flex items-center justify-center hover:bg-[#4A90E2] hover:text-white transition-colors text-slate-600"
-              >
-                <svg
-                  className="w-5 h-5"
-                  fill="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path d="M19 0h-14c-2.761 0-5 2.239-5 5v14c0 2.761 2.239 5 5 5h14c2.762 0 5-2.239 5-5v-14c0-2.761-2.238-5-5-5zm-11 19h-3v-11h3v11zm-1.5-12.268c-.966 0-1.75-.79-1.75-1.764s.784-1.764 1.75-1.764 1.75.79 1.75 1.764-.783 1.764-1.75 1.764zm13.5 12.268h-3v-5.604c0-3.368-4-3.113-4 0v5.604h-3v-11h3v1.765c1.396-2.586 7-2.777 7 2.476v6.759z"></path>
-                </svg>
+              <a href="https://linkedin.com" target="_blank" rel="noopener noreferrer" className="text-neutral-400 hover:text-neutral-900 transition-colors">
+                LinkedIn
+              </a>
+              <a href="https://twitter.com" target="_blank" rel="noopener noreferrer" className="text-neutral-400 hover:text-neutral-900 transition-colors">
+                Twitter
               </a>
             </div>
           </div>
 
-          {/* Product Links */}
-          <div>
-            <h4 className="font-bold mb-6 text-slate-900">Produkten</h4>
-            <ul className="space-y-4 text-sm text-slate-500">
-              <li>
-                <a href="#hur-det-funkar" className="hover:text-[#4A90E2]">
-                  Funktioner
-                </a>
-              </li>
-              <li>
-                <Link href="/signup" className="hover:text-[#4A90E2]">
-                  Integrationer
-                </Link>
-              </li>
-              <li>
-                <Link href="/signup" className="hover:text-[#4A90E2]">
-                  Säkerhet
-                </Link>
-              </li>
-              <li>
-                <Link href="/signup" className="hover:text-[#4A90E2]">
-                  API
-                </Link>
-              </li>
+          <div className="md:col-span-2 md:col-start-7">
+            <h4 className="font-mono text-xs font-bold text-neutral-400 mb-6 uppercase tracking-wider">Produkt</h4>
+            <ul className="space-y-4 text-sm font-bold text-neutral-600">
+              <li><Link href="#hur-det-funkar" className="hover:text-neutral-900 transition-colors">Teknik</Link></li>
+              <li><Link href="/signup" className="hover:text-neutral-900 transition-colors">Integrationer</Link></li>
+              <li><Link href="/signup" className="hover:text-neutral-900 transition-colors">Säkerhet</Link></li>
+              <li><Link href="/signup" className="hover:text-neutral-900 transition-colors">API Docs</Link></li>
             </ul>
           </div>
 
-          {/* Contact Links */}
-          <div>
-            <h4 className="font-bold mb-6 text-slate-900">Kontakt</h4>
-            <ul className="space-y-4 text-sm text-slate-500">
-              <li>
-                <a href="mailto:kontakt@vextra.ai" className="hover:text-[#4A90E2]">
-                  Support
-                </a>
-              </li>
-              <li>
-                <a href="mailto:sales@vextra.ai" className="hover:text-[#4A90E2]">
-                  Försäljning
-                </a>
-              </li>
-              <li>hello@vextra.ai</li>
-              <li>Stockholm, Sverige</li>
+          <div className="md:col-span-2">
+            <h4 className="font-mono text-xs font-bold text-neutral-400 mb-6 uppercase tracking-wider">Företag</h4>
+            <ul className="space-y-4 text-sm font-bold text-neutral-600">
+              <li><Link href="/about" className="hover:text-neutral-900 transition-colors">Om oss</Link></li>
+              <li><Link href="/careers" className="hover:text-neutral-900 transition-colors">Karriär</Link></li>
+              <li><Link href="/blog" className="hover:text-neutral-900 transition-colors">Blogg</Link></li>
+              <li><Link href="/contact" className="hover:text-neutral-900 transition-colors">Kontakt</Link></li>
+            </ul>
+          </div>
+
+          <div className="md:col-span-2">
+            <h4 className="font-mono text-xs font-bold text-neutral-400 mb-6 uppercase tracking-wider">Legal</h4>
+            <ul className="space-y-4 text-sm font-bold text-neutral-600">
+              <li><Link href="/privacy" className="hover:text-neutral-900 transition-colors">Integritet</Link></li>
+              <li><Link href="/terms" className="hover:text-neutral-900 transition-colors">Villkor</Link></li>
+              <li><Link href="/cookies" className="hover:text-neutral-900 transition-colors">Cookies</Link></li>
             </ul>
           </div>
         </div>
 
-        {/* Bottom Bar */}
-        <div className="border-t border-slate-200 pt-8 flex flex-col md:flex-row justify-between items-center gap-4">
-          <p className="text-xs text-slate-400">
-            © 2024 Vextra.ai AB. Alla rättigheter reserverade.
-          </p>
-          <div className="flex gap-6 text-xs text-slate-400">
-            <Link href="/privacy" className="hover:text-[#4A90E2]">
-              Integritetspolicy
-            </Link>
-            <Link href="/terms" className="hover:text-[#4A90E2]">
-              Användarvillkor
-            </Link>
-            <Link href="/cookies" className="hover:text-[#4A90E2]">
-              Cookies
-            </Link>
+        <div className="border-t border-neutral-200 pt-8 flex flex-col md:flex-row justify-between items-center gap-4 text-xs font-mono text-neutral-400">
+          <p>© 2024 Vextra.ai AB. Alla rättigheter förbehållna.</p>
+          <div className="flex items-center gap-2">
+            <span className="w-2 h-2 bg-green-500 rounded-full"></span>
+            SYSTEM STATUS: ONLINE
           </div>
         </div>
       </div>
