@@ -1,133 +1,71 @@
 "use client";
 
+import { ChevronDown } from "lucide-react";
 import { useState } from "react";
-import { motion, AnimatePresence } from "framer-motion";
-import { Plus, Minus } from "lucide-react";
 
 const faqs = [
   {
-    question: "Funkar det med handskrivna dokument?",
+    question: "Hur säker är min data?",
     answer:
-      "Ja. Vår AI är tränad för att hantera handskrivna, suddiga och skadade dokument — precis de som era chaufförer producerar i verkligheten.",
+      "All data krypteras både under överföring och lagring. Vi följer strikta GDPR-riktlinjer och säljer aldrig vidare din data. All bearbetning sker på säkra servrar inom EU.",
   },
   {
-    question: "Vad händer om AI:n gissar fel?",
+    question: "Fungerar det med handskrivna dokument?",
     answer:
-      "Varje dokument går genom en 4-stegs verifiering. Osäker data flaggas automatiskt. Ni ställer in er egen confidence-tröskel för vad som kräver manuell granskning.",
+      "Ja, vår avancerade AI-modell är tränad på tusentals handskrivna logistikdokument och kan med hög precision tyda de flesta handstilar.",
   },
   {
-    question: "Är min data säker?",
+    question: "Kan jag integrera Vextra i mitt befintliga system?",
     answer:
-      "All data krypteras under överföring och lagring. Dokument raderas automatiskt efter bearbetning om ni vill.",
+      "Absolut! För våra Enterprise-kunder erbjuder vi ett robust API som gör det möjligt att automatisera hela flödet från inskanning till bokföring.",
   },
   {
-    question: "Vad händer om ni lägger ner?",
+    question: "Vilka filformat stöds?",
     answer:
-      "All er data kan exporteras när som helst i standard-format. Ni äger alltid er data.",
+      "Vi stödjer PDF, JPG, PNG, TIFF och de flesta vanliga bildformat. Vi kan också hantera Excel-filer och skannade dokument.",
   },
   {
-    question: "Måste jag ha en API-nyckel?",
+    question: "Hur lång tid tar det att komma igång?",
     answer:
-      "Nej. Allt ingår i er plan. Inga externa konton eller nycklar krävs.",
-  },
-  {
-    question: "Kan jag integrera med vårt befintliga system?",
-    answer:
-      "Enterprise-planen inkluderar API-access för direkt integration med ert ERP, WMS eller ekonomisystem.",
+      "Du kan börja extrahera data inom några minuter efter registrering. Ingen installation eller setup krävs.",
   },
 ];
-
-function FAQItem({
-  question,
-  answer,
-  isOpen,
-  onClick,
-}: {
-  question: string;
-  answer: string;
-  isOpen: boolean;
-  onClick: () => void;
-}) {
-  return (
-    <div className="border-b border-white/[0.06] last:border-0">
-      <button
-        onClick={onClick}
-        className="w-full py-6 flex items-center justify-between text-left group"
-      >
-        <span className="text-lg font-medium text-[#F5F5F5] group-hover:text-[#00E599] transition-colors pr-4">
-          {question}
-        </span>
-        <div
-          className={`w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 transition-all ${
-            isOpen
-              ? "bg-[#00E599]/20 text-[#00E599]"
-              : "bg-[#1A1A2E] text-[#8A8A9A] group-hover:bg-[#1A1A2E]/80"
-          }`}
-        >
-          {isOpen ? (
-            <Minus className="w-4 h-4" />
-          ) : (
-            <Plus className="w-4 h-4" />
-          )}
-        </div>
-      </button>
-      <AnimatePresence initial={false}>
-        {isOpen && (
-          <motion.div
-            initial={{ height: 0, opacity: 0 }}
-            animate={{ height: "auto", opacity: 1 }}
-            exit={{ height: 0, opacity: 0 }}
-            transition={{ duration: 0.3, ease: "easeInOut" }}
-            className="overflow-hidden"
-          >
-            <p className="pb-6 text-[#8A8A9A] leading-relaxed">{answer}</p>
-          </motion.div>
-        )}
-      </AnimatePresence>
-    </div>
-  );
-}
 
 export function FAQ() {
   const [openIndex, setOpenIndex] = useState<number | null>(0);
 
   return (
-    <section id="faq" className="relative py-24 px-6 lg:px-8 bg-[#0A0A0A]">
+    <section className="py-24 px-6 bg-[#F0F7FF]" id="faq">
       <div className="max-w-3xl mx-auto">
-        {/* Section header */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          transition={{ duration: 0.6 }}
-          className="text-center mb-12"
-        >
-          <span className="text-sm font-medium text-[#00E599] uppercase tracking-wider">
-            Vanliga frågor
-          </span>
-          <h2 className="text-3xl md:text-4xl font-bold text-[#F5F5F5] mt-3">
-            Allt du behöver veta
-          </h2>
-        </motion.div>
+        <h2 className="text-3xl font-black mb-12 text-center text-slate-900">
+          Vanliga frågor
+        </h2>
 
-        {/* FAQ items */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          transition={{ duration: 0.6, delay: 0.1 }}
-          className="rounded-2xl bg-[#1A1A2E]/30 backdrop-blur-sm border border-white/[0.06] px-6"
-        >
-          {faqs.map((faq, i) => (
-            <FAQItem
-              key={i}
-              question={faq.question}
-              answer={faq.answer}
-              isOpen={openIndex === i}
-              onClick={() => setOpenIndex(openIndex === i ? null : i)}
-            />
+        <div className="space-y-4">
+          {faqs.map((faq, index) => (
+            <div
+              key={index}
+              className="bg-white rounded-xl border border-slate-200 overflow-hidden"
+            >
+              <button
+                onClick={() => setOpenIndex(openIndex === index ? null : index)}
+                className="w-full px-6 py-5 text-left flex items-center justify-between font-bold text-slate-900 hover:bg-slate-50 transition-colors"
+              >
+                <span>{faq.question}</span>
+                <ChevronDown
+                  className={`w-5 h-5 text-slate-400 transition-transform ${
+                    openIndex === index ? "rotate-180" : ""
+                  }`}
+                />
+              </button>
+              {openIndex === index && (
+                <div className="px-6 pb-5 text-sm text-slate-600 leading-relaxed">
+                  {faq.answer}
+                </div>
+              )}
+            </div>
           ))}
-        </motion.div>
+        </div>
       </div>
     </section>
   );

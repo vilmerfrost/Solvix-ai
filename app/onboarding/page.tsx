@@ -2,8 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { motion } from "framer-motion";
-import { Check, ArrowRight, Loader2 } from "lucide-react";
+import { Check, ArrowRight, Loader2, Zap, Shield, CheckCircle } from "lucide-react";
 import { INDUSTRIES, type IndustryConfig } from "@/config/industries";
 import { createBrowserClient } from "@supabase/ssr";
 
@@ -58,32 +57,49 @@ export default function OnboardingPage() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-950 flex items-center justify-center p-4">
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5 }}
-        className="w-full max-w-3xl"
-      >
-        {/* Progress */}
-        <div className="text-center mb-2">
-          <span className="text-xs font-medium text-slate-500 uppercase tracking-wider">
-            Steg 1 av 1
-          </span>
+    <div className="min-h-screen bg-white flex flex-col">
+      {/* Header with Logo */}
+      <header className="flex items-center justify-between px-8 py-6 border-b border-slate-200">
+        <div className="flex items-center gap-2">
+          <div className="w-8 h-8 bg-[#4A90E2] rounded-lg flex items-center justify-center">
+            <span className="text-white font-bold text-sm">V</span>
+          </div>
+          <span className="text-xl font-bold text-slate-900">Vextra.ai</span>
         </div>
+        <button className="w-10 h-10 rounded-xl border border-slate-200 flex items-center justify-center text-slate-400 hover:text-slate-600 hover:border-slate-300 transition-all">
+          ?
+        </button>
+      </header>
 
+      {/* Progress Bar */}
+      <div className="px-8 py-6 border-b border-slate-100">
+        <div className="max-w-[500px] mx-auto">
+          <div className="flex justify-between items-center mb-2">
+            <span className="text-xs font-semibold text-[#4A90E2] uppercase tracking-wider">
+              Steg 1 av 1
+            </span>
+            <span className="text-xs font-medium text-slate-500">100% slutfört</span>
+          </div>
+          <div className="h-2 w-full bg-slate-200 rounded-full overflow-hidden">
+            <div className="h-full bg-[#4A90E2] rounded-full transition-all duration-500 w-full" />
+          </div>
+        </div>
+      </div>
+
+      {/* Main Content */}
+      <main className="flex-1 px-8 py-12 flex flex-col items-center">
         {/* Header */}
-        <div className="text-center mb-10">
-          <h1 className="text-3xl font-bold text-white mb-3">
+        <div className="max-w-[960px] w-full text-center mb-12">
+          <h1 className="text-4xl font-bold text-slate-900 mb-3 tracking-tight">
             Välkommen till Vextra
           </h1>
-          <p className="text-slate-400 text-lg max-w-xl mx-auto">
-            Vilken bransch jobbar du i? Vi anpassar verktyget efter dina behov.
+          <p className="text-lg text-slate-500">
+            Vi anpassar verktyget efter dina behov
           </p>
         </div>
 
         {/* Industry Grid */}
-        <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mb-10">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 w-full max-w-[960px] mb-12">
           {INDUSTRIES.map((industry) => (
             <IndustryCard
               key={industry.id}
@@ -95,27 +111,27 @@ export default function OnboardingPage() {
         </div>
 
         {/* Feature Callouts */}
-        <div className="mt-8 grid grid-cols-3 gap-4 max-w-lg mx-auto mb-10">
-          <div className="text-center">
-            <div className="text-2xl mb-1">&#x26A1;</div>
-            <p className="text-xs text-slate-400">Ingen setup</p>
+        <div className="flex flex-wrap justify-center gap-8 mb-12 w-full max-w-[960px]">
+          <div className="flex items-center gap-2 text-slate-600">
+            <Zap className="w-5 h-5 text-[#4A90E2]" />
+            <span className="text-sm font-medium">Ingen setup</span>
           </div>
-          <div className="text-center">
-            <div className="text-2xl mb-1">&#x1F3AF;</div>
-            <p className="text-xs text-slate-400">97% accuracy</p>
+          <div className="flex items-center gap-2 text-slate-600">
+            <CheckCircle className="w-5 h-5 text-[#4A90E2]" />
+            <span className="text-sm font-medium">97% accuracy</span>
           </div>
-          <div className="text-center">
-            <div className="text-2xl mb-1">&#x1F512;</div>
-            <p className="text-xs text-slate-400">Krypterad data</p>
+          <div className="flex items-center gap-2 text-slate-600">
+            <Shield className="w-5 h-5 text-[#4A90E2]" />
+            <span className="text-sm font-medium">Krypterad data</span>
           </div>
         </div>
 
         {/* Continue Button */}
-        <div className="flex justify-center">
+        <div className="w-full max-w-[400px]">
           <button
             onClick={handleSubmit}
             disabled={!selectedIndustry || saving}
-            className="flex items-center gap-3 px-8 py-3.5 bg-emerald-600 text-white rounded-xl font-semibold text-lg hover:bg-emerald-500 transition-all disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-emerald-600"
+            className="w-full py-4 bg-[#4A90E2] hover:bg-[#4A90E2]/90 text-white font-bold rounded-xl shadow-lg shadow-[#4A90E2]/20 transition-all flex items-center justify-center gap-2 group disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-[#4A90E2]"
           >
             {saving ? (
               <>
@@ -125,20 +141,35 @@ export default function OnboardingPage() {
             ) : (
               <>
                 Fortsätt
-                <ArrowRight className="w-5 h-5" />
+                <ArrowRight className="w-5 h-5 transition-transform group-hover:translate-x-1" />
               </>
             )}
           </button>
+          <p className="text-center mt-4 text-xs text-slate-400">
+            Genom att fortsätta godkänner du våra användarvillkor.
+          </p>
         </div>
-      </motion.div>
+      </main>
+
+      {/* Footer */}
+      <footer className="py-10 px-8 flex justify-center border-t border-slate-100">
+        <div className="max-w-[960px] w-full flex justify-between items-center text-slate-400 text-sm">
+          <p>© 2024 Vextra.ai - Scandinavian Document Intelligence</p>
+          <div className="flex gap-4">
+            <a href="/privacy" className="hover:text-[#4A90E2] transition-colors">
+              Integritet
+            </a>
+            <a href="mailto:kontakt@vextra.ai" className="hover:text-[#4A90E2] transition-colors">
+              Support
+            </a>
+          </div>
+        </div>
+      </footer>
     </div>
   );
 }
 
-// =============================================================================
-// INDUSTRY CARD COMPONENT
-// =============================================================================
-
+// Industry Card Component
 function IndustryCard({
   industry,
   selected,
@@ -149,55 +180,49 @@ function IndustryCard({
   onSelect: () => void;
 }) {
   return (
-    <motion.button
-      whileHover={{ scale: 1.02 }}
-      whileTap={{ scale: 0.98 }}
+    <button
       onClick={onSelect}
-      className={`relative p-5 rounded-xl text-left transition-all ${
+      className={`group relative flex flex-col p-6 rounded-xl text-left transition-all ${
         selected
-          ? "bg-slate-800 border-2 border-emerald-500 ring-1 ring-emerald-500/30"
-          : "bg-slate-900 border border-slate-800 hover:border-slate-600"
+          ? "bg-[#4A90E2]/10 border-2 border-[#4A90E2] shadow-sm"
+          : "bg-white border border-slate-200 hover:border-[#4A90E2]/50 hover:shadow-md"
       }`}
     >
-      {/* Selected Checkmark */}
+      {/* Checkmark */}
       {selected && (
-        <motion.div
-          initial={{ scale: 0 }}
-          animate={{ scale: 1 }}
-          className="absolute top-3 right-3 w-6 h-6 bg-emerald-500 rounded-full flex items-center justify-center"
-        >
-          <Check className="w-4 h-4 text-white" strokeWidth={3} />
-        </motion.div>
+        <div className="absolute top-4 right-4 bg-[#4A90E2] text-white rounded-full p-0.5">
+          <Check className="w-4 h-4" strokeWidth={3} />
+        </div>
       )}
 
       {/* Icon */}
-      <div className="text-3xl mb-3">{industry.icon}</div>
+      <div className="text-4xl mb-4">{industry.icon}</div>
 
       {/* Name */}
-      <h3 className="font-semibold text-white text-sm mb-1">
+      <h3 className="text-lg font-bold text-slate-900 mb-1">
         {industry.nameSv}
       </h3>
 
       {/* Description */}
-      <p className="text-xs text-slate-400 mb-3 line-clamp-2">
+      <p className="text-sm text-slate-600 mb-4 leading-relaxed">
         {industry.descriptionSv}
       </p>
 
-      {/* Sample document types */}
-      <div className="flex flex-wrap gap-1.5">
-        {industry.sampleDocumentTypes.slice(0, 3).map((type) => (
+      {/* Sample Document Tags */}
+      <div className="flex flex-wrap gap-2 mt-auto">
+        {industry.sampleDocumentTypes.slice(0, 2).map((type) => (
           <span
             key={type}
-            className={`text-[10px] px-2 py-0.5 rounded-full ${
+            className={`px-2 py-1 text-[10px] font-bold uppercase tracking-wide rounded border ${
               selected
-                ? "bg-emerald-900/50 text-emerald-300"
-                : "bg-slate-800 text-slate-500"
+                ? "bg-white text-[#4A90E2] border-[#4A90E2]/20"
+                : "bg-slate-50 text-slate-500 border-slate-200"
             }`}
           >
             {type}
           </span>
         ))}
       </div>
-    </motion.button>
+    </button>
   );
 }
