@@ -1,200 +1,147 @@
-import Link from "next/link";
+"use client";
+
+import { Navbar } from "@/components/landing/Navbar";
+import { Footer } from "@/components/landing/Footer";
+import { Scale, AlertTriangle, CreditCard, Ban, FileSignature } from "lucide-react";
 
 export default function TermsPage() {
   return (
-    <div className="min-h-screen bg-slate-50">
-      {/* Header */}
-      <header className="border-b border-slate-200 bg-white">
-        <div className="max-w-4xl mx-auto px-4 py-4 flex items-center justify-between">
-          <Link href="/" className="flex items-center gap-2">
-            <div className="w-8 h-8 bg-indigo-600 rounded-lg flex items-center justify-center">
-              <span className="text-white font-bold">V</span>
+    <div className="min-h-screen bg-white">
+      <Navbar />
+      
+      <main className="pt-32 pb-24 px-6">
+        <div className="max-w-[1000px] mx-auto">
+          {/* Header */}
+          <div className="mb-20 border-b border-neutral-200 pb-12">
+            <div className="inline-flex items-center gap-2 border border-neutral-900 px-3 py-1 mb-8 bg-neutral-900 text-white">
+              <span className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></span>
+              <span className="text-xs font-mono tracking-widest uppercase font-bold">Legal Protocol v2.1</span>
             </div>
-            <span className="font-semibold text-slate-900">Vextra AI</span>
-          </Link>
-        </div>
-      </header>
-
-      <main className="max-w-4xl mx-auto px-4 py-12">
-        <h1 className="text-3xl font-bold text-slate-900 mb-8">
-          Användarvillkor
-        </h1>
-
-        <div className="prose prose-slate max-w-none">
-          <p className="text-slate-600 mb-8">
-            Senast uppdaterad: {new Date().toLocaleDateString("sv-SE")}
-          </p>
-
-          <section className="mb-8">
-            <h2 className="text-xl font-semibold text-slate-900 mb-4">
-              1. Godkännande av villkor
-            </h2>
-            <p>
-              Genom att använda Vextra AI ("Tjänsten") godkänner du dessa
-              användarvillkor. Om du inte godkänner villkoren får du inte använda
-              Tjänsten.
+            <h1 className="text-5xl md:text-6xl font-bold tracking-tighter text-neutral-900 mb-6">
+              ANVÄNDARVILLKOR
+            </h1>
+            <p className="text-xl text-neutral-500 font-mono">
+              // Senast uppdaterad: {new Date().toLocaleDateString("sv-SE")}
             </p>
-          </section>
+          </div>
 
-          <section className="mb-8">
-            <h2 className="text-xl font-semibold text-slate-900 mb-4">
-              2. Beskrivning av Tjänsten
-            </h2>
-            <p>
-              Vextra AI är en plattform för intelligent dokumentextraktion som
-              använder artificiell intelligens för att analysera och extrahera
-              data från dokument. Tjänsten erbjuder:
-            </p>
-            <ul className="list-disc ml-6 mt-2">
-              <li>OCR och dokumentanalys med AI-modeller</li>
-              <li>Integration med Azure Blob Storage</li>
-              <li>Export till Excel-format</li>
-              <li>Dashboard och statistik</li>
-            </ul>
-          </section>
+          {/* Content Grid */}
+          <div className="grid gap-12">
+            
+            {/* Section 1 */}
+            <div className="grid md:grid-cols-12 gap-8 border-b border-neutral-100 pb-12">
+              <div className="md:col-span-4">
+                <div className="flex items-center gap-3 text-neutral-900 mb-2">
+                  <FileSignature className="w-5 h-5" />
+                  <h2 className="font-mono font-bold text-sm uppercase tracking-wider">1. GODKÄNNANDE</h2>
+                </div>
+              </div>
+              <div className="md:col-span-8">
+                <p className="text-lg text-neutral-600 leading-relaxed font-medium">
+                  Genom att använda Vextra AI ("Tjänsten") ingår du ett juridiskt bindande avtal med Vextra AI AB. Om du inte godkänner dessa villkor får du inte använda tjänsten.
+                </p>
+              </div>
+            </div>
 
-          <section className="mb-8">
-            <h2 className="text-xl font-semibold text-slate-900 mb-4">
-              3. Kontokrav
-            </h2>
-            <p>För att använda Tjänsten måste du:</p>
-            <ul className="list-disc ml-6 mt-2">
-              <li>Vara minst 18 år gammal</li>
-              <li>Tillhandahålla korrekt kontaktinformation</li>
-              <li>Hålla dina inloggningsuppgifter konfidentiella</li>
-              <li>Ansvara för all aktivitet på ditt konto</li>
-            </ul>
-          </section>
+            {/* Section 2 */}
+            <div className="grid md:grid-cols-12 gap-8 border-b border-neutral-100 pb-12">
+              <div className="md:col-span-4">
+                <div className="flex items-center gap-3 text-neutral-900 mb-2">
+                  <AlertTriangle className="w-5 h-5" />
+                  <h2 className="font-mono font-bold text-sm uppercase tracking-wider">2. API & KOSTNADER</h2>
+                </div>
+              </div>
+              <div className="md:col-span-8">
+                <div className="bg-amber-50 border border-amber-200 p-6 mb-6">
+                  <h3 className="text-amber-900 font-bold mb-2 flex items-center gap-2">
+                    <AlertTriangle className="w-4 h-4" />
+                    BYOK (Bring Your Own Key)
+                  </h3>
+                  <p className="text-amber-800 text-sm">
+                    Vextra AI använder en modell där du tillhandahåller egna API-nycklar. Du är ensamt ansvarig för alla kostnader som uppstår hos dina AI-leverantörer (OpenAI, Anthropic, Google). Vi rekommenderar starkt att du sätter kostnadsgränser (Hard Limits).
+                  </p>
+                </div>
+                <p className="text-neutral-600 font-medium">
+                  Du ansvarar för att hålla dina API-nycklar säkra. Vextra AI lagrar dessa nycklar krypterade men ansvarar inte för missbruk om ditt konto komprometteras på grund av svagt lösenord.
+                </p>
+              </div>
+            </div>
 
-          <section className="mb-8">
-            <h2 className="text-xl font-semibold text-slate-900 mb-4">
-              4. API-nycklar (BYOK-modell)
-            </h2>
-            <p>
-              Vextra AI använder en "Bring Your Own Key"-modell där du
-              tillhandahåller egna API-nycklar för AI-tjänster. Du ansvarar för:
-            </p>
-            <ul className="list-disc ml-6 mt-2">
-              <li>
-                Att hantera kostnadsgränser hos dina AI-leverantörer (Google,
-                OpenAI, Anthropic)
-              </li>
-              <li>
-                Alla kostnader som uppstår genom användning av dina API-nycklar
-              </li>
-              <li>Att hålla dina API-nycklar säkra</li>
-            </ul>
-            <p className="mt-4 p-4 bg-amber-50 border border-amber-200 rounded-lg">
-              <strong>Viktigt:</strong> Vi rekommenderar starkt att du sätter
-              kostnadsgränser hos dina AI-leverantörer för att undvika oväntade
-              kostnader.
-            </p>
-          </section>
+            {/* Section 3 */}
+            <div className="grid md:grid-cols-12 gap-8 border-b border-neutral-100 pb-12">
+              <div className="md:col-span-4">
+                <div className="flex items-center gap-3 text-neutral-900 mb-2">
+                  <Ban className="w-5 h-5" />
+                  <h2 className="font-mono font-bold text-sm uppercase tracking-wider">3. FÖRBJUDEN ANVÄNDNING</h2>
+                </div>
+              </div>
+              <div className="md:col-span-8">
+                <ul className="grid gap-4">
+                  {[
+                    "Olaglig verksamhet eller penningtvätt",
+                    "Bearbetning av dokument du inte äger rättigheterna till",
+                    "Reverse engineering av vår plattform",
+                    "Massautomatisering som liknar DDoS-attacker"
+                  ].map((item, i) => (
+                    <li key={i} className="flex items-center justify-between p-4 border border-neutral-200 bg-neutral-50 text-neutral-700 font-bold text-sm">
+                      {item}
+                      <span className="text-red-500 text-xs font-mono uppercase">FÖRBJUDET</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            </div>
 
-          <section className="mb-8">
-            <h2 className="text-xl font-semibold text-slate-900 mb-4">
-              5. Tillåten användning
-            </h2>
-            <p>Du får använda Tjänsten för:</p>
-            <ul className="list-disc ml-6 mt-2">
-              <li>Affärsrelaterad dokumentbearbetning</li>
-              <li>Dataextraktion från egna eller godkända dokument</li>
-              <li>Integration med dina egna system</li>
-            </ul>
-            <p className="mt-4">Du får INTE använda Tjänsten för:</p>
-            <ul className="list-disc ml-6 mt-2">
-              <li>Olaglig verksamhet</li>
-              <li>Bearbetning av dokument utan behörighet</li>
-              <li>Försök att kringgå säkerhetsåtgärder</li>
-              <li>Massautomatisering som överbelastar systemen</li>
-              <li>Återförsäljning av Tjänsten utan tillstånd</li>
-            </ul>
-          </section>
+            {/* Section 4 */}
+            <div className="grid md:grid-cols-12 gap-8 border-b border-neutral-100 pb-12">
+              <div className="md:col-span-4">
+                <div className="flex items-center gap-3 text-neutral-900 mb-2">
+                  <CreditCard className="w-5 h-5" />
+                  <h2 className="font-mono font-bold text-sm uppercase tracking-wider">4. BETALNING</h2>
+                </div>
+              </div>
+              <div className="md:col-span-8">
+                <p className="text-neutral-600 font-medium mb-4">
+                  Betalda prenumerationer debiteras i förskott månadsvis.
+                </p>
+                <ul className="space-y-4">
+                  <li className="flex items-start gap-4">
+                    <span className="font-mono text-neutral-400 font-bold">01.</span>
+                    <span className="text-neutral-800">Du kan avsluta när som helst. Tjänsten fortsätter perioden ut.</span>
+                  </li>
+                  <li className="flex items-start gap-4">
+                    <span className="font-mono text-neutral-400 font-bold">02.</span>
+                    <span className="text-neutral-800">Inga återbetalningar för påbörjad månad.</span>
+                  </li>
+                </ul>
+              </div>
+            </div>
 
-          <section className="mb-8">
-            <h2 className="text-xl font-semibold text-slate-900 mb-4">
-              6. Betalning och prenumerationer
-            </h2>
-            <p>
-              Betalda prenumerationer faktureras månadsvis. Du kan avsluta din
-              prenumeration när som helst, och den fortsätter till slutet av
-              innevarande faktureringsperiod. Återbetalningar ges inte för
-              delvis använda perioder.
-            </p>
-          </section>
+            {/* Section 5 */}
+            <div className="grid md:grid-cols-12 gap-8 border-b border-neutral-100 pb-12">
+              <div className="md:col-span-4">
+                <div className="flex items-center gap-3 text-neutral-900 mb-2">
+                  <Scale className="w-5 h-5" />
+                  <h2 className="font-mono font-bold text-sm uppercase tracking-wider">5. ANSVARSBEGRÄNSNING</h2>
+                </div>
+              </div>
+              <div className="md:col-span-8">
+                <div className="border-l-4 border-neutral-900 pl-6 py-2">
+                  <p className="text-neutral-900 font-bold italic text-lg">
+                    "Tjänsten tillhandahålls i befintligt skick."
+                  </p>
+                </div>
+                <p className="mt-4 text-neutral-600 font-medium">
+                  Vi garanterar inte att AI-tolkningen är 100% felfri. Du ansvarar för att verifiera all data innan den exporteras till ditt affärssystem. Vextra AI ansvarar inte för ekonomisk skada som uppstår till följd av felaktig datatolkning.
+                </p>
+              </div>
+            </div>
 
-          <section className="mb-8">
-            <h2 className="text-xl font-semibold text-slate-900 mb-4">
-              7. Immateriella rättigheter
-            </h2>
-            <p>
-              Tjänsten och dess innehåll ägs av Vextra AI. Du behåller alla
-              rättigheter till de dokument du laddar upp och den data som
-              extraheras.
-            </p>
-          </section>
-
-          <section className="mb-8">
-            <h2 className="text-xl font-semibold text-slate-900 mb-4">
-              8. Ansvarsbegränsning
-            </h2>
-            <p>
-              Tjänsten tillhandahålls "i befintligt skick". Vi garanterar inte
-              att AI-extraktioner är felfria och ansvarar inte för skador som
-              uppstår genom användning av Tjänsten. Du ansvarar för att verifiera
-              extraherad data.
-            </p>
-          </section>
-
-          <section className="mb-8">
-            <h2 className="text-xl font-semibold text-slate-900 mb-4">
-              9. Uppsägning
-            </h2>
-            <p>
-              Vi förbehåller oss rätten att stänga av eller avsluta ditt konto
-              vid brott mot dessa villkor. Du kan avsluta ditt konto när som
-              helst via Inställningar.
-            </p>
-          </section>
-
-          <section className="mb-8">
-            <h2 className="text-xl font-semibold text-slate-900 mb-4">
-              10. Ändringar
-            </h2>
-            <p>
-              Vi kan uppdatera dessa villkor. Fortsatt användning efter ändringar
-              innebär att du godkänner de nya villkoren.
-            </p>
-          </section>
-
-          <section className="mb-8">
-            <h2 className="text-xl font-semibold text-slate-900 mb-4">
-              11. Tillämplig lag
-            </h2>
-            <p>
-              Dessa villkor regleras av svensk lag. Tvister avgörs av svensk
-              domstol.
-            </p>
-          </section>
-
-          <section className="mb-8">
-            <h2 className="text-xl font-semibold text-slate-900 mb-4">
-              12. Kontakt
-            </h2>
-            <p>
-              Vid frågor om dessa villkor, kontakta:
-            </p>
-            <p className="mt-2">
-              <a
-                href="mailto:vilmer.frost@gmail.com"
-                className="text-indigo-600 hover:underline"
-              >
-                vilmer.frost@gmail.com
-              </a>
-            </p>
-          </section>
+          </div>
         </div>
       </main>
+
+      <Footer />
     </div>
   );
 }
