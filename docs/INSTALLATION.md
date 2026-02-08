@@ -1,6 +1,6 @@
-# Vextra AI - Customer Installation Guide
+# Solvix.ai AI - Customer Installation Guide
 
-This guide covers deploying Vextra AI for a new customer.
+This guide covers deploying Solvix.ai AI for a new customer.
 
 ---
 
@@ -184,8 +184,8 @@ docker compose logs web
 
 ## Support
 
-For technical support, contact your Vextra AI representative.
+For technical support, contact your Solvix.ai AI representative.
 
 ---
 
-**Vextra AI** - *Intelligent Document Extraction*
+**Solvix.ai AI** - *Intelligent Document Extraction*

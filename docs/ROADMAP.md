@@ -1,4 +1,4 @@
-# Vextra AI - Product Roadmap
+# Solvix.ai AI - Product Roadmap
 
 **Intelligent Document Extraction Platform**
 
@@ -283,4 +283,4 @@
 
 *Last Updated: January 2026*
 
-**Vextra AI** - *Verify + Extract = Vextra*
+**Solvix.ai AI** - *Verify + Extract = Solvix.ai*

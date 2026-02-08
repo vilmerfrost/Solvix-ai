@@ -558,6 +558,62 @@ async function extractFromPDF(
   if (filenameDate) {
     log(`✓ Date from filename: ${filenameDate}`, 'info');
   }
+
+  // Detect if this is likely an invoice based on filename
+  const filenameLC = (filename || '').toLowerCase();
+  const isInvoice = filenameLC.includes('faktura') || filenameLC.includes('invoice');
+
+  if (isInvoice) {
+    log('📄 Detected INVOICE document — using invoice extraction prompt', 'info');
+    const { buildInvoiceExtractionPrompt } = await import("@/lib/extraction/invoice-prompt");
+    const invoicePrompt = buildInvoiceExtractionPrompt('', filename);
+
+    try {
+      const invoiceResponse = await userAnthropicClient.messages.create({
+        model: "claude-sonnet-4-5-20250929",
+        max_tokens: 16384,
+        messages: [{
+          role: "user",
+          content: [
+            { type: "document", source: { type: "base64", media_type: "application/pdf", data: base64Data } },
+            { type: "text", text: invoicePrompt },
+          ],
+        }],
+      });
+
+      const invoiceText = invoiceResponse.content
+        .filter((b: any) => b.type === 'text')
+        .map((b: any) => (b as any).text)
+        .join('');
+
+      let cleaned = invoiceText.replace(/```json/g, '').replace(/```/g, '').trim();
+      let invoiceParsed: any = null;
+      try { invoiceParsed = JSON.parse(cleaned); } catch {
+        const fb = cleaned.indexOf('{'), lb = cleaned.lastIndexOf('}');
+        if (fb !== -1 && lb > fb) invoiceParsed = JSON.parse(cleaned.substring(fb, lb + 1));
+      }
+
+      if (invoiceParsed) {
+        invoiceParsed.documentType = 'invoice';
+        log(`✓ Invoice extracted: ${invoiceParsed.invoiceNumber?.value || 'unknown'} from ${invoiceParsed.supplier?.value || 'unknown'}`, 'success');
+
+        return {
+          ...invoiceParsed,
+          lineItems: [],
+          metadata: { totalRows: 0, extractedRows: 0, chunked: false, chunks: 1, model: "sonnet-4-5" },
+          totalWeightKg: 0,
+          totalCostSEK: 0,
+          uniqueAddresses: 0,
+          uniqueReceivers: 0,
+          uniqueMaterials: 0,
+          _validation: { completeness: 95, confidence: 90, issues: [] },
+          _processingLog: processingLog,
+        };
+      }
+    } catch (invoiceError) {
+      log(`⚠️ Invoice extraction failed, falling back to waste extraction: ${invoiceError instanceof Error ? invoiceError.message : String(invoiceError)}`, 'warning');
+    }
+  }
   
   // Material synonyms
   const synonyms = Object.entries(settings.material_synonyms || {})
@@ -1042,6 +1098,11 @@ export async function GET(req: Request) {
       ? "approved" 
       : "needs_review";
     
+    // Detect document type from extracted data
+    const { detectDocumentType } = await import("@/lib/schemas");
+    const detectedType = extractedData.documentType || detectDocumentType(extractedData, doc.filename);
+    extractedData.documentType = detectedType;
+
     // Save to database
     await supabase
       .from("documents")
@@ -1051,6 +1112,28 @@ export async function GET(req: Request) {
         updated_at: new Date().toISOString()
       })
       .eq("id", doc.id);
+
+    // Audit logging (non-blocking)
+    import("@/lib/audit").then(({ auditDocumentProcessed }) => {
+      auditDocumentProcessed(
+        doc.user_id, doc.id,
+        extractedData.metadata?.model || 'adaptive',
+        overallConfidence / 100,
+        detectedType,
+      );
+    }).catch(() => {});
+
+    // Post-processing duplicate check (non-blocking)
+    import("@/lib/duplicate-detection").then(async ({ checkForDuplicate }) => {
+      const postDup = await checkForDuplicate(
+        doc.user_id, doc.content_hash || '', extractedData, doc.filename,
+      );
+      if (postDup.isDuplicate && !doc.is_duplicate) {
+        await supabase.from("documents").update({
+          is_duplicate: true, duplicate_of: postDup.matchedDocumentId,
+        }).eq("id", doc.id);
+      }
+    }).catch(() => {});
     
     console.log(`   Status: ${newStatus}`);
     console.log(`   Completeness: ${completeness.toFixed(1)}%`);

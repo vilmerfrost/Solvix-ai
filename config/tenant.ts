@@ -43,8 +43,8 @@ export interface TenantBranding {
 // ============================================================================
 
 export const DEFAULT_TENANT_CONFIG: TenantConfig = {
-  companyName: "Vextra AI",
-  companySlug: "vextra-ai",
+  companyName: "Solvix.ai",
+  companySlug: "solvix-ai",
   companyLogo: undefined,
   primaryColor: "#6366F1", // Indigo-500 - Modern AI look
   language: "sv",

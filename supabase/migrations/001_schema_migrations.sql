@@ -1,5 +1,5 @@
 -- ============================================================
--- VEXTRA AI - SCHEMA MIGRATIONS TRACKING
+-- SOLVIX.AI - SCHEMA MIGRATIONS TRACKING
 -- Tracks which migrations have been applied
 -- ============================================================
 

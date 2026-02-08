@@ -3,7 +3,7 @@ import { createServiceRoleClient } from "@/lib/supabase";
 
 /**
  * Inbound email webhook
- * Receives emails forwarded to docs@inbox.vextra.ai
+ * Receives emails forwarded to docs@inbox.solvix.ai
  * Extracts PDF/Excel attachments and creates document records
  */
 export async function POST(request: NextRequest) {
@@ -69,8 +69,10 @@ export async function POST(request: NextRequest) {
         name.endsWith(".pdf") ||
         name.endsWith(".xlsx") ||
         name.endsWith(".xls") ||
+        name.endsWith(".csv") ||
         type.includes("pdf") ||
-        type.includes("spreadsheet")
+        type.includes("spreadsheet") ||
+        type.includes("csv")
       );
     });
 

@@ -204,7 +204,7 @@ export default function APIKeysPage() {
                   Hanterade AI-nycklar aktiva
                 </h3>
                 <p className="text-sm text-emerald-700 mt-1">
-                  Du använder Vextras hanterade AI-nycklar. Dokument bearbetas
+                  Du använder Solvix.ais hanterade AI-nycklar. Dokument bearbetas
                   utan att du behöver egna API-nycklar. Du kan valfritt lägga
                   till egna nycklar nedan för full kontroll.
                 </p>

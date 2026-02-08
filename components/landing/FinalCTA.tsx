@@ -25,7 +25,7 @@ export function FinalCTA() {
             <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
           </Link>
           <Link
-            href="mailto:sales@vextra.ai"
+            href="mailto:sales@solvix.ai"
             className="px-10 py-5 text-lg font-bold tracking-wide border-2 border-neutral-700 text-white hover:border-white transition-all hover:bg-white/5"
           >
             BOKA TEKNISK DEMO

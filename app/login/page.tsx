@@ -146,7 +146,7 @@ function LoginPageContent() {
           <div className="inline-flex items-center justify-center w-14 h-14 bg-indigo-600 rounded-xl mb-4 shadow-lg shadow-indigo-500/20">
             <span className="text-xl font-bold text-white">V</span>
           </div>
-          <h1 className="text-2xl font-bold text-stone-900">Vextra AI</h1>
+          <h1 className="text-2xl font-bold text-stone-900">Solvix.ai AI</h1>
           <p className="text-stone-500 mt-1">Intelligent dokumentextraktion</p>
         </div>
 
@@ -324,7 +324,7 @@ function LoginPageLoading() {
           <div className="inline-flex items-center justify-center w-14 h-14 bg-indigo-600 rounded-xl mb-4 shadow-lg shadow-indigo-500/20">
             <span className="text-xl font-bold text-white">V</span>
           </div>
-          <h1 className="text-2xl font-bold text-stone-900">Vextra AI</h1>
+          <h1 className="text-2xl font-bold text-stone-900">Solvix.ai AI</h1>
           <p className="text-stone-500 mt-1">Intelligent dokumentextraktion</p>
         </div>
         <div className="bg-white rounded-2xl shadow-xl shadow-stone-200/50 border border-stone-200 p-8 flex items-center justify-center">

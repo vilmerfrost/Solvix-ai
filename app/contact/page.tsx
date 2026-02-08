@@ -35,8 +35,8 @@ export default function ContactPage() {
                     <p className="text-neutral-500 font-mono text-sm">Svarar inom 24h</p>
                   </div>
                 </div>
-                <a href="mailto:hello@vextra.ai" className="text-2xl font-bold text-neutral-900 hover:text-blue-600 underline decoration-2 underline-offset-4">
-                  hello@vextra.ai
+                <a href="mailto:hello@solvix.ai" className="text-2xl font-bold text-neutral-900 hover:text-blue-600 underline decoration-2 underline-offset-4">
+                  hello@solvix.ai
                 </a>
               </div>
 
@@ -51,7 +51,7 @@ export default function ContactPage() {
                   </div>
                 </div>
                 <p className="text-xl font-medium text-neutral-900">
-                  Vextra AI AB<br/>
+                  Solvix.ai AB<br/>
                   Sveavägen 44<br/>
                   111 34 Stockholm
                 </p>

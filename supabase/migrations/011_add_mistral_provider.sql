@@ -1,5 +1,5 @@
 -- ============================================================
--- VEXTRA AI - ADD MISTRAL AS AI PROVIDER
+-- SOLVIX.AI - ADD MISTRAL AS AI PROVIDER
 -- ============================================================
 
 -- Drop the existing CHECK constraint and recreate with mistral

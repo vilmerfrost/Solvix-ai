@@ -1,5 +1,5 @@
 -- ============================================================
--- VEXTRA AI - EXPORT TEMPLATES
+-- SOLVIX.AI - EXPORT TEMPLATES
 -- Customizable export formats for different use cases
 -- ============================================================
 

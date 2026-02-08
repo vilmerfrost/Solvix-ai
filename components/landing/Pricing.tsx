@@ -47,7 +47,7 @@ export function Pricing() {
         "SLA & Account Manager",
       ],
       cta: "Kontakta oss",
-      href: "mailto:sales@vextra.ai",
+      href: "mailto:sales@solvix.ai",
       highlight: false
     }
   ];

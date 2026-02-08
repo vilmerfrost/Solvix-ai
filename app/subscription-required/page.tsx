@@ -76,7 +76,7 @@ export default function SubscriptionRequiredPage() {
             <div className="w-10 h-10 bg-indigo-600 rounded-xl flex items-center justify-center">
               <span className="text-white font-bold text-lg">V</span>
             </div>
-            <span className="font-semibold text-xl text-stone-900">Vextra AI</span>
+            <span className="font-semibold text-xl text-stone-900">Solvix.ai AI</span>
           </Link>
         </div>
 
@@ -117,12 +117,12 @@ export default function SubscriptionRequiredPage() {
               {/* Description */}
               <p className="text-stone-600 text-center mb-6">
                 {isTrialExpired
-                  ? "Tack för att du testade Vextra AI! För att fortsätta använda alla funktioner, välj en plan nedan."
+                  ? "Tack för att du testade Solvix.ai AI! För att fortsätta använda alla funktioner, välj en plan nedan."
                   : isPastDue
                   ? "Vi kunde inte dra betalningen. Uppdatera din betalningsmetod för att fortsätta."
                   : isCanceled
                   ? "Din prenumeration har avslutats. Återaktivera den för att få tillgång igen."
-                  : "Du behöver en aktiv prenumeration för att använda Vextra AI."}
+                  : "Du behöver en aktiv prenumeration för att använda Solvix.ai AI."}
               </p>
 
               {/* Trial info if applicable */}
@@ -172,7 +172,7 @@ export default function SubscriptionRequiredPage() {
         {/* Footer */}
         <p className="text-center text-stone-500 text-sm mt-6">
           Har du frågor?{" "}
-          <a href="mailto:support@vextra.ai" className="text-indigo-600 hover:underline">
+          <a href="mailto:support@solvix.ai" className="text-indigo-600 hover:underline">
             Kontakta oss
           </a>
         </p>

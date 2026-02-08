@@ -38,7 +38,7 @@ export default function CookiesPage() {
               </div>
               <div className="md:col-span-8">
                 <p className="text-lg text-neutral-600 leading-relaxed font-medium mb-8">
-                  Vextra AI använder enbart nödvändiga cookies för att tjänsten ska fungera säkert. Vi använder inga tredjeparts-cookies för marknadsföring eller spårning.
+                  Solvix.ai använder enbart nödvändiga cookies för att tjänsten ska fungera säkert. Vi använder inga tredjeparts-cookies för marknadsföring eller spårning.
                 </p>
                 
                 <div className="grid gap-4">

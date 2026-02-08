@@ -1,5 +1,5 @@
 -- ============================================================
--- VEXTRA AI - STRICT RLS POLICIES
+-- SOLVIX.AI - STRICT RLS POLICIES
 -- Multi-tenant security with auth.uid() based isolation
 -- ============================================================
 

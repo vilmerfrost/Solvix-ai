@@ -1,5 +1,5 @@
 -- ============================================================
--- VEXTRA AI - SUBSCRIPTIONS TABLE
+-- SOLVIX.AI - SUBSCRIPTIONS TABLE
 -- Stripe integration for billing and subscriptions
 -- ============================================================
 

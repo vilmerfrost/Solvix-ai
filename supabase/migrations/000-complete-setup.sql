@@ -1,5 +1,5 @@
 -- ============================================================
--- VEXTRA AI - COMPLETE DATABASE SETUP
+-- SOLVIX.AI - COMPLETE DATABASE SETUP
 -- Run this single file to set up a fresh Supabase project
 -- ============================================================
 
@@ -48,8 +48,8 @@ CREATE TABLE IF NOT EXISTS settings (
   azure_output_folder TEXT DEFAULT 'completed',
   
   -- Tenant branding (white-label)
-  company_name TEXT DEFAULT 'Vextra AI',
-  company_slug TEXT DEFAULT 'vextra-ai',
+  company_name TEXT DEFAULT 'Solvix.ai',
+  company_slug TEXT DEFAULT 'solvix-ai',
   company_logo_url TEXT,
   primary_color TEXT DEFAULT '#6366F1',
   language TEXT DEFAULT 'sv',
@@ -97,7 +97,7 @@ VALUES (
     "Betong": ["Armerad betong", "Betongkross"],
     "Brännbart": ["Restavfall", "Blandat brännbart"]
   }'::jsonb,
-  'Vextra AI',
+  'Solvix.ai',
   false
 )
 ON CONFLICT (user_id) DO NOTHING;

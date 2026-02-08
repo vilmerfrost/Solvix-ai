@@ -66,7 +66,7 @@ export default function IntegrationsPage() {
               INTEGRATIONER
             </h1>
             <p className="text-xl text-neutral-600 font-medium max-w-2xl leading-relaxed">
-              Vextra AI är byggt för att passa in i ert existerande ekosystem. Vi agerar mellanlager mellan kaotisk indata och ert strukturerade affärssystem.
+              Solvix.ai är byggt för att passa in i ert existerande ekosystem. Vi agerar mellanlager mellan kaotisk indata och ert strukturerade affärssystem.
             </p>
           </div>
 
@@ -110,7 +110,7 @@ export default function IntegrationsPage() {
             <p className="text-neutral-400 mb-8 max-w-xl mx-auto font-mono text-sm">
               Vi bygger custom-adaptrar för Enterprise-kunder. Kontakta vårt team för en teknisk genomgång av era krav.
             </p>
-            <a href="mailto:integrations@vextra.ai" className="inline-flex items-center gap-2 bg-white text-neutral-900 px-8 py-4 font-bold tracking-wide hover:bg-neutral-200 transition-colors">
+            <a href="mailto:integrations@solvix.ai" className="inline-flex items-center gap-2 bg-white text-neutral-900 px-8 py-4 font-bold tracking-wide hover:bg-neutral-200 transition-colors">
               KONTAKTA INTEGRATION TEAM
               <ArrowRight className="w-4 h-4" />
             </a>

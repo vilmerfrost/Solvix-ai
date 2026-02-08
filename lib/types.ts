@@ -1,5 +1,5 @@
 /**
- * Core Types for Vextra AI Document Pipeline
+ * Core Types for Solvix.ai Document Pipeline
  * 
  * This module provides strict TypeScript interfaces for all document
  * processing, extraction, and database operations.

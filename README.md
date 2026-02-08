@@ -1,4 +1,4 @@
-# Vextra AI
+# Solvix.ai AI
 
 **Intelligent Document Extraction Platform**
 
@@ -8,7 +8,7 @@ Extract, verify, and export structured data from complex documents using AI.
 
 ## Overview
 
-Vextra AI automates the extraction, validation, and export of data from unstructured documents (PDFs and Excel files). Using advanced AI models (Google Gemini, OpenAI GPT, Anthropic Claude), it transforms complex documents into structured, actionable data.
+Solvix.ai AI automates the extraction, validation, and export of data from unstructured documents (PDFs and Excel files). Using advanced AI models (Google Gemini, OpenAI GPT, Anthropic Claude), it transforms complex documents into structured, actionable data.
 
 ### System Flow
 
@@ -67,7 +67,7 @@ Document Upload → AI Extraction → Human Review → Export
 1. **Clone and install**
 ```bash
 git clone <repository-url>
-cd vextra-ai
+cd solvix-ai
 npm install
 ```
 
@@ -178,4 +178,4 @@ Proprietary - All rights reserved
 
 ---
 
-**Vextra AI** - *Verify + Extract = Vextra*
+**Solvix.ai AI** - *Verify + Extract = Solvix.ai*

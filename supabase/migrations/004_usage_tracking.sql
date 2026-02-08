@@ -1,5 +1,5 @@
 -- ============================================================
--- VEXTRA AI - USAGE TRACKING TABLE
+-- SOLVIX.AI - USAGE TRACKING TABLE
 -- Tracks AI usage and costs for billing/display
 -- ============================================================
 

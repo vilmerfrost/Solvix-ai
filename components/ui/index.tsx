@@ -1,5 +1,5 @@
 /**
- * Vextra AI UI Components
+ * Solvix.ai AI UI Components
  * 
  * Premium design system components with theme support,
  * micro-interactions, and WCAG AA compliance.

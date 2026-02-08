@@ -69,7 +69,7 @@ export function log(
   const enrichedContext = {
     ...context,
     environment: process.env.NODE_ENV,
-    app: "vextra-ai",
+    app: "solvix-ai",
   };
 
   // Console logging (always)

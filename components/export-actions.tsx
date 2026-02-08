@@ -5,6 +5,30 @@ import * as XLSX from "xlsx";
 import { archiveAllDocuments, verifyAllDocuments } from "@/app/actions";
 import { useState } from "react";
 
+/** Calculate average confidence for a row (line item or document-level) */
+function calculateRowConfidence(extractedData: any, lineItem?: any): number | null {
+  const confidences: number[] = [];
+  const addConf = (field: any) => {
+    if (field && typeof field === 'object' && 'confidence' in field && typeof field.confidence === 'number') {
+      confidences.push(field.confidence);
+    }
+  };
+  if (lineItem) {
+    addConf(lineItem.material);
+    addConf(lineItem.weightKg);
+    addConf(lineItem.address);
+    addConf(lineItem.receiver);
+  } else if (extractedData) {
+    addConf(extractedData.material);
+    addConf(extractedData.weightKg);
+    addConf(extractedData.address);
+    addConf(extractedData.date);
+    addConf(extractedData.supplier);
+  }
+  if (confidences.length === 0) return null;
+  return confidences.reduce((a, b) => a + b, 0) / confidences.length;
+}
+
 export function ExportActions({ documents }: { documents: any[] }) {
   const [isArchiving, setIsArchiving] = useState(false);
   const [isVerifying, setIsVerifying] = useState(false);
@@ -116,25 +140,29 @@ export function ExportActions({ documents }: { documents: any[] }) {
           const itemReceiver = getVal(item.receiver);
           const rowReceiver = isPlaceholder(itemReceiver) ? cleanReceiver : itemReceiver.trim();
 
+          const conf = calculateRowConfidence(data, item);
           rows.push({
             "Datum": rowDate, // ✅ ÅÅÅÅ-MM-DD format
             "Adress": rowAddr || "", // ✅ Hämtställe
             "Material": getVal(item.material) || "Okänt", // ✅ Standardiserad benämning
             "Vikt": formatWeight(Number(getVal(item.weightKg)) || 0), // ✅ Två decimaler, kommatecken
             "Enhet": "Kg", // ✅ Alltid "Kg" (stor K)
-            "Mottagare": rowReceiver || "" // ✅ Mottagare per rad
+            "Mottagare": rowReceiver || "", // ✅ Mottagare per rad
+            "Säkerhet": conf ? `${Math.round(conf * 100)}%` : "—"
           });
         });
       } else {
         // SCENARIO 2: Inga rader (gammal fil eller enkel faktura)
         // ✅ Use the same documentDate with proper priority chain
+        const conf = calculateRowConfidence(data);
         rows.push({
           "Datum": documentDate, // ✅ ÅÅÅÅ-MM-DD format from priority chain
           "Adress": cleanMainAddress || "", // ✅ Hämtställe
           "Material": getVal(data.material) || "Blandat", // ✅ Standardiserad benämning
           "Vikt": formatWeight(Number(getVal(data.weightKg)) || 0), // ✅ Två decimaler, kommatecken
           "Enhet": "Kg", // ✅ Alltid "Kg" (stor K)
-          "Mottagare": getVal(data.receiver) || "" // ✅ Mottagare
+          "Mottagare": getVal(data.receiver) || "", // ✅ Mottagare
+          "Säkerhet": conf ? `${Math.round(conf * 100)}%` : "—"
         });
       }
     });
@@ -159,7 +187,8 @@ export function ExportActions({ documents }: { documents: any[] }) {
       { wch: 30 }, // Material
       { wch: 12 }, // Vikt (formaterad som text med kommatecken)
       { wch: 8 },  // Enhet
-      { wch: 25 }  // Mottagare
+      { wch: 25 }, // Mottagare
+      { wch: 10 }  // Säkerhet
     ];
 
     // Formatera rubrikraden (fetstil)
@@ -206,7 +235,8 @@ export function ExportActions({ documents }: { documents: any[] }) {
       "Material", 
       "Vikt", 
       "Enhet", 
-      "Mottagare"
+      "Mottagare",
+      "Säkerhet"
     ];
     
     const rows = data.map(row => {
@@ -221,7 +251,8 @@ export function ExportActions({ documents }: { documents: any[] }) {
             cleanCsvValue(row.Material || ""), // ✅ Standardiserad benämning
             viktStr, // ✅ Två decimaler, kommatecken, inga tusenavgränsare
             "Kg", // ✅ Alltid "Kg" (stor K)
-            cleanCsvValue(row.Mottagare || "") // ✅ Mottagare
+            cleanCsvValue(row.Mottagare || ""), // ✅ Mottagare
+            cleanCsvValue(row["Säkerhet"] || "—") // Konfidenspoäng
         ].join(",");
     });
 

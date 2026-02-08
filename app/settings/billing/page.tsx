@@ -97,7 +97,7 @@ function BillingPageContent() {
           <div className="mb-6 p-4 bg-green-50 border border-green-200 rounded-lg flex items-center gap-3">
             <CheckCircle2 className="w-5 h-5 text-green-600" />
             <p className="text-green-800">
-              Din prenumeration har aktiverats! Tack för att du valde Vextra AI Pro.
+              Din prenumeration har aktiverats! Tack för att du valde Solvix.ai AI Pro.
             </p>
           </div>
         )}

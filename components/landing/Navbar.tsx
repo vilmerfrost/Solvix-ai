@@ -36,10 +36,10 @@ export function Navbar() {
         {/* Logo */}
         <Link href="/" className="flex items-center gap-2 group">
           <div className="w-8 h-8 bg-neutral-900 flex items-center justify-center text-white font-black text-sm tracking-tighter group-hover:bg-neutral-800 transition-colors">
-            V
+            S
           </div>
           <span className="text-xl font-bold tracking-tighter text-neutral-900">
-            VEXTRA.AI
+            SOLVIX.AI
           </span>
         </Link>
 

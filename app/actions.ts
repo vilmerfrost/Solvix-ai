@@ -173,25 +173,36 @@ export async function uploadAndEnqueueDocument(formData: FormData) {
       throw new Error(`Filtypen "${fileExtension || 'okänd'}" stöds inte. Endast PDF och Excel.`);
     }
     
+    // Generate content hash for duplicate detection
+    const fileBuffer = Buffer.from(await file.arrayBuffer());
+    const { generateContentHash, checkForDuplicate } = await import("@/lib/duplicate-detection");
+    const contentHash = generateContentHash(fileBuffer);
+
     // Upload to storage (user-scoped path)
     const storagePath = `${user.id}/${Date.now()}-${crypto.randomUUID()}.${fileExtension}`;
     const { error: uploadError } = await supabase.storage
       .from(STORAGE_BUCKET)
-      .upload(storagePath, file, { cacheControl: "3600", upsert: false });
+      .upload(storagePath, fileBuffer, { cacheControl: "3600", upsert: false });
     
     if (uploadError) {
       console.error("Storage upload error:", uploadError);
       throw new Error("Kunde inte ladda upp filen. Försök igen.");
     }
+
+    // Check for duplicates before creating record
+    const duplicateCheck = await checkForDuplicate(user.id, contentHash, null, file.name);
     
-    // Save to database with real user ID
+    // Save to database with real user ID + content hash + duplicate info
     const { data: document, error: documentError } = await supabase
       .from("documents")
       .insert({ 
         user_id: user.id, 
         filename: file.name, 
         storage_path: storagePath, 
-        status: "uploaded" 
+        status: "uploaded",
+        content_hash: contentHash,
+        is_duplicate: duplicateCheck.isDuplicate,
+        duplicate_of: duplicateCheck.matchedDocumentId || null,
       })
       .select()
       .single();
@@ -201,6 +212,17 @@ export async function uploadAndEnqueueDocument(formData: FormData) {
       await supabase.storage.from(STORAGE_BUCKET).remove([storagePath]).catch(() => {});
       throw new Error("Kunde inte spara dokumentet. Försök igen.");
     }
+
+    // Audit logging (non-blocking)
+    import("@/lib/audit").then(({ auditDocumentUpload, auditDuplicateDetected }) => {
+      auditDocumentUpload(user.id, document.id, file.name);
+      if (duplicateCheck.isDuplicate && duplicateCheck.matchedDocumentId) {
+        auditDuplicateDetected(
+          user.id, document.id, duplicateCheck.matchedDocumentId,
+          duplicateCheck.confidence, duplicateCheck.reason || '',
+        );
+      }
+    }).catch(() => {});
     
     // Process using the REAL multi-model pipeline (same as Azure sync)
     try {

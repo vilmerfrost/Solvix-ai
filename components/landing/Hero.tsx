@@ -122,7 +122,7 @@ export function Hero() {
           </h1>
           
           <p className="text-lg text-neutral-600 mb-10 max-w-md font-medium leading-relaxed">
-            Eliminera manuell inmatning. Vextra omvandlar ostrukturerade PDF:er och bilder till strukturerad data med 99.8% precision.
+            Eliminera manuell inmatning. Solvix.ai omvandlar ostrukturerade PDF:er och bilder till strukturerad data med 99.8% precision.
           </p>
 
           <div className="flex flex-col sm:flex-row gap-4 mb-12">

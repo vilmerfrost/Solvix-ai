@@ -34,7 +34,7 @@ async function main() {
 
   const supabase = createClient(supabaseUrl, supabaseKey);
 
-  console.log("🔄 Vextra AI Database Migration");
+  console.log("🔄 Solvix.ai Database Migration");
   console.log("================================\n");
 
   // Ensure schema_migrations table exists

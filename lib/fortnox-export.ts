@@ -46,6 +46,26 @@ export function prepareFortnoxData(documents: any[]): FortnoxRow[] {
       doc.document_date ||
       doc.created_at?.split("T")[0] ||
       new Date().toISOString().split("T")[0];
+
+    // Invoice-aware: use native invoice fields when documentType is 'invoice'
+    const docType = data.documentType;
+    if (docType === 'invoice') {
+      rows.push({
+        Fakturadatum: getVal(data.invoiceDate) || docDate,
+        Förfallodatum: getVal(data.dueDate) || calculateDueDate(getVal(data.invoiceDate) || docDate),
+        Fakturanummer: getVal(data.invoiceNumber) || '',
+        Leverantör: getVal(data.supplier) || 'Okänd leverantör',
+        Beskrivning: data.invoiceLineItems?.map((item: any) => getVal(item.description)).filter(Boolean).join(', ').slice(0, 200) || doc.file_name || '',
+        "Belopp exkl. moms": formatFortnoxNumber(Number(getVal(data.subtotal)) || 0),
+        Moms: formatFortnoxNumber(Number(getVal(data.vatAmount)) || 0),
+        "Totalt belopp": formatFortnoxNumber(Number(getVal(data.totalAmount)) || 0),
+        Valuta: getVal(data.currency) || "SEK",
+        Notering: `Solvix import ${doc.file_name || ''}`.trim(),
+      });
+      continue;
+    }
+
+    // Waste document (existing logic)
     const supplier =
       getVal(data.supplier) || getVal(data.sender_name) || "Okänd leverantör";
     const totalCost =
@@ -79,7 +99,7 @@ export function prepareFortnoxData(documents: any[]): FortnoxRow[] {
       Moms: formatFortnoxNumber(vatAmount),
       "Totalt belopp": formatFortnoxNumber(totalCost),
       Valuta: "SEK",
-      Notering: `Vextra import ${doc.file_name || ""}`.trim(),
+      Notering: `Solvix import ${doc.file_name || ""}`.trim(),
     });
   }
 

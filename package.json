@@ -1,7 +1,7 @@
 {
-  "name": "vextra-ai",
+  "name": "solvix-ai",
   "version": "1.0.0",
-  "description": "Vextra AI - Intelligent Document Extraction Platform",
+  "description": "Solvix.ai - Intelligent Document Extraction Platform",
   "private": true,
   "scripts": {
     "dev": "next dev",

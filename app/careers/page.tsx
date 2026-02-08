@@ -71,7 +71,7 @@ export default function CareersPage() {
             <p className="text-neutral-600 mb-8 max-w-md mx-auto">
               Vi letar alltid efter talang. Skicka en spontanansökan och berätta vad du kan bygga.
             </p>
-            <a href="mailto:careers@vextra.ai" className="inline-block border-2 border-neutral-900 px-8 py-3 font-bold text-neutral-900 hover:bg-neutral-900 hover:text-white transition-all">
+            <a href="mailto:careers@solvix.ai" className="inline-block border-2 border-neutral-900 px-8 py-3 font-bold text-neutral-900 hover:bg-neutral-900 hover:text-white transition-all">
               MAILA OSS
             </a>
           </div>

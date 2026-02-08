@@ -18,7 +18,7 @@ export default function AboutPage() {
             </h1>
             <div className="w-24 h-2 bg-neutral-900 mb-12"></div>
             <p className="text-2xl text-neutral-700 font-medium leading-relaxed max-w-3xl">
-              Vi är ett team av ingenjörer och datavetare baserade i Stockholm. Vi byggde Vextra eftersom vi tröttnade på att se briljanta logistikkoordinatorer agera mänskliga tangentbord.
+              Vi är ett team av ingenjörer och datavetare baserade i Stockholm. Vi byggde Solvix.ai eftersom vi tröttnade på att se briljanta logistikkoordinatorer agera mänskliga tangentbord.
             </p>
           </div>
 

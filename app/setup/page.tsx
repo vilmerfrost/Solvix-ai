@@ -12,7 +12,7 @@ const LANGUAGES = [
 ] as const;
 
 const COLOR_PRESETS = [
-  { name: "Indigo (Vextra)", value: "#6366F1" },
+  { name: "Indigo (Solvix.ai)", value: "#6366F1" },
   { name: "Blue", value: "#3B82F6" },
   { name: "Green", value: "#10B981" },
   { name: "Purple", value: "#8B5CF6" },
@@ -30,7 +30,7 @@ export default function SetupPage() {
     companyName: "",
     companySlug: "",
     companyLogo: "",
-    primaryColor: "#6366F1", // Vextra AI brand color
+    primaryColor: "#6366F1", // Solvix.ai AI brand color
     language: "sv" as "sv" | "en" | "no" | "fi",
   });
 
@@ -95,7 +95,7 @@ export default function SetupPage() {
             <Building2 className="w-8 h-8 text-white" />
           </div>
           <h1 className="text-3xl font-bold text-slate-900 mb-2">
-            Welcome to Vextra AI
+            Welcome to Solvix.ai AI
           </h1>
           <p className="text-slate-600">
             Let's set up your intelligent document extraction system

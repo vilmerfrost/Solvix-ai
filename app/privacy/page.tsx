@@ -38,7 +38,7 @@ export default function PrivacyPage() {
               </div>
               <div className="md:col-span-8">
                 <p className="text-lg text-neutral-600 leading-relaxed font-medium">
-                  Vextra AI ("vi", "oss", "vår") värnar om din integritet. Denna integritetspolicy förklarar strikt hur vi samlar in, använder, lagrar och skyddar dina personuppgifter när du använder vår tjänst för dokumentextraktion. Vi tror på full transparens.
+                  Solvix.ai ("vi", "oss", "vår") värnar om din integritet. Denna integritetspolicy förklarar strikt hur vi samlar in, använder, lagrar och skyddar dina personuppgifter när du använder vår tjänst för dokumentextraktion. Vi tror på full transparens.
                 </p>
               </div>
             </div>
@@ -55,11 +55,11 @@ export default function PrivacyPage() {
                 <div className="bg-neutral-50 p-6 border border-neutral-200 font-mono text-sm">
                   <div className="grid grid-cols-[120px_1fr] gap-4">
                     <span className="text-neutral-400 font-bold">BOLAG:</span>
-                    <span className="text-neutral-900">Vextra AI AB</span>
+                    <span className="text-neutral-900">Solvix.ai AB</span>
                     <span className="text-neutral-400 font-bold">ORG.NR:</span>
                     <span className="text-neutral-900">559000-0000</span>
                     <span className="text-neutral-400 font-bold">EMAIL:</span>
-                    <span className="text-neutral-900">privacy@vextra.ai</span>
+                    <span className="text-neutral-900">privacy@solvix.ai</span>
                   </div>
                 </div>
               </div>
@@ -127,8 +127,8 @@ export default function PrivacyPage() {
                 <p className="text-neutral-600 font-medium">
                   För utdrag ur registret eller radering av data ("Rätten att bli glömd"), kontakta oss direkt. Vi hanterar alla ärenden inom 24 timmar.
                 </p>
-                <a href="mailto:privacy@vextra.ai" className="inline-block mt-4 text-lg font-bold text-neutral-900 underline decoration-2 underline-offset-4 hover:bg-neutral-900 hover:text-white transition-all px-1 -mx-1">
-                  privacy@vextra.ai
+                <a href="mailto:privacy@solvix.ai" className="inline-block mt-4 text-lg font-bold text-neutral-900 underline decoration-2 underline-offset-4 hover:bg-neutral-900 hover:text-white transition-all px-1 -mx-1">
+                  privacy@solvix.ai
                 </a>
               </div>
             </div>

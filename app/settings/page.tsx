@@ -1436,10 +1436,10 @@ export default function SettingsPage() {
                         <p className="text-sm font-medium text-emerald-900 mb-2">Din inkorgsadress:</p>
                         <div className="flex items-center gap-2">
                           <code className="flex-1 px-3 py-2 bg-white border border-emerald-300 rounded-lg text-sm font-mono text-emerald-800">
-                            docs@inbox.vextra.ai
+                            docs@inbox.solvix.ai
                           </code>
                           <button
-                            onClick={() => navigator.clipboard.writeText('docs@inbox.vextra.ai')}
+                            onClick={() => navigator.clipboard.writeText('docs@inbox.solvix.ai')}
                             className="px-3 py-2 bg-emerald-600 text-white rounded-lg text-sm hover:bg-emerald-700"
                           >
                             Kopiera
@@ -1455,8 +1455,38 @@ export default function SettingsPage() {
                         <ol className="text-sm text-slate-600 space-y-1 list-decimal list-inside">
                           <li>Vidarebefordra mail med PDF/Excel-bilagor till adressen ovan</li>
                           <li>Skriv <strong>VEXT-{(settings as any)?.inbox_code}</strong> i ämnesraden</li>
-                          <li>Vextra extraherar data automatiskt och visar resultatet i dashboarden</li>
+                          <li>Solvix.ai extraherar data automatiskt och visar resultatet i dashboarden</li>
                         </ol>
+                      </div>
+
+                      {/* Auto-process toggle */}
+                      <div className="flex items-center justify-between p-4 bg-white border border-gray-200 rounded-lg">
+                        <div>
+                          <p className="font-medium text-gray-900">Automatisk bearbetning</p>
+                          <p className="text-xs text-gray-500">Bearbeta bilagor automatiskt vid mottagning</p>
+                        </div>
+                        <button
+                          onClick={async () => {
+                            if (!userId) return;
+                            const supabase = createBrowserClient(
+                              process.env.NEXT_PUBLIC_SUPABASE_URL!,
+                              process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+                            );
+                            const newVal = !(settings as any)?.inbox_auto_process;
+                            await supabase
+                              .from('settings')
+                              .update({ inbox_auto_process: newVal })
+                              .eq('user_id', userId);
+                            window.location.reload();
+                          }}
+                          className={`relative w-11 h-6 rounded-full transition-colors ${
+                            (settings as any)?.inbox_auto_process ? 'bg-emerald-500' : 'bg-slate-300'
+                          }`}
+                        >
+                          <span className={`absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform ${
+                            (settings as any)?.inbox_auto_process ? 'translate-x-5' : 'translate-x-0'
+                          }`} />
+                        </button>
                       </div>
                     </div>
                   ) : (

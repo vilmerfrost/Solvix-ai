@@ -1,8 +1,8 @@
-# Vextra AI - AI Agent Instructions
+# Solvix.ai AI - AI Agent Instructions
 
 ## Architecture Overview
 
-**Vextra AI** is a multi-tenant, white-label document extraction platform that transforms unstructured documents (PDFs, Excel) into structured data using AI. Built as a Next.js 16 app with Supabase backend, Azure Blob integration, and multi-model AI extraction (Google Gemini, OpenAI GPT, Anthropic Claude).
+**Solvix.ai AI** is a multi-tenant, white-label document extraction platform that transforms unstructured documents (PDFs, Excel) into structured data using AI. Built as a Next.js 16 app with Supabase backend, Azure Blob integration, and multi-model AI extraction (Google Gemini, OpenAI GPT, Anthropic Claude).
 
 **Key Insight**: This is a BYOK (Bring Your Own Key) architecture - users provide their own AI API keys, which are encrypted with AES-256-GCM and stored in the database. The platform never uses platform-owned AI keys.
 

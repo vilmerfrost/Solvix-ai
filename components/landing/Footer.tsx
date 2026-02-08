@@ -10,10 +10,10 @@ export function Footer() {
           <div className="md:col-span-4">
             <Link href="/" className="flex items-center gap-2 mb-6 group">
               <div className="w-6 h-6 bg-neutral-900 flex items-center justify-center text-white font-black text-xs tracking-tighter">
-                V
+                S
               </div>
               <span className="text-lg font-bold tracking-tighter text-neutral-900">
-                VEXTRA.AI
+                SOLVIX.AI
               </span>
             </Link>
             <p className="text-neutral-500 font-medium text-sm leading-relaxed max-w-sm mb-8">
@@ -61,7 +61,7 @@ export function Footer() {
         </div>
 
         <div className="border-t border-neutral-200 pt-8 flex flex-col md:flex-row justify-between items-center gap-4 text-xs font-mono text-neutral-400">
-          <p>© 2024 Vextra.ai AB. Alla rättigheter förbehållna.</p>
+          <p>© 2024 Solvix.ai AB. Alla rättigheter förbehållna.</p>
           <div className="flex items-center gap-2">
             <span className="w-2 h-2 bg-green-500 rounded-full"></span>
             SYSTEM STATUS: ONLINE

@@ -67,6 +67,14 @@ export default async function ReviewPage({
   
   const nextDocId = nextDocs?.[0]?.id;
 
+  // Fetch audit log for this document
+  const { data: auditLog } = await supabase
+    .from("audit_log")
+    .select("*")
+    .eq("document_id", id)
+    .order("created_at", { ascending: false })
+    .limit(20);
+
   // Use preview endpoint to ensure inline display and avoid downloads
   const previewUrl = `/api/preview-file?id=${doc.id}`;
   const isExcel = doc.filename.toLowerCase().endsWith(".xlsx") || 
@@ -365,6 +373,26 @@ export default async function ReviewPage({
       </div>
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 py-8">
+        {/* DUPLICATE WARNING */}
+        {doc.is_duplicate && (
+          <div className="mb-6 p-4 bg-orange-50 border border-orange-300 rounded-xl flex items-center gap-3">
+            <div className="w-10 h-10 bg-orange-100 rounded-lg flex items-center justify-center flex-shrink-0">
+              <svg className="w-5 h-5 text-orange-600" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"/></svg>
+            </div>
+            <div className="flex-1">
+              <p className="font-medium text-orange-900">Möjlig dubblett identifierad</p>
+              <p className="text-sm text-orange-700">
+                Detta dokument liknar ett som redan finns i systemet.
+                {doc.duplicate_of && (
+                  <Link href={`/review/${doc.duplicate_of}`} className="ml-1 underline">
+                    Visa originalet →
+                  </Link>
+                )}
+              </p>
+            </div>
+          </div>
+        )}
+
         {/* CONFIDENCE SUMMARY BANNER */}
         {(() => {
           // Calculate confidence summary from line items
@@ -752,6 +780,93 @@ export default async function ReviewPage({
           </div>
         )}
 
+        {/* Invoice-specific fields — shown when document type is invoice */}
+        {extractedData?.documentType === 'invoice' && (
+          <div className="mb-6 p-6 bg-white rounded-lg border border-stone-200 space-y-6">
+            <h3 className="text-lg font-semibold text-slate-900 flex items-center gap-2">
+              <FileText className="w-5 h-5" />
+              Fakturadetaljer
+            </h3>
+
+            <div className="grid grid-cols-2 gap-4 text-sm">
+              <div><span className="text-slate-500">Fakturanummer:</span> <span className="font-medium">{getValue(extractedData.invoiceNumber) || '—'}</span></div>
+              <div><span className="text-slate-500">Fakturadatum:</span> <span className="font-medium">{getValue(extractedData.invoiceDate) || '—'}</span></div>
+              <div><span className="text-slate-500">Förfallodatum:</span> <span className="font-medium">{getValue(extractedData.dueDate) || '—'}</span></div>
+              <div><span className="text-slate-500">OCR-referens:</span> <span className="font-medium">{getValue(extractedData.ocrReference) || '—'}</span></div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4 text-sm">
+              <div><span className="text-slate-500">Leverantör:</span> <span className="font-medium">{getValue(extractedData.supplier) || '—'}</span></div>
+              <div><span className="text-slate-500">Org.nr (leverantör):</span> <span className="font-medium">{getValue(extractedData.supplierOrgNr) || '—'}</span></div>
+              <div><span className="text-slate-500">Köpare:</span> <span className="font-medium">{getValue(extractedData.buyerName) || '—'}</span></div>
+              <div><span className="text-slate-500">Org.nr (köpare):</span> <span className="font-medium">{getValue(extractedData.buyerOrgNr) || '—'}</span></div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4 text-sm">
+              <div><span className="text-slate-500">Bankgiro:</span> <span className="font-medium">{getValue(extractedData.bankgiro) || '—'}</span></div>
+              <div><span className="text-slate-500">Plusgiro:</span> <span className="font-medium">{getValue(extractedData.plusgiro) || '—'}</span></div>
+            </div>
+
+            <div className="grid grid-cols-3 gap-4 text-sm">
+              <div><span className="text-slate-500">Summa exkl. moms:</span> <span className="font-medium">{typeof getValue(extractedData.subtotal) === 'number' ? `${getValue(extractedData.subtotal).toLocaleString('sv-SE')} kr` : '—'}</span></div>
+              <div><span className="text-slate-500">Moms:</span> <span className="font-medium">{typeof getValue(extractedData.vatAmount) === 'number' ? `${getValue(extractedData.vatAmount).toLocaleString('sv-SE')} kr` : '—'}</span></div>
+              <div><span className="text-slate-500">Att betala:</span> <span className="font-bold text-slate-900">{typeof getValue(extractedData.totalAmount) === 'number' ? `${getValue(extractedData.totalAmount).toLocaleString('sv-SE')} kr` : '—'}</span></div>
+            </div>
+
+            {/* Invoice line items table */}
+            {extractedData.invoiceLineItems?.length > 0 && (
+              <div>
+                <h4 className="text-sm font-medium text-slate-700 mb-2">Fakturarader</h4>
+                <div className="border border-slate-200 rounded-lg overflow-hidden">
+                  <table className="w-full text-sm">
+                    <thead className="bg-slate-50">
+                      <tr>
+                        <th className="px-3 py-2 text-left text-slate-600">Beskrivning</th>
+                        <th className="px-3 py-2 text-right text-slate-600">Antal</th>
+                        <th className="px-3 py-2 text-right text-slate-600">Á-pris</th>
+                        <th className="px-3 py-2 text-right text-slate-600">Belopp</th>
+                        <th className="px-3 py-2 text-right text-slate-600">Moms</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {extractedData.invoiceLineItems.map((item: any, i: number) => (
+                        <tr key={i} className="border-t border-slate-100">
+                          <td className="px-3 py-2">{getValue(item.description) || ''}</td>
+                          <td className="px-3 py-2 text-right">{getValue(item.quantity) || ''}</td>
+                          <td className="px-3 py-2 text-right">
+                            {typeof getValue(item.unitPrice) === 'number'
+                              ? getValue(item.unitPrice).toFixed(2).replace('.', ',')
+                              : ''}
+                          </td>
+                          <td className="px-3 py-2 text-right font-medium">
+                            {typeof getValue(item.amount) === 'number'
+                              ? getValue(item.amount).toFixed(2).replace('.', ',')
+                              : ''}
+                          </td>
+                          <td className="px-3 py-2 text-right text-slate-500">
+                            {getValue(item.vatRate) ? `${getValue(item.vatRate)}%` : ''}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                    <tfoot className="bg-slate-50 font-medium">
+                      <tr className="border-t border-slate-200">
+                        <td colSpan={3} className="px-3 py-2 text-right">Summa:</td>
+                        <td className="px-3 py-2 text-right">
+                          {typeof getValue(extractedData.totalAmount) === 'number'
+                            ? `${getValue(extractedData.totalAmount).toFixed(2).replace('.', ',')} kr`
+                            : ''}
+                        </td>
+                        <td></td>
+                      </tr>
+                    </tfoot>
+                  </table>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+
         {/* Right: Review Form */}
         <div className="mb-6">
           <ReviewForm
@@ -897,6 +1012,39 @@ export default async function ReviewPage({
             </div>
           </div>
         )}
+
+        {/* Audit Trail Section */}
+        <div className="mt-8 border-t border-slate-200 pt-6">
+          <details className="group">
+            <summary className="flex items-center gap-2 cursor-pointer text-sm font-medium text-slate-600 hover:text-slate-900">
+              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+              Händelselogg
+              <svg className="w-4 h-4 transition-transform group-open:rotate-180" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7"/></svg>
+            </summary>
+            <div className="mt-4 space-y-2">
+              {(auditLog || []).map((entry: any) => (
+                <div key={entry.id} className="flex items-start gap-3 py-2 border-b border-slate-50 last:border-0">
+                  <div className={`w-2 h-2 rounded-full mt-1.5 flex-shrink-0 ${
+                    entry.action?.includes('approved') ? 'bg-emerald-500' :
+                    entry.action?.includes('error') || entry.action?.includes('rejected') ? 'bg-rose-500' :
+                    entry.action?.includes('edited') ? 'bg-amber-500' :
+                    entry.action?.includes('duplicate') ? 'bg-orange-500' :
+                    'bg-blue-500'
+                  }`} />
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm text-slate-700">{entry.description}</p>
+                    <p className="text-xs text-slate-400">
+                      {new Date(entry.created_at).toLocaleString('sv-SE')}
+                    </p>
+                  </div>
+                </div>
+              ))}
+              {(!auditLog || auditLog.length === 0) && (
+                <p className="text-sm text-slate-400 py-2">Inga händelser registrerade</p>
+              )}
+            </div>
+          </details>
+        </div>
       </div>
     </div>
   );

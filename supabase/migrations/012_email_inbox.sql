@@ -1,5 +1,5 @@
 -- ============================================================
--- VEXTRA AI - EMAIL INBOX PROCESSING
+-- SOLVIX.AI - EMAIL INBOX PROCESSING
 -- ============================================================
 
 -- User inbox configuration
@@ -35,3 +35,8 @@ CREATE INDEX IF NOT EXISTS idx_settings_inbox_code ON settings(inbox_code);
 ALTER TABLE email_log ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "Users can read own email logs" ON email_log
   FOR SELECT USING (auth.uid()::text = user_id);
+
+-- Migration record
+INSERT INTO schema_migrations (version, name) 
+VALUES ('012', 'email_inbox')
+ON CONFLICT (version) DO NOTHING;

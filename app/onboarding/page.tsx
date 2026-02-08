@@ -64,7 +64,7 @@ export default function OnboardingPage() {
           <div className="w-8 h-8 bg-[#4A90E2] rounded-lg flex items-center justify-center">
             <span className="text-white font-bold text-sm">V</span>
           </div>
-          <span className="text-xl font-bold text-slate-900">Vextra.ai</span>
+          <span className="text-xl font-bold text-slate-900">Solvix.ai</span>
         </div>
         <button className="w-10 h-10 rounded-xl border border-slate-200 flex items-center justify-center text-slate-400 hover:text-slate-600 hover:border-slate-300 transition-all">
           ?
@@ -91,7 +91,7 @@ export default function OnboardingPage() {
         {/* Header */}
         <div className="max-w-[960px] w-full text-center mb-12">
           <h1 className="text-4xl font-bold text-slate-900 mb-3 tracking-tight">
-            Välkommen till Vextra
+            Välkommen till Solvix.ai
           </h1>
           <p className="text-lg text-slate-500">
             Vi anpassar verktyget efter dina behov
@@ -154,12 +154,12 @@ export default function OnboardingPage() {
       {/* Footer */}
       <footer className="py-10 px-8 flex justify-center border-t border-slate-100">
         <div className="max-w-[960px] w-full flex justify-between items-center text-slate-400 text-sm">
-          <p>© 2024 Vextra.ai - Scandinavian Document Intelligence</p>
+          <p>© 2024 Solvix.ai - Scandinavian Document Intelligence</p>
           <div className="flex gap-4">
             <a href="/privacy" className="hover:text-[#4A90E2] transition-colors">
               Integritet
             </a>
-            <a href="mailto:kontakt@vextra.ai" className="hover:text-[#4A90E2] transition-colors">
+            <a href="mailto:kontakt@solvix.ai" className="hover:text-[#4A90E2] transition-colors">
               Support
             </a>
           </div>

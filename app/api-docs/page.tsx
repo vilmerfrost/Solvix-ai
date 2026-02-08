@@ -21,7 +21,7 @@ export default function ApiDocsPage() {
               API DOKUMENTATION
             </h1>
             <p className="text-xl text-neutral-600 font-medium max-w-2xl leading-relaxed">
-              Programmatisk åtkomst till hela Vextra-plattformen. Integrera dokumentanalys direkt i din egen applikation.
+              Programmatisk åtkomst till hela Solvix.ai-plattformen. Integrera dokumentanalys direkt i din egen applikation.
             </p>
           </div>
 
@@ -104,7 +104,7 @@ export default function ApiDocsPage() {
                         <span>CURL</span>
                       </div>
 <pre className="font-mono text-neutral-300">
-{`curl -X POST https://api.vextra.ai/v1/process \\
+{`curl -X POST https://api.solvix.ai/v1/process \\
   -H "Authorization: Bearer vk_live..." \\
   -F "file=@invoice.pdf"`}
 </pre>

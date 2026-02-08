@@ -1,5 +1,5 @@
 -- ============================================================
--- VEXTRA AI - WEBHOOKS SYSTEM
+-- SOLVIX.AI - WEBHOOKS SYSTEM
 -- Enable integrations with external systems (n8n, Zapier, etc.)
 -- ============================================================
 

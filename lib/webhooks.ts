@@ -111,15 +111,15 @@ async function sendWebhook(
   // Build headers
   const headers: Record<string, string> = {
     "Content-Type": "application/json",
-    "X-Vextra-Event": event,
-    "X-Vextra-Timestamp": payload.timestamp,
-    "X-Vextra-Webhook-Id": webhook.id,
+    "X-Solvix-Event": event,
+    "X-Solvix-Timestamp": payload.timestamp,
+    "X-Solvix-Webhook-Id": webhook.id,
   };
   
   // Add signature if secret is configured
   if (webhook.secret) {
     const signature = generateSignature(payloadString, webhook.secret);
-    headers["X-Vextra-Signature"] = `sha256=${signature}`;
+    headers["X-Solvix-Signature"] = `sha256=${signature}`;
   }
   
   // Create log entry
@@ -279,7 +279,7 @@ export async function testWebhook(
   
   const testData = {
     test: true,
-    message: "This is a test webhook from Vextra AI",
+    message: "This is a test webhook from Solvix.ai",
     webhook_id: webhookId,
     webhook_name: webhook.name,
   };
@@ -295,14 +295,14 @@ export async function testWebhook(
   
   const headers: Record<string, string> = {
     "Content-Type": "application/json",
-    "X-Vextra-Event": "test",
-    "X-Vextra-Timestamp": payload.timestamp,
-    "X-Vextra-Webhook-Id": webhook.id,
+    "X-Solvix-Event": "test",
+    "X-Solvix-Timestamp": payload.timestamp,
+    "X-Solvix-Webhook-Id": webhook.id,
   };
   
   if (webhook.secret) {
     const signature = generateSignature(payloadString, webhook.secret);
-    headers["X-Vextra-Signature"] = `sha256=${signature}`;
+    headers["X-Solvix-Signature"] = `sha256=${signature}`;
   }
   
   try {

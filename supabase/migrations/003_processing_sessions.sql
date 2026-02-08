@@ -1,5 +1,5 @@
 -- ============================================================
--- VEXTRA AI - PROCESSING SESSIONS TABLE
+-- SOLVIX.AI - PROCESSING SESSIONS TABLE
 -- Enables circuit breaker functionality (stop extraction)
 -- ============================================================
 

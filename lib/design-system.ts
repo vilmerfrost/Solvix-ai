@@ -1,5 +1,5 @@
 /**
- * Vextra AI Design System
+ * Solvix.ai Design System
  * 
  * Professional color palette inspired by Stripe, Linear, and Raycast.
  * Light mode with warm neutrals and a refined indigo primary.

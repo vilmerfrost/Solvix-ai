@@ -1,8 +1,8 @@
-# Vextra AI - Application Summary
+# Solvix.ai AI - Application Summary
 
 ## Overview
 
-**Vextra AI** (also known as Frost Document Pipeline) is an intelligent document extraction and processing platform designed to automate the extraction, validation, and export of structured data from unstructured documents. The system primarily targets waste management companies that receive hundreds of PDFs and Excel files containing waste data in various formats, but it's built as a general-purpose document extraction platform.
+**Solvix.ai AI** (also known as Frost Document Pipeline) is an intelligent document extraction and processing platform designed to automate the extraction, validation, and export of structured data from unstructured documents. The system primarily targets waste management companies that receive hundreds of PDFs and Excel files containing waste data in various formats, but it's built as a general-purpose document extraction platform.
 
 The application transforms chaotic, unstructured documents (PDFs, Excel files) into clean, validated, structured data ready for integration with downstream systems like Power BI, Simplitics, or any other data processing pipeline.
 
@@ -432,6 +432,6 @@ docker compose up -d --build
 
 ## Summary
 
-Vextra AI is a production-ready document extraction platform built with modern web technologies. It provides a complete solution for automating data extraction from unstructured documents, with strong emphasis on security (encryption, BYOK), flexibility (multi-model AI, self-service Azure), and user experience (review dashboard, auto-approval). The system is designed to scale and integrate with enterprise workflows while maintaining simplicity for end users.
+Solvix.ai AI is a production-ready document extraction platform built with modern web technologies. It provides a complete solution for automating data extraction from unstructured documents, with strong emphasis on security (encryption, BYOK), flexibility (multi-model AI, self-service Azure), and user experience (review dashboard, auto-approval). The system is designed to scale and integrate with enterprise workflows while maintaining simplicity for end users.
 
 The architecture follows Next.js best practices with server-side processing, TypeScript for type safety, and a modular design that allows for easy extension and maintenance. The platform is particularly well-suited for waste management companies but can be adapted for any document extraction use case.

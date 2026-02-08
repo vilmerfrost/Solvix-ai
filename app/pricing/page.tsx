@@ -68,7 +68,7 @@ function PricingPageContent() {
 
   const handleSelectPlan = async (planId: string) => {
     if (planId === "enterprise") {
-      window.location.href = "mailto:vilmer.frost@gmail.com?subject=Vextra AI Enterprise Inquiry";
+      window.location.href = "mailto:vilmer.frost@gmail.com?subject=Solvix.ai AI Enterprise Inquiry";
       return;
     }
 
@@ -113,7 +113,7 @@ function PricingPageContent() {
               <div className="w-8 h-8 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-lg flex items-center justify-center">
                 <span className="text-white font-bold text-sm">V</span>
               </div>
-              <span className="font-semibold text-white/90 text-lg tracking-tight">Vextra</span>
+              <span className="font-semibold text-white/90 text-lg tracking-tight">Solvix.ai</span>
             </Link>
             
             <div className="flex items-center gap-3">
@@ -243,7 +243,7 @@ function PricingPageContent() {
                 This means you pay AI providers directly at their rates — no markup from us.
               </p>
               <p>
-                <strong className="text-white/70">Your subscription covers:</strong> the Vextra platform, document processing infrastructure, 
+                <strong className="text-white/70">Your subscription covers:</strong> the Solvix.ai platform, document processing infrastructure, 
                 data storage, Excel exports, and support. AI costs are separate and depend on your usage.
               </p>
               <div className="pt-4 border-t border-white/[0.06]">
@@ -277,7 +277,7 @@ function PricingPageContent() {
             <div className="w-6 h-6 bg-gradient-to-br from-indigo-500 to-purple-600 rounded flex items-center justify-center">
               <span className="text-white font-bold text-xs">V</span>
             </div>
-            <span className="text-sm text-white/40">© 2026 Vextra AI</span>
+            <span className="text-sm text-white/40">© 2026 Solvix.ai AI</span>
           </div>
           <div className="flex items-center gap-6 text-sm text-white/40">
             <Link href="/privacy" className="hover:text-white/60 transition-colors">Privacy</Link>

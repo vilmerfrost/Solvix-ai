@@ -1,5 +1,5 @@
 -- ============================================================
--- VEXTRA AI - INDUSTRY ONBOARDING
+-- SOLVIX.AI - INDUSTRY ONBOARDING
 -- Adds industry selection and feature flags to settings
 -- ============================================================
 

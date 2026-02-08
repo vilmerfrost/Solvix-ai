@@ -23,7 +23,7 @@ interface ErrorContext {
 }
 
 const DEVELOPER_EMAIL = "vilmer.frost@gmail.com";
-const FROM_EMAIL = process.env.RESEND_FROM_EMAIL || "errors@vextra.ai";
+const FROM_EMAIL = process.env.RESEND_FROM_EMAIL || "errors@solvix.ai";
 
 /**
  * Initialize Resend client
@@ -93,7 +93,7 @@ export async function notifyDeveloperError(
 
   const html = `
     <div style="font-family: system-ui, sans-serif; max-width: 600px; margin: 0 auto;">
-      <h2 style="color: #ef4444;">🚨 Vextra AI System Error</h2>
+      <h2 style="color: #ef4444;">🚨 Solvix.ai System Error</h2>
       
       <div style="background: #fef2f2; border: 1px solid #fecaca; border-radius: 8px; padding: 16px; margin: 16px 0;">
         <h3 style="margin: 0 0 8px 0; color: #991b1b;">${error.name || "Error"}</h3>
@@ -114,14 +114,14 @@ ${error.stack || "No stack trace available"}
 
       <hr style="border: none; border-top: 1px solid #e2e8f0; margin: 24px 0;">
       <p style="color: #64748b; font-size: 12px;">
-        This is an automated notification from Vextra AI error monitoring.
+        This is an automated notification from Solvix.ai error monitoring.
       </p>
     </div>
   `;
 
   await sendEmail({
     to: DEVELOPER_EMAIL,
-    subject: `[Vextra AI] System Error: ${(error instanceof Error ? error.message : String(error)).slice(0, 50)}`,
+    subject: `[Solvix.ai] System Error: ${(error instanceof Error ? error.message : String(error)).slice(0, 50)}`,
     html,
     text: `Error: ${(error instanceof Error ? error.message : String(error))}\n\nError ID: ${errorId}\nTimestamp: ${timestamp}\n\nStack:\n${error.stack}`,
   });
@@ -164,14 +164,14 @@ export async function sendUserNotification(
 
       <hr style="border: none; border-top: 1px solid #e2e8f0; margin: 24px 0;">
       <p style="color: #64748b; font-size: 12px; text-align: center;">
-        Vextra AI - Intelligent Document Extraction
+        Solvix.ai - Intelligent Document Extraction
       </p>
     </div>
   `;
 
   return sendEmail({
     to: userEmail,
-    subject: `[Vextra AI] ${subject}`,
+    subject: `[Solvix.ai] ${subject}`,
     html,
   });
 }
@@ -190,7 +190,7 @@ export async function notifyBatchComplete(
       <p style="margin: 8px 0 0 0;"><strong>Lyckades:</strong> ${stats.success}</p>
       ${stats.failed > 0 ? `<p style="margin: 8px 0 0 0; color: #dc2626;"><strong>Misslyckades:</strong> ${stats.failed}</p>` : ""}
     </div>
-    <p><a href="${process.env.NEXT_PUBLIC_APP_URL || "https://app.vextra.ai"}/dashboard" style="color: #6366f1;">Gå till dashboard →</a></p>
+    <p><a href="${process.env.NEXT_PUBLIC_APP_URL || "https://app.solvix.ai"}/dashboard" style="color: #6366f1;">Gå till dashboard →</a></p>
   `;
 
   return sendUserNotification(userEmail, "Batch-bearbetning klar", message);

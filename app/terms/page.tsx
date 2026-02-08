@@ -38,7 +38,7 @@ export default function TermsPage() {
               </div>
               <div className="md:col-span-8">
                 <p className="text-lg text-neutral-600 leading-relaxed font-medium">
-                  Genom att använda Vextra AI ("Tjänsten") ingår du ett juridiskt bindande avtal med Vextra AI AB. Om du inte godkänner dessa villkor får du inte använda tjänsten.
+                  Genom att använda Solvix.ai ("Tjänsten") ingår du ett juridiskt bindande avtal med Solvix.ai AB. Om du inte godkänner dessa villkor får du inte använda tjänsten.
                 </p>
               </div>
             </div>
@@ -58,11 +58,11 @@ export default function TermsPage() {
                     BYOK (Bring Your Own Key)
                   </h3>
                   <p className="text-amber-800 text-sm">
-                    Vextra AI använder en modell där du tillhandahåller egna API-nycklar. Du är ensamt ansvarig för alla kostnader som uppstår hos dina AI-leverantörer (OpenAI, Anthropic, Google). Vi rekommenderar starkt att du sätter kostnadsgränser (Hard Limits).
+                    Solvix.ai använder en modell där du tillhandahåller egna API-nycklar. Du är ensamt ansvarig för alla kostnader som uppstår hos dina AI-leverantörer (OpenAI, Anthropic, Google). Vi rekommenderar starkt att du sätter kostnadsgränser (Hard Limits).
                   </p>
                 </div>
                 <p className="text-neutral-600 font-medium">
-                  Du ansvarar för att hålla dina API-nycklar säkra. Vextra AI lagrar dessa nycklar krypterade men ansvarar inte för missbruk om ditt konto komprometteras på grund av svagt lösenord.
+                  Du ansvarar för att hålla dina API-nycklar säkra. Solvix.ai lagrar dessa nycklar krypterade men ansvarar inte för missbruk om ditt konto komprometteras på grund av svagt lösenord.
                 </p>
               </div>
             </div>
@@ -132,7 +132,7 @@ export default function TermsPage() {
                   </p>
                 </div>
                 <p className="mt-4 text-neutral-600 font-medium">
-                  Vi garanterar inte att AI-tolkningen är 100% felfri. Du ansvarar för att verifiera all data innan den exporteras till ditt affärssystem. Vextra AI ansvarar inte för ekonomisk skada som uppstår till följd av felaktig datatolkning.
+                  Vi garanterar inte att AI-tolkningen är 100% felfri. Du ansvarar för att verifiera all data innan den exporteras till ditt affärssystem. Solvix.ai ansvarar inte för ekonomisk skada som uppstår till följd av felaktig datatolkning.
                 </p>
               </div>
             </div>

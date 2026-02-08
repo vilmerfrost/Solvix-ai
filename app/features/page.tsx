@@ -21,7 +21,7 @@ export default function FeaturesPage() {
               TEKNISK PIPELINE
             </h1>
             <p className="text-xl text-neutral-600 font-medium max-w-2xl leading-relaxed">
-              Vextra AI är inte en "wrapper". Det är en purpose-built extraktionsmotor byggd för logistikdata, med en 4-stegs pipeline för maximal precision.
+              Solvix.ai är inte en "wrapper". Det är en purpose-built extraktionsmotor byggd för logistikdata, med en 4-stegs pipeline för maximal precision.
             </p>
           </div>
 

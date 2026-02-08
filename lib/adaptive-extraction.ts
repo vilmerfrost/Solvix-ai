@@ -165,7 +165,29 @@ async function analyzeDocumentStructure(
   const synonymGuide = buildSynonymGuide();
   const columnLookup = buildColumnLookup();
   
-  const analysisPrompt = `Analyze this waste management document and map columns to standard attributes.
+  // Also detect invoice-specific columns
+  const invoiceAliases: Record<string, string[]> = {
+    invoiceNumber: ['fakturanummer', 'faktura nr', 'invoice', 'inv.nr', 'faktura#'],
+    amount: ['belopp', 'summa', 'amount', 'total', 'att betala', 'netto'],
+    vatAmount: ['moms', 'vat', 'mervärdesskatt', 'mva'],
+    dueDate: ['förfallodatum', 'förfaller', 'due date', 'bet.datum', 'betala senast'],
+    description: ['beskrivning', 'artikel', 'text', 'benämning', 'tjänst', 'vara'],
+    unitPrice: ['á-pris', 'a-pris', 'enhetspris', 'styckpris', 'pris', 'unit price'],
+    quantity: ['antal', 'kvantitet', 'st', 'quantity', 'qty'],
+  };
+
+  // Check first row for invoice-like headers
+  const headerRow = sampleRows[0]?.map(cell => String(cell).toLowerCase()).join(' ') || '';
+  let invoiceColumnHits = 0;
+  for (const aliases of Object.values(invoiceAliases)) {
+    if (aliases.some(a => headerRow.includes(a))) invoiceColumnHits++;
+  }
+  const looksLikeInvoice = invoiceColumnHits >= 3;
+  if (looksLikeInvoice) {
+    console.log(`   📄 Document headers suggest INVOICE format (${invoiceColumnHits} invoice column matches)`);
+  }
+
+  const analysisPrompt = `Analyze this ${looksLikeInvoice ? 'invoice/accounting' : 'waste management'} document and map columns to standard attributes.
 
 DOCUMENT: ${filename}
 

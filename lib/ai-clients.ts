@@ -70,7 +70,7 @@ export const getSystemOpenRouterClient = (): OpenAI => {
     apiKey,
     defaultHeaders: {
       "HTTP-Referer": process.env.NEXT_PUBLIC_APP_URL || "https://localhost:3000",
-      "X-Title": "Vextra Document Processor",
+      "X-Title": "Solvix Document Processor",
     },
   });
 };
@@ -159,7 +159,7 @@ export async function getOpenRouterClientForUser(
         apiKey: userKey,
         defaultHeaders: {
           "HTTP-Referer": process.env.NEXT_PUBLIC_APP_URL || "https://localhost:3000",
-          "X-Title": "Vextra Document Processor",
+          "X-Title": "Solvix Document Processor",
         },
       }),
       isUserKey: true,
