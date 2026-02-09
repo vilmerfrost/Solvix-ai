@@ -316,9 +316,18 @@ Extract ALL line items. Output ONLY valid JSON.`;
     log.push(`✓ Extracted invoice: ${items.length} line items, supplier=${supplier}`);
     
     // Store full invoice data for the review page
-    const { items: _i, invoiceLineItems: _il, confidence: _c, ...invoiceMetadata } = parsed;
+    // Keep invoiceLineItems so the review page can render the invoice table
+    const invoiceData: Record<string, unknown> = {};
+    const skipKeys = new Set(['items', 'confidence']);
+    for (const [key, val] of Object.entries(parsed)) {
+      if (!skipKeys.has(key)) invoiceData[key] = val;
+    }
+    // Ensure invoiceLineItems exists (map from items if not present)
+    if (!invoiceData.invoiceLineItems && rawItems.length > 0) {
+      invoiceData.invoiceLineItems = rawItems;
+    }
     
-    return { items, confidence, tokensUsed, documentType: 'invoice', invoiceData: invoiceMetadata };
+    return { items, confidence, tokensUsed, documentType: 'invoice', invoiceData };
     
   } catch (error) {
     const errorMsg = error instanceof Error ? error.message : String(error);
