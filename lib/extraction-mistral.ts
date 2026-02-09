@@ -104,49 +104,59 @@ export async function extractWithMistral(
 
 /**
  * Run Mistral OCR on PDF buffer using dedicated OCR endpoint
+ * Requires: 1) Upload file, 2) OCR by file ID
  */
 async function runMistralOCR(
   client: InstanceType<typeof import("@mistralai/mistralai").Mistral>,
   buffer: Buffer,
   filename: string
 ): Promise<OCRResult> {
-  // Convert buffer to base64 data URL
-  const base64Data = buffer.toString('base64');
-  const dataUrl = `data:application/pdf;base64,${base64Data}`;
-  
-  // Use Mistral's dedicated OCR endpoint (NOT chat completions)
-  // OCR models only work with client.ocr.process()
-  const response = await client.ocr.process({
-    model: MODELS.PDF_OCR,
-    document: {
-      type: "document_url",
-      document_url: dataUrl
+  // Step 1: Upload the PDF buffer to Mistral
+  // The SDK requires the file to be uploaded before OCR processing
+  const uploaded = await client.files.upload({
+    file: {
+      fileName: filename,
+      content: buffer,
     },
-    // Use HTML table format to preserve structure better
-    table_format: "html"
+    purpose: "ocr",
   });
   
-  // Extract text from OCR response
-  // The response contains structured pages with text content
+  // Step 2: Run OCR on the uploaded file
+  // Use the dedicated OCR endpoint with file ID reference
+  const ocrResult = await client.ocr.process({
+    model: MODELS.PDF_OCR,
+    document: {
+      type: "file",
+      fileId: uploaded.id,
+    },
+    // TypeScript SDK uses camelCase (NOT snake_case)
+    tableFormat: "html",
+  });
+  
+  // Step 3: Extract text from OCR response
+  // Combine all pages into a single text string
   const textParts: string[] = [];
   
-  if (response.pages && Array.isArray(response.pages)) {
-    for (const page of response.pages) {
-      if (page.text) {
+  if (ocrResult.pages && Array.isArray(ocrResult.pages)) {
+    for (const page of ocrResult.pages) {
+      // Use markdown format which includes tables
+      if (page.markdown) {
+        textParts.push(page.markdown);
+      } else if (page.text) {
         textParts.push(page.text);
       }
     }
   }
   
   const text = textParts.join('\n\n');
-  const pages = response.pages?.length || 1;
+  const pages = ocrResult.pages?.length || 1;
   
   return {
     text,
     pages,
     tokensUsed: {
-      input: response.usage?.promptTokens || 0,
-      output: response.usage?.completionTokens || 0,
+      input: ocrResult.usage?.promptTokens || 0,
+      output: ocrResult.usage?.completionTokens || 0,
     }
   };
 }
