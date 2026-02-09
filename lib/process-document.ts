@@ -167,7 +167,9 @@ export async function processDocument(
       },
       totalWeightKg: totalWeight,
       totalCostSEK: multiModelResult.estimatedCostUSD * 10.5, // USD to SEK
-      documentType: "waste_report",
+      documentType: multiModelResult.documentType || "waste_report",
+      // Store full invoice metadata if this is an invoice
+      ...(multiModelResult.invoiceData ? { invoiceData: multiModelResult.invoiceData } : {}),
       uniqueAddresses,
       uniqueReceivers,
       uniqueMaterials,

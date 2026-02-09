@@ -6,6 +6,7 @@
  */
 
 import { getMistralClientForUser, MODELS, trackUsage } from "@/lib/ai-clients";
+import { isLikelyInvoice } from "@/lib/extraction/invoice-prompt";
 import type { LineItem, UserSettings, MultiModelExtractionResult, AIProvider } from "@/lib/types";
 
 // =============================================================================
@@ -89,6 +90,9 @@ export async function extractWithMistral(
       tokensUsed: { input: totalTokensInput, output: totalTokensOutput },
       cost: estimatedCost,
       processingTimeMs: processingTime,
+      // Pass through document type and invoice metadata
+      documentType: structuredResult.documentType,
+      invoiceData: structuredResult.invoiceData,
     };
     
   } catch (error) {
@@ -167,6 +171,7 @@ async function runMistralOCR(
 
 /**
  * Structure OCR text into line items using Mistral Large
+ * Detects document type (invoice vs waste report) and adapts prompt
  */
 async function structureWithMistralLarge(
   client: InstanceType<typeof import("@mistralai/mistralai").Mistral>,
@@ -178,73 +183,89 @@ async function structureWithMistralLarge(
   items: LineItem[];
   confidence: number;
   tokensUsed: { input: number; output: number };
+  documentType?: string;
+  invoiceData?: Record<string, unknown>;
 }> {
-  // Infer receiver from filename
-  const receiver = inferReceiver(filename);
-  
-  // Build material synonyms section
-  const materialSynonyms = settings.material_synonyms
-    ? Object.entries(settings.material_synonyms)
-        .map(([std, syns]) => `${std}: ${(syns as string[]).join(", ")}`)
-        .join("\n")
-    : "";
+  // Detect document type from filename + OCR text
+  const fnLower = filename.toLowerCase();
+  const isInvoice = fnLower.includes('faktura') || fnLower.includes('invoice') || isLikelyInvoice(ocrText);
   
   // Extract date from filename
   const dateMatch = filename.match(/(\d{4}[-_]\d{2}[-_]\d{2})/);
   const filenameDate = dateMatch ? dateMatch[0].replace(/[-_]/g, '-') : null;
+  const today = new Date().toISOString().split('T')[0];
   
-  const prompt = `Extract ALL waste management data from this OCR text into structured JSON.
+  if (isInvoice) {
+    log.push(`📄 Detected INVOICE document — using invoice extraction prompt`);
+    return structureInvoice(client, ocrText, filename, filenameDate || today, settings, log);
+  }
+  
+  log.push(`📄 Detected WASTE REPORT document — using waste extraction prompt`);
+  return structureWasteReport(client, ocrText, filename, filenameDate || today, settings, log);
+}
 
-═══════════════════════════════════════════════════════════════════════════════
-MULTI-LANGUAGE SUPPORT
-═══════════════════════════════════════════════════════════════════════════════
-Document may be in: Swedish, Norwegian, Danish, Finnish, or English.
-Recognize terms in any of these languages.
+/**
+ * Structure invoice OCR text into items
+ */
+async function structureInvoice(
+  client: InstanceType<typeof import("@mistralai/mistralai").Mistral>,
+  ocrText: string,
+  filename: string,
+  fallbackDate: string,
+  settings: UserSettings,
+  log: string[]
+): Promise<{
+  items: LineItem[];
+  confidence: number;
+  tokensUsed: { input: number; output: number };
+  documentType: string;
+  invoiceData?: Record<string, unknown>;
+}> {
+  const prompt = `Extract ALL data from this Swedish invoice/faktura into JSON.
 
-═══════════════════════════════════════════════════════════════════════════════
-DATE HANDLING
-═══════════════════════════════════════════════════════════════════════════════
-- If date is a period range, extract the END DATE
-- Output dates as YYYY-MM-DD
-- Fallback date: ${filenameDate || 'today'}
+DOCUMENT: ${filename}
 
-═══════════════════════════════════════════════════════════════════════════════
-MATERIAL STANDARDIZATION
-═══════════════════════════════════════════════════════════════════════════════
-${materialSynonyms || 'Use material names as found in document.'}
+EXTRACT:
+1. Header: invoiceNumber, invoiceDate (YYYY-MM-DD), dueDate, supplier, buyerName
+2. Payment: bankgiro, plusgiro, ocrReference
+3. Amounts: subtotal, vatAmount, totalAmount, currency (default SEK), vatRate
+4. ALL line items from the invoice table
 
-═══════════════════════════════════════════════════════════════════════════════
-WEIGHT CONVERSION (always output in kg)
-═══════════════════════════════════════════════════════════════════════════════
-- ton/t/tonn/tonnes → ×1000
-- g/gram → ÷1000
-- kg/kilogram → as-is
+SWEDISH NUMBER FORMAT: "1 234,50" → 1234.50 (space=thousands, comma=decimal)
+DATE FORMAT: Output as YYYY-MM-DD. Fallback: ${fallbackDate}
 
-═══════════════════════════════════════════════════════════════════════════════
-OCR TEXT
-═══════════════════════════════════════════════════════════════════════════════
+OCR TEXT:
 ${ocrText}
 
-${settings.custom_instructions ? `═══════════════════════════════════════════════════════════════════════════════
-CUSTOM INSTRUCTIONS (HIGHEST PRIORITY)
-═══════════════════════════════════════════════════════════════════════════════
-${settings.custom_instructions}
-` : ''}
-═══════════════════════════════════════════════════════════════════════════════
-JSON OUTPUT FORMAT (no markdown, no backticks)
-═══════════════════════════════════════════════════════════════════════════════
-{"items":[{"date":"2024-01-16","location":"Address","material":"Material","weightKg":185,"unit":"Kg","receiver":"${receiver}","isHazardous":false}],"confidence":0.95}
+${settings.custom_instructions ? `CUSTOM INSTRUCTIONS (HIGHEST PRIORITY):\n${settings.custom_instructions}\n` : ''}
+JSON OUTPUT (no markdown, no backticks):
+{
+  "documentType": "invoice",
+  "invoiceNumber": "12345",
+  "invoiceDate": "2025-01-15",
+  "dueDate": "2025-02-14",
+  "supplier": "Företag AB",
+  "buyerName": "Köpare AB",
+  "bankgiro": "1234-5678",
+  "ocrReference": "7234567890123",
+  "subtotal": 10000,
+  "vatAmount": 2500,
+  "totalAmount": 12500,
+  "currency": "SEK",
+  "vatRate": 25,
+  "items": [
+    {"description": "Konsulttjänster", "quantity": 40, "unitPrice": 250, "amount": 10000, "date": "2025-01-15"}
+  ],
+  "confidence": 0.95
+}
 
-Extract ALL rows. Output ONLY valid JSON.`;
+Extract ALL line items. Output ONLY valid JSON.`;
 
   try {
     const response = await client.chat.complete({
       model: MODELS.PDF_STRUCTURING,
       messages: [
-        {
-          role: "system",
-          content: "You are a document extraction expert. Extract ALL data from the OCR text into structured JSON. Output ONLY valid JSON with no markdown."
-        },
+        { role: "system", content: "You are a Swedish invoice extraction expert. Extract ALL data into structured JSON. Output ONLY valid JSON." },
         { role: "user", content: prompt }
       ],
       maxTokens: 16384,
@@ -253,23 +274,125 @@ Extract ALL rows. Output ONLY valid JSON.`;
     
     const text = response.choices?.[0]?.message?.content || "";
     const textContent = typeof text === 'string' ? text : '';
+    const tokensUsed = { input: response.usage?.promptTokens || 0, output: response.usage?.completionTokens || 0 };
     
-    const tokensUsed = {
-      input: response.usage?.promptTokens || 0,
-      output: response.usage?.completionTokens || 0,
-    };
+    // Parse the response — invoice JSON may not have "items" at top level
+    const parsed = parseGeneralJsonResponse(textContent);
+    if (!parsed) {
+      log.push(`⚠️ Failed to parse invoice JSON`);
+      return { items: [], confidence: 0, tokensUsed, documentType: 'invoice' };
+    }
     
-    // Parse JSON response
+    // Map invoice line items → LineItem format so the rest of the pipeline works
+    const rawItems = (parsed.items || parsed.invoiceLineItems || []) as Record<string, unknown>[];
+    const invoiceDate = String(parsed.invoiceDate || fallbackDate);
+    const supplier = String(parsed.supplier || '');
+    const buyer = String(parsed.buyerName || '');
+    
+    const items: LineItem[] = rawItems.map((item: Record<string, unknown>) => ({
+      date: String(item.date || invoiceDate),
+      location: buyer,
+      material: String(item.description || item.text || ''),
+      weightKg: typeof item.amount === 'number' ? item.amount : parseFloat(String(item.amount)) || 0,
+      unit: "SEK",
+      receiver: supplier,
+      isHazardous: false,
+    }));
+    
+    // If no line items but we have totals, create a summary item
+    if (items.length === 0 && parsed.totalAmount) {
+      items.push({
+        date: invoiceDate,
+        location: buyer,
+        material: `Faktura ${parsed.invoiceNumber || filename}`,
+        weightKg: typeof parsed.totalAmount === 'number' ? parsed.totalAmount : parseFloat(String(parsed.totalAmount)) || 0,
+        unit: "SEK",
+        receiver: supplier,
+        isHazardous: false,
+      });
+    }
+    
+    const confidence = typeof parsed.confidence === 'number' ? parsed.confidence : 0.85;
+    log.push(`✓ Extracted invoice: ${items.length} line items, supplier=${supplier}`);
+    
+    // Store full invoice data for the review page
+    const { items: _i, invoiceLineItems: _il, confidence: _c, ...invoiceMetadata } = parsed;
+    
+    return { items, confidence, tokensUsed, documentType: 'invoice', invoiceData: invoiceMetadata };
+    
+  } catch (error) {
+    const errorMsg = error instanceof Error ? error.message : String(error);
+    log.push(`⚠️ Invoice structuring failed: ${errorMsg}`);
+    return { items: [], confidence: 0, tokensUsed: { input: 0, output: 0 }, documentType: 'invoice' };
+  }
+}
+
+/**
+ * Structure waste report OCR text into items (original logic)
+ */
+async function structureWasteReport(
+  client: InstanceType<typeof import("@mistralai/mistralai").Mistral>,
+  ocrText: string,
+  filename: string,
+  fallbackDate: string,
+  settings: UserSettings,
+  log: string[]
+): Promise<{
+  items: LineItem[];
+  confidence: number;
+  tokensUsed: { input: number; output: number };
+}> {
+  const receiver = inferReceiver(filename);
+  const materialSynonyms = settings.material_synonyms
+    ? Object.entries(settings.material_synonyms)
+        .map(([std, syns]) => `${std}: ${(syns as string[]).join(", ")}`)
+        .join("\n")
+    : "";
+  
+  const prompt = `Extract ALL waste management data from this OCR text into structured JSON.
+
+MULTI-LANGUAGE: Swedish, Norwegian, Danish, Finnish, or English.
+
+DATE: Period ranges → use END DATE. Output YYYY-MM-DD. Fallback: ${fallbackDate}
+
+MATERIAL SYNONYMS:
+${materialSynonyms || 'Use material names as found in document.'}
+
+WEIGHT CONVERSION (always output in kg):
+ton/t → ×1000, g/gram → ÷1000, kg → as-is
+
+OCR TEXT:
+${ocrText}
+
+${settings.custom_instructions ? `CUSTOM INSTRUCTIONS (HIGHEST PRIORITY):\n${settings.custom_instructions}\n` : ''}
+JSON OUTPUT (no markdown, no backticks):
+{"items":[{"date":"2024-01-16","location":"Address","material":"Material","weightKg":185,"unit":"Kg","receiver":"${receiver}","isHazardous":false}],"confidence":0.95}
+
+Extract ALL rows. Output ONLY valid JSON.`;
+
+  try {
+    const response = await client.chat.complete({
+      model: MODELS.PDF_STRUCTURING,
+      messages: [
+        { role: "system", content: "You are a document extraction expert. Extract ALL data into structured JSON. Output ONLY valid JSON." },
+        { role: "user", content: prompt }
+      ],
+      maxTokens: 16384,
+      temperature: 0,
+    });
+    
+    const text = response.choices?.[0]?.message?.content || "";
+    const textContent = typeof text === 'string' ? text : '';
+    const tokensUsed = { input: response.usage?.promptTokens || 0, output: response.usage?.completionTokens || 0 };
+    
     const parsed = parseJsonResponse(textContent);
-    
     if (!parsed || !parsed.items || parsed.items.length === 0) {
       log.push(`⚠️ No items parsed from Mistral Large response`);
       return { items: [], confidence: 0, tokensUsed };
     }
     
-    // Normalize items to LineItem format
     const items: LineItem[] = parsed.items.map((item: Record<string, unknown>) => ({
-      date: String(item.date || filenameDate || ""),
+      date: String(item.date || fallbackDate),
       location: String(item.location || item.address || ""),
       material: String(item.material || ""),
       weightKg: typeof item.weightKg === 'number' ? item.weightKg : parseFloat(String(item.weightKg)) || 0,
@@ -279,7 +402,6 @@ Extract ALL rows. Output ONLY valid JSON.`;
     }));
     
     const confidence = typeof parsed.confidence === 'number' ? parsed.confidence : 0.85;
-    
     log.push(`✓ Structured ${items.length} items (${(confidence * 100).toFixed(0)}% confidence)`);
     
     return { items, confidence, tokensUsed };
@@ -294,6 +416,23 @@ Extract ALL rows. Output ONLY valid JSON.`;
 // =============================================================================
 // HELPER FUNCTIONS
 // =============================================================================
+
+/**
+ * Parse any JSON response (for invoices and other non-standard formats)
+ */
+function parseGeneralJsonResponse(text: string): Record<string, unknown> | null {
+  let cleaned = text
+    .replace(/```json/gi, '')
+    .replace(/```/g, '')
+    .trim();
+  
+  try { return JSON.parse(cleaned); } catch {}
+  try {
+    const fb = cleaned.indexOf('{'), lb = cleaned.lastIndexOf('}');
+    if (fb !== -1 && lb > fb) return JSON.parse(cleaned.substring(fb, lb + 1));
+  } catch {}
+  return null;
+}
 
 /**
  * Parse JSON response with multiple fallback strategies

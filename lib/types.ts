@@ -217,6 +217,8 @@ export interface MultiModelExtractionResult {
   cost: number;
   processingTimeMs: number;
   error?: string;
+  documentType?: string;
+  invoiceData?: Record<string, unknown>;
 }
 
 // Quality assessment result from document router
@@ -272,6 +274,8 @@ export interface DocumentProcessingResult {
   runId: string;
   totalTokens: number;
   estimatedCostUSD: number;
+  documentType?: string;
+  invoiceData?: Record<string, unknown>;
 }
 
 // API Key provider type (synonym for AIProvider, kept for clarity)

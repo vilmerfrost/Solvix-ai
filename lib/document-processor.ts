@@ -204,6 +204,8 @@ export async function processDocumentMultiModel(
     let items = extractionResult.items;
     let confidence = extractionResult.confidence;
     const sourceText = extractionResult.sourceText || "";
+    const detectedDocumentType = extractionResult.documentType;
+    const invoiceData = extractionResult.invoiceData;
     
     log.push(`✓ Extracted ${items.length} items (${(confidence * 100).toFixed(0)}% confidence)`);
     
@@ -288,6 +290,8 @@ export async function processDocumentMultiModel(
       runId,
       totalTokens,
       estimatedCostUSD: totalCost,
+      documentType: detectedDocumentType,
+      invoiceData,
     };
     
   } catch (error) {
