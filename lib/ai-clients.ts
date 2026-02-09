@@ -18,19 +18,19 @@ import type { AIProvider } from "@/lib/types";
 // =============================================================================
 
 export const MODELS = {
-  // Quality assessment & Excel extraction
-  QUALITY_ASSESSMENT: "gemini-3-flash",
-  EXCEL_EXTRACTION: "gemini-3-flash",
+  // Quality assessment & Excel extraction (OpenRouter format for Gemini)
+  QUALITY_ASSESSMENT: "google/gemini-3-flash-preview",
+  EXCEL_EXTRACTION: "google/gemini-3-flash-preview",
   
-  // PDF extraction via Mistral
-  PDF_OCR: "mistral-large-3",
-  PDF_STRUCTURING: "mistral-large-3",
+  // PDF extraction via Mistral (use latest model IDs)
+  PDF_OCR: "mistral-ocr-latest",
+  PDF_STRUCTURING: "mistral-large-latest",
   
-  // Verification (always on)
-  VERIFICATION: "claude-haiku-4-5",
+  // Verification (always on) - full versioned model ID
+  VERIFICATION: "claude-haiku-4-5-20251001",
   
-  // Reconciliation (when confidence < 80%)
-  RECONCILIATION: "claude-sonnet-4-5",
+  // Reconciliation (when confidence < 80%) - full versioned model ID
+  RECONCILIATION: "claude-sonnet-4-5-20250929",
 } as const;
 
 export const THRESHOLDS = {

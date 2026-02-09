@@ -6,6 +6,7 @@ import Anthropic from "@anthropic-ai/sdk";
 import * as XLSX from "xlsx";
 import * as fs from "fs";
 import * as path from "path";
+import { MODELS } from "@/lib/ai-clients";
 
 const anthropic = new Anthropic({
   apiKey: process.env.ANTHROPIC_API_KEY!,
@@ -119,7 +120,7 @@ Extract ALL ${chunkRows.length} rows from this chunk!`;
 
     try {
       const response = await anthropic.messages.create({
-        model: "claude-sonnet-4-5",
+        model: MODELS.RECONCILIATION,
         max_tokens: 8192,
         messages: [{ role: "user", content: prompt }]
       });
