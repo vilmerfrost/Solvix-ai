@@ -13,18 +13,11 @@
 
 import { createServiceRoleClient } from "@/lib/supabase";
 import { processDocumentMultiModel } from "@/lib/document-processor";
-import { extractAdaptive } from "@/lib/adaptive-extraction";
-import { extractWithRetryAndFallback, getUserPreferredModel } from "@/lib/extraction/router";
-import { ExtractionRequest } from "@/lib/extraction/types";
 import type { 
   DocumentStatus, 
   ExtractedDocumentData, 
   UserSettings, 
-  LineItem,
-  SpreadsheetData,
-  CellValue
 } from "@/lib/types";
-import * as XLSX from "xlsx";
 
 // Default settings when none exist
 const DEFAULT_SETTINGS: Partial<UserSettings> = {
@@ -66,130 +59,6 @@ export interface ProcessResult {
 export interface ProcessOptions {
   modelId?: string;
   customInstructions?: string;
-  /** Use new multi-model pipeline (Mistral OCR + Gemini + Haiku verification) */
-  useMultiModelPipeline?: boolean;
-}
-
-/**
- * Extract data from PDF using the extraction router
- * Supports all providers (Gemini, GPT, Claude) based on user's selection
- */
-async function extractFromPDF(
-  pdfBuffer: ArrayBuffer,
-  filename: string,
-  settings: ProcessingSettings,
-  userId: string,
-  modelId: string
-): Promise<ExtractedDocumentData> {
-  console.log(`📄 PDF EXTRACTION: ${filename}`);
-  console.log(`   Using model: ${modelId}`);
-  
-  // Convert ArrayBuffer to Buffer for the router
-  const buffer = Buffer.from(pdfBuffer);
-  console.log(`✓ PDF prepared (${(buffer.byteLength / 1024).toFixed(0)} KB)`);
-  
-  // Infer receiver from filename
-  let receiver = "Okänd mottagare";
-  const fn = filename.toLowerCase();
-  if (fn.includes('ragn-sells') || fn.includes('ragnsells')) receiver = "Ragn-Sells";
-  else if (fn.includes('renova')) receiver = "Renova";
-  else if (fn.includes('nsr')) receiver = "NSR";
-  
-  // Build extraction request for the router
-  const request: ExtractionRequest = {
-    content: buffer,
-    contentType: 'pdf',
-    filename: filename,
-    customInstructions: settings.custom_instructions,
-    settings: {
-      material_synonyms: settings.material_synonyms,
-      known_receivers: [receiver],
-      extraction_max_tokens: 16384
-    }
-  };
-  
-  // Use the extraction router with retry and fallback
-  const result = await extractWithRetryAndFallback(
-    request,
-    userId,
-    modelId,
-    {
-      maxRetries: 2,
-      fallbackToOtherProviders: true,
-      onLog: (msg, level) => console.log(`   ${msg}`)
-    }
-  );
-  
-  if (!result.success) {
-    throw new Error(result.error || "PDF extraction failed");
-  }
-  
-  console.log(`✓ Extraction complete: ${result.items.length} items via ${result.provider}`);
-  
-  // Extract date from filename for fallback
-  const dateMatch = filename.match(/(\d{4}-\d{2}-\d{2})/);
-  const filenameDate = dateMatch ? dateMatch[1] : new Date().toISOString().split('T')[0];
-  
-  // Transform router result to expected format
-  const lineItems = result.items.map(item => ({
-    date: item.date || filenameDate,
-    location: item.location || "Okänd adress",
-    material: item.material || "Okänt material",
-    weightKg: item.weightKg || 0,
-    unit: item.unit || "Kg",
-    receiver: item.receiver || receiver,
-    isHazardous: item.isHazardous || false
-  }));
-  
-  // Aggregate duplicates
-  const grouped = new Map<string, LineItem>();
-  for (const item of lineItems) {
-    const key = `${item.date}|${item.location}|${item.material}|${item.receiver}`;
-    if (grouped.has(key)) {
-      const existing = grouped.get(key)!;
-      existing.weightKg += item.weightKg;
-    } else {
-      grouped.set(key, { ...item });
-    }
-  }
-  
-  const aggregated = Array.from(grouped.values());
-  const totalWeight = aggregated.reduce((sum, item) => sum + (item.weightKg || 0), 0);
-  const uniqueAddresses = new Set(aggregated.map(item => item.location)).size;
-  const uniqueMaterials = new Set(aggregated.map(item => item.material)).size;
-  
-  console.log(`✅ PDF extraction complete: ${aggregated.length} items, ${(totalWeight/1000).toFixed(2)} ton`);
-  
-  return {
-    lineItems: aggregated,
-    metadata: {
-      totalRows: lineItems.length,
-      extractedRows: lineItems.length,
-      aggregatedRows: aggregated.length,
-      model: result.model,
-      provider: result.provider,
-      tokensUsed: result.tokensUsed,
-      cost: result.cost,
-      processingTimeMs: result.processingTimeMs
-    },
-    totalWeightKg: totalWeight,
-    totalCostSEK: result.cost,
-    documentType: "waste_report",
-    uniqueAddresses,
-    uniqueReceivers: 1,
-    uniqueMaterials,
-    documentMetadata: {
-      date: filenameDate,
-      address: aggregated[0]?.location || "Okänd adress",
-      supplier: "Okänd leverantör",
-      receiver: receiver
-    },
-    _validation: {
-      completeness: lineItems.length > 0 ? 95 : 0,
-      confidence: 90,
-      issues: lineItems.length === 0 ? ["No data extracted from PDF"] : []
-    }
-  };
 }
 
 /**
@@ -222,9 +91,8 @@ export async function processDocument(
       };
     }
     
-    // Get settings and user's preferred model
+    // Get settings
     const settings = await getSettings(doc.user_id);
-    const modelId = options.modelId || await getUserPreferredModel(doc.user_id);
     
     // Add custom instructions to settings if provided
     if (options.customInstructions) {
@@ -232,7 +100,6 @@ export async function processDocument(
     }
     
     console.log(`   Filename: ${doc.filename}`);
-    console.log(`   Model: ${modelId}`);
     
     // Download file
     let arrayBuffer: ArrayBuffer;
@@ -258,122 +125,70 @@ export async function processDocument(
     const isExcel = doc.filename.match(/\.(xlsx|xls)$/i);
     const isPDF = doc.filename.match(/\.pdf$/i);
     
-    let extractedData: ExtractedDocumentData;
-    
-    // NEW: Use multi-model pipeline if enabled
-    if (options.useMultiModelPipeline) {
-      console.log(`   🚀 Using new multi-model extraction pipeline`);
-      
-      const multiModelResult = await processDocumentMultiModel(
-        Buffer.from(arrayBuffer),
-        doc.filename,
-        doc.id,
-        doc.user_id,
-        settings as UserSettings
-      );
-      
-      if (!multiModelResult.success) {
-        throw new Error(multiModelResult.log.join('\n') || "Multi-model extraction failed");
-      }
-      
-      // Transform result to ExtractedDocumentData format
-      const totalWeight = multiModelResult.items.reduce((sum, item) => sum + (item.weightKg || 0), 0);
-      const uniqueAddresses = new Set(multiModelResult.items.map(item => item.location)).size;
-      const uniqueMaterials = new Set(multiModelResult.items.map(item => item.material)).size;
-      const uniqueReceivers = new Set(multiModelResult.items.map(item => item.receiver)).size;
-      
-      extractedData = {
-        lineItems: multiModelResult.items,
-        metadata: {
-          totalRows: multiModelResult.items.length,
-          extractedRows: multiModelResult.items.length,
-          processedRows: multiModelResult.items.length,
-          model: multiModelResult.modelPath,
-          provider: 'multi-model',
-          tokensUsed: { input: multiModelResult.totalTokens, output: 0 },
-          cost: multiModelResult.estimatedCostUSD,
-          confidence: multiModelResult.confidence,
-        },
-        totalWeightKg: totalWeight,
-        totalCostSEK: multiModelResult.estimatedCostUSD * 10.5, // USD to SEK
-        documentType: "waste_report",
-        uniqueAddresses,
-        uniqueReceivers,
-        uniqueMaterials,
-        _validation: {
-          completeness: multiModelResult.confidence * 100,
-          confidence: multiModelResult.confidence * 100,
-          issues: multiModelResult.verification?.issues.map(i => i.issue) || [],
-        },
-        _verification: multiModelResult.verification ? {
-          verified: multiModelResult.verification.verified,
-          verificationTime: multiModelResult.verification.processingTimeMs,
-          hallucinations: multiModelResult.verification.issues.map(i => ({
-            rowIndex: i.itemIndex,
-            field: i.field,
-            extracted: i.extractedValue as unknown,
-            issue: i.issue,
-            severity: i.severity as 'warning' | 'error',
-          })),
-        } : undefined,
-        _processingLog: multiModelResult.log,
-      };
-    } else if (isExcel) {
-      console.log(`   📊 Excel file - using adaptive extraction`);
-      
-      const workbook = XLSX.read(arrayBuffer);
-      let allData: SpreadsheetData = [];
-      
-      for (const sheetName of workbook.SheetNames) {
-        const sheet = workbook.Sheets[sheetName];
-        const sheetData = XLSX.utils.sheet_to_json(sheet, { header: 1, defval: "" }) as SpreadsheetData;
-        
-        if (sheetData.length === 0) continue;
-        
-        if (allData.length === 0) {
-          allData = sheetData;
-        } else {
-          const firstRowLooksLikeHeader = sheetData[0]?.some((cell: CellValue) => 
-            String(cell).toLowerCase().match(/datum|material|vikt|adress|kvantitet/)
-          );
-          
-          if (firstRowLooksLikeHeader && sheetData.length > 1) {
-            allData = [...allData, ...sheetData.slice(1)];
-          } else {
-            allData = [...allData, ...sheetData];
-          }
-        }
-      }
-      
-      const adaptiveResult = await extractAdaptive(
-        allData,
-        doc.filename,
-        settings,
-        undefined,
-        doc.user_id
-      );
-      
-      extractedData = {
-        ...adaptiveResult,
-        totalCostSEK: 0,
-        documentType: "waste_report",
-        uniqueReceivers: adaptiveResult.uniqueReceivers || 1,
-      };
-      
-    } else if (isPDF) {
-      console.log(`   📄 PDF file - using ${modelId} via extraction router`);
-      
-      extractedData = await extractFromPDF(
-        arrayBuffer,
-        doc.filename,
-        settings,
-        doc.user_id,
-        modelId
-      );
-      
-    } else {
+    if (!isExcel && !isPDF) {
       throw new Error(`Unsupported file type: ${doc.filename}`);
     }
+    
+    let extractedData: ExtractedDocumentData;
+    
+    // ALWAYS use the multi-model pipeline (correct orchestrator)
+    // Pipeline: Gemini Flash (assess) → Mistral OCR (PDF) / Gemini (Excel) → Haiku (verify) → Sonnet (reconcile if <80%)
+    console.log(`   🚀 Using multi-model extraction pipeline`);
+    
+    const multiModelResult = await processDocumentMultiModel(
+      Buffer.from(arrayBuffer),
+      doc.filename,
+      doc.id,
+      doc.user_id,
+      settings as UserSettings
+    );
+    
+    if (!multiModelResult.success) {
+      throw new Error(multiModelResult.log.join('\n') || "Multi-model extraction failed");
+    }
+    
+    // Transform result to ExtractedDocumentData format
+    const totalWeight = multiModelResult.items.reduce((sum, item) => sum + (item.weightKg || 0), 0);
+    const uniqueAddresses = new Set(multiModelResult.items.map(item => item.location)).size;
+    const uniqueMaterials = new Set(multiModelResult.items.map(item => item.material)).size;
+    const uniqueReceivers = new Set(multiModelResult.items.map(item => item.receiver)).size;
+    
+    extractedData = {
+      lineItems: multiModelResult.items,
+      metadata: {
+        totalRows: multiModelResult.items.length,
+        extractedRows: multiModelResult.items.length,
+        processedRows: multiModelResult.items.length,
+        model: multiModelResult.modelPath,
+        provider: 'multi-model',
+        tokensUsed: { input: multiModelResult.totalTokens, output: 0 },
+        cost: multiModelResult.estimatedCostUSD,
+        confidence: multiModelResult.confidence,
+      },
+      totalWeightKg: totalWeight,
+      totalCostSEK: multiModelResult.estimatedCostUSD * 10.5, // USD to SEK
+      documentType: "waste_report",
+      uniqueAddresses,
+      uniqueReceivers,
+      uniqueMaterials,
+      _validation: {
+        completeness: multiModelResult.confidence * 100,
+        confidence: multiModelResult.confidence * 100,
+        issues: multiModelResult.verification?.issues.map(i => i.issue) || [],
+      },
+      _verification: multiModelResult.verification ? {
+        verified: multiModelResult.verification.verified,
+        verificationTime: multiModelResult.verification.processingTimeMs,
+        hallucinations: multiModelResult.verification.issues.map(i => ({
+          rowIndex: i.itemIndex,
+          field: i.field,
+          extracted: i.extractedValue as unknown,
+          issue: i.issue,
+          severity: i.severity as 'warning' | 'error',
+        })),
+      } : undefined,
+      _processingLog: multiModelResult.log,
+    };
     
     // Calculate quality score
     const completeness = extractedData._validation?.completeness || 0;
