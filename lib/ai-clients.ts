@@ -22,8 +22,8 @@ export const MODELS = {
   QUALITY_ASSESSMENT: "google/gemini-3-flash-preview",
   EXCEL_EXTRACTION: "google/gemini-3-flash-preview",
   
-  // PDF extraction via Mistral (use specific version for OCR, latest for structuring)
-  PDF_OCR: "mistral-ocr-2512",
+  // PDF extraction via Mistral (use official OCR model alias)
+  PDF_OCR: "mistral-ocr-latest",
   PDF_STRUCTURING: "mistral-large-latest",
   
   // Verification (always on) - full versioned model ID

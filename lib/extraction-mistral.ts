@@ -103,51 +103,47 @@ export async function extractWithMistral(
 // =============================================================================
 
 /**
- * Run Mistral OCR on PDF buffer
+ * Run Mistral OCR on PDF buffer using dedicated OCR endpoint
  */
 async function runMistralOCR(
   client: InstanceType<typeof import("@mistralai/mistralai").Mistral>,
   buffer: Buffer,
   filename: string
 ): Promise<OCRResult> {
-  // Convert buffer to base64 for Mistral API
+  // Convert buffer to base64 data URL
   const base64Data = buffer.toString('base64');
-  const mimeType = 'application/pdf';
+  const dataUrl = `data:application/pdf;base64,${base64Data}`;
   
-  // Use Mistral's chat API with document
-  // Note: Mistral OCR uses the vision capability with PDF support
-  const response = await client.chat.complete({
+  // Use Mistral's dedicated OCR endpoint (NOT chat completions)
+  // OCR models only work with client.ocr.process()
+  const response = await client.ocr.process({
     model: MODELS.PDF_OCR,
-    messages: [
-      {
-        role: "user",
-        content: [
-          {
-            type: "text",
-            text: `Extract ALL text from this PDF document. Preserve table structure using tabs and newlines. 
-Output the raw text content - do not summarize or interpret.
-
-Document: ${filename}`
-          },
-          {
-            type: "image_url",
-            imageUrl: `data:${mimeType};base64,${base64Data}`
-          }
-        ]
-      }
-    ],
-    maxTokens: 32768,
+    document: {
+      type: "document_url",
+      document_url: dataUrl
+    },
+    // Use HTML table format to preserve structure better
+    table_format: "html"
   });
   
-  const text = response.choices?.[0]?.message?.content || "";
-  const textContent = typeof text === 'string' ? text : '';
+  // Extract text from OCR response
+  // The response contains structured pages with text content
+  const textParts: string[] = [];
   
-  // Estimate pages from content length (rough estimate)
-  const estimatedPages = Math.max(1, Math.ceil(textContent.length / 3000));
+  if (response.pages && Array.isArray(response.pages)) {
+    for (const page of response.pages) {
+      if (page.text) {
+        textParts.push(page.text);
+      }
+    }
+  }
+  
+  const text = textParts.join('\n\n');
+  const pages = response.pages?.length || 1;
   
   return {
-    text: textContent,
-    pages: estimatedPages,
+    text,
+    pages,
     tokensUsed: {
       input: response.usage?.promptTokens || 0,
       output: response.usage?.completionTokens || 0,
