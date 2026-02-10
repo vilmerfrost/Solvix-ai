@@ -289,7 +289,7 @@ export default async function ReviewPage({
   const hasCriticalIssues = issues.some((issue: string) => issue.includes("KRITISKT"));
   const aiSummary = hasCriticalIssues
     ? `Dokument med ${lineItems.length} rader från ${uniqueAddresses} adresser till ${uniqueReceivers} mottagare. ${issues.filter((i: string) => i.includes("KRITISKT")).length} kritiska problem måste åtgärdas.`
-    : `Dokument med ${lineItems.length} rader från ${uniqueAddresses} adresser till ${uniqueReceivers} mottagare (${Array.from(new Set(lineItems.map((i: any) => i.receiver?.value || extractedData.receiver?.value).filter(Boolean))).join(", ")}). All obligatorisk data komplett.`;
+    : `Dokument med ${lineItems.length} rader från ${uniqueAddresses} adresser till ${uniqueReceivers} mottagare (${Array.from(new Set(lineItems.map((i: any) => getValue(i.receiver) || getValue(extractedData.receiver) || '').filter(Boolean))).join(", ")}). All obligatorisk data komplett.`;
 
   // Parse issues to find rows to highlight
   const highlightedRows = new Set<number>();
@@ -814,7 +814,7 @@ export default async function ReviewPage({
             </div>
 
             {/* Invoice line items table */}
-            {extractedData.invoiceLineItems?.length > 0 && (
+            {Array.isArray(extractedData.invoiceLineItems) && extractedData.invoiceLineItems.length > 0 && (
               <div>
                 <h4 className="text-sm font-medium text-slate-700 mb-2">Fakturarader</h4>
                 <div className="border border-slate-200 rounded-lg overflow-hidden">
@@ -831,8 +831,8 @@ export default async function ReviewPage({
                     <tbody>
                       {extractedData.invoiceLineItems.map((item: any, i: number) => (
                         <tr key={i} className="border-t border-slate-100">
-                          <td className="px-3 py-2">{getValue(item.description) || ''}</td>
-                          <td className="px-3 py-2 text-right">{getValue(item.quantity) || ''}</td>
+                          <td className="px-3 py-2">{String(getValue(item.description) || '')}</td>
+                          <td className="px-3 py-2 text-right">{String(getValue(item.quantity) ?? '')}</td>
                           <td className="px-3 py-2 text-right">
                             {typeof getValue(item.unitPrice) === 'number'
                               ? getValue(item.unitPrice).toFixed(2).replace('.', ',')
@@ -883,22 +883,22 @@ export default async function ReviewPage({
               Svenska format identifierade
             </h4>
             <div className="grid grid-cols-2 gap-2 text-sm">
-              {extractedData.swedishMetadata.orgNr?.map((nr: string) => (
+              {Array.isArray(extractedData.swedishMetadata.orgNr) && extractedData.swedishMetadata.orgNr.map((nr: string) => (
                 <div key={nr} className="text-blue-700">
                   <span className="text-blue-400">Org.nr:</span> {nr}
                 </div>
               ))}
-              {extractedData.swedishMetadata.plusgiro?.map((pg: string) => (
+              {Array.isArray(extractedData.swedishMetadata.plusgiro) && extractedData.swedishMetadata.plusgiro.map((pg: string) => (
                 <div key={pg} className="text-blue-700">
                   <span className="text-blue-400">Plusgiro:</span> {pg}
                 </div>
               ))}
-              {extractedData.swedishMetadata.bankgiro?.map((bg: string) => (
+              {Array.isArray(extractedData.swedishMetadata.bankgiro) && extractedData.swedishMetadata.bankgiro.map((bg: string) => (
                 <div key={bg} className="text-blue-700">
                   <span className="text-blue-400">Bankgiro:</span> {bg}
                 </div>
               ))}
-              {extractedData.swedishMetadata.ocrReferences?.map((ocr: string) => (
+              {Array.isArray(extractedData.swedishMetadata.ocrReferences) && extractedData.swedishMetadata.ocrReferences.map((ocr: string) => (
                 <div key={ocr} className="text-blue-700">
                   <span className="text-blue-400">OCR:</span> {ocr}
                 </div>

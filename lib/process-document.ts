@@ -168,8 +168,27 @@ export async function processDocument(
       totalWeightKg: totalWeight,
       totalCostSEK: multiModelResult.estimatedCostUSD * 10.5, // USD to SEK
       documentType: multiModelResult.documentType || "waste_report",
-      // Spread invoice metadata at top level so the review page can access it directly
-      ...(multiModelResult.invoiceData || {}),
+      // For invoices: pick ONLY known fields (never blind-spread AI data)
+      ...(multiModelResult.documentType === 'invoice' && multiModelResult.invoiceData ? {
+        invoiceNumber: String(multiModelResult.invoiceData.invoiceNumber || ''),
+        invoiceDate: String(multiModelResult.invoiceData.invoiceDate || ''),
+        dueDate: String(multiModelResult.invoiceData.dueDate || ''),
+        supplier: String(multiModelResult.invoiceData.supplier || ''),
+        supplierOrgNr: String(multiModelResult.invoiceData.supplierOrgNr || ''),
+        buyerName: String(multiModelResult.invoiceData.buyerName || ''),
+        buyerOrgNr: String(multiModelResult.invoiceData.buyerOrgNr || ''),
+        bankgiro: String(multiModelResult.invoiceData.bankgiro || ''),
+        plusgiro: String(multiModelResult.invoiceData.plusgiro || ''),
+        ocrReference: String(multiModelResult.invoiceData.ocrReference || ''),
+        subtotal: Number(multiModelResult.invoiceData.subtotal) || 0,
+        vatAmount: Number(multiModelResult.invoiceData.vatAmount) || 0,
+        totalAmount: Number(multiModelResult.invoiceData.totalAmount) || 0,
+        currency: String(multiModelResult.invoiceData.currency || 'SEK'),
+        vatRate: Number(multiModelResult.invoiceData.vatRate) || 0,
+        invoiceLineItems: Array.isArray(multiModelResult.invoiceData.invoiceLineItems)
+          ? multiModelResult.invoiceData.invoiceLineItems
+          : [],
+      } : {}),
       uniqueAddresses,
       uniqueReceivers,
       uniqueMaterials,
