@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { SmartInput } from "@/components/smart-input";
 import { saveDocument } from "@/app/actions";
-import { ArrowRight, Save, Skull, Plus, Trash2, AlertTriangle } from "lucide-react";
+import { ArrowRight, Save, Skull, Plus, Trash2, AlertTriangle, Eraser } from "lucide-react";
 import { useUnsavedChanges } from "@/hooks/use-unsaved-changes";
 
 export function ReviewForm({
@@ -214,6 +214,19 @@ export function ReviewForm({
     setLineItems([...lineItems, newItem]);
   };
 
+  // Clear Datum, Adress, and Mottagare from all rows (these inherit from Huvudet)
+  const clearInheritableFields = () => {
+    setHasBeenModified(true);
+    const newItems = lineItems.map((item: any) => ({
+      ...item,
+      date: { value: "", confidence: 1 },
+      address: { value: "", confidence: 1 },
+      location: { value: "", confidence: 1 },
+      receiver: { value: "", confidence: 1 },
+    }));
+    setLineItems(newItems);
+  };
+
   // Show address column if ANY row has address field OR if we have rows (always show for editing)
   // This allows users to fill in missing addresses even if all rows have "SAKNAS"
   const hasLineAddress = lineItems.length > 0 && (
@@ -224,10 +237,8 @@ export function ReviewForm({
     }) || true // Always show if we have rows - allows editing missing addresses
   );
   
-  const hasLineReceiver = lineItems.some((item: any) => {
-    const rec = typeof item.receiver === 'object' ? item.receiver?.value : item.receiver;
-    return rec && String(rec).length > 1;
-  });
+  // Always show Mottagare column when rows exist — allows clearing auto-assigned values like "Ragn-Sells"
+  const hasLineReceiver = lineItems.length > 0;
   
   const hasHandling = lineItems.some((item: any) => {
     const hand = typeof item.handling === 'object' ? item.handling?.value : item.handling;
@@ -472,14 +483,26 @@ export function ReviewForm({
           <h3 className="text-sm font-semibold text-gray-500 uppercase tracking-wide">
             Specifikation - Material ({lineItems.length} rader)
           </h3>
-                            <button 
-                                type="button"
-            onClick={addLineItem}
-            className="flex items-center gap-2 px-3 py-1.5 text-sm bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
-                            >
-            <Plus className="w-4 h-4" />
-            Lägg till rad
-                            </button>
+          <div className="flex items-center gap-2">
+            {lineItems.length > 0 && (
+              <button
+                type="button"
+                onClick={clearInheritableFields}
+                className="flex items-center gap-2 px-3 py-1.5 text-sm border border-gray-300 text-gray-700 rounded-md hover:bg-gray-100 transition-colors"
+              >
+                <Eraser className="w-4 h-4" />
+                Töm värden
+              </button>
+            )}
+            <button
+              type="button"
+              onClick={addLineItem}
+              className="flex items-center gap-2 px-3 py-1.5 text-sm bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
+            >
+              <Plus className="w-4 h-4" />
+              Lägg till rad
+            </button>
+          </div>
         </div>
 
         {lineItems.length === 0 ? (
@@ -625,7 +648,7 @@ export function ReviewForm({
                         <input
                           type="text"
                           name={`lineItems[${index}].address`}
-                          value={(addressValue || locationValue || '').replace('SAKNAS', '')}
+                          value={(addressValue || locationValue || '').replace('SAKNAS', '') || projectAddress}
                           onChange={(e) => {
                             const val = e.target.value;
                             updateLineItem(index, "address", val);
