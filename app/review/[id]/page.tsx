@@ -30,9 +30,11 @@ export default async function ReviewPage({
 }: {
   params: Promise<{ id: string }>;
 }) {
+  let id = '';
+  try {
   const user = await requireAuth();
   const supabase = createServiceRoleClient();
-  const { id } = await params;
+  id = (await params).id;
   
   // Get tenant configuration
   const config = await getTenantConfigFromDB();
@@ -95,13 +97,11 @@ export default async function ReviewPage({
   // === EXPORT PREVIEW DATA ===
   // Apply the SAME fallbacks as the export-to-azure route so users see the final result
   // Get document-level metadata for fallbacks
+  // Extract date - try metadata, then extracted data, then filename, then today
+  const filenameDateMatch = doc.filename.replace(/\s*\(\d+\)/g, '').match(/(\d{4}-\d{2}-\d{2})/);
   const docDate = getValue(extractedData.documentMetadata?.date) || 
                   getValue(extractedData.date) || 
-                  (() => {
-                    // Try to extract from filename
-                    const match = doc.filename.replace(/\s*\(\d+\)/g, '').match(/(\d{4}-\d{2}-\d{2})/);
-                    return match ? match[1] : new Date().toISOString().split('T')[0];
-                  })();
+                  (filenameDateMatch ? filenameDateMatch[1] : new Date().toISOString().split('T')[0]);
   const docAddress = getValue(extractedData.documentMetadata?.address) || getValue(extractedData.address) || "";
   const docReceiver = getValue(extractedData.documentMetadata?.receiver) || getValue(extractedData.receiver) || "";
   const docSupplier = getValue(extractedData.documentMetadata?.supplier) || getValue(extractedData.supplier) || "";
@@ -191,10 +191,10 @@ export default async function ReviewPage({
   );
 
   // Dynamic column detection - only show columns that exist in data
-  function detectExistingColumns(items: any[]): {
+  const detectExistingColumns = (items: any[]): {
     mandatory: string[];
     optional: string[];
-  } {
+  } => {
     if (!items || items.length === 0) {
       return { mandatory: [], optional: [] };
     }
@@ -229,7 +229,7 @@ export default async function ReviewPage({
       mandatory: MANDATORY_FIELDS,
       optional: existingOptional
     };
-  }
+  };
 
   const { mandatory, optional } = detectExistingColumns(lineItems);
   // Filter columns based on user's industry (hide waste-specific fields for non-waste users)
@@ -306,6 +306,36 @@ export default async function ReviewPage({
   const qualityColor = qualityScore >= 80 ? 'text-emerald-500' : qualityScore >= 50 ? 'text-amber-500' : 'text-red-500';
   const qualityLabel = qualityScore >= 80 ? 'Hög kvalitet' : qualityScore >= 50 ? 'Medel kvalitet' : 'Låg kvalitet';
   const ringDashoffset = 175.9 - (175.9 * qualityScore / 100);
+
+  // Pre-compute confidence summary (extracted from JSX IIFE to avoid Turbopack bundler issues)
+  let confTotalFields = 0;
+  let confHigh = 0;
+  let confMedium = 0;
+  let confLow = 0;
+  const checkConf = (field: any) => {
+    if (!field || typeof field !== 'object' || !('confidence' in field)) return;
+    confTotalFields++;
+    const conf = field.confidence;
+    if (conf >= 0.9) confHigh++;
+    else if (conf >= 0.6) confMedium++;
+    else confLow++;
+  };
+  checkConf(extractedData.date);
+  checkConf(extractedData.supplier);
+  checkConf(extractedData.address);
+  checkConf(extractedData.receiver);
+  checkConf(extractedData.material);
+  checkConf(extractedData.weightKg);
+  checkConf(extractedData.cost);
+  if (Array.isArray(lineItems)) {
+    for (const item of lineItems) {
+      checkConf(item.material);
+      checkConf(item.weightKg);
+      checkConf(item.address);
+      checkConf(item.receiver);
+    }
+  }
+  const showConfidenceBanner = confTotalFields > 0;
 
   return (
     <div className="min-h-screen bg-[#f8f9fa]">
@@ -431,82 +461,44 @@ export default async function ReviewPage({
         )}
 
         {/* CONFIDENCE SUMMARY BANNER */}
-        {(() => {
-          // Calculate confidence summary from line items
-          let totalFields = 0;
-          let highConfidence = 0;
-          let mediumConfidence = 0;
-          let lowConfidence = 0;
-          
-          const checkConf = (field: any) => {
-            if (!field || typeof field !== 'object' || !('confidence' in field)) return;
-            totalFields++;
-            const conf = field.confidence;
-            if (conf >= 0.9) highConfidence++;
-            else if (conf >= 0.6) mediumConfidence++;
-            else lowConfidence++;
-          };
-          
-          // Check document-level fields
-          checkConf(extractedData.date);
-          checkConf(extractedData.supplier);
-          checkConf(extractedData.address);
-          checkConf(extractedData.receiver);
-          checkConf(extractedData.material);
-          checkConf(extractedData.weightKg);
-          checkConf(extractedData.cost);
-          
-          // Check line item fields
-          if (Array.isArray(lineItems)) {
-            for (const item of lineItems) {
-              checkConf(item.material);
-              checkConf(item.weightKg);
-              checkConf(item.address);
-              checkConf(item.receiver);
-            }
-          }
-          
-          if (totalFields === 0) return null;
-          
-          return (
-            <div className={`mb-6 p-4 rounded-xl border ${
-              lowConfidence > 0 
-                ? 'bg-rose-50 border-rose-200' 
-                : mediumConfidence > 0 
-                  ? 'bg-amber-50 border-amber-200'
-                  : 'bg-emerald-50 border-emerald-200'
-            }`}>
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  {lowConfidence > 0 ? (
-                    <AlertTriangle className="w-5 h-5 text-rose-600" />
-                  ) : mediumConfidence > 0 ? (
-                    <AlertCircle className="w-5 h-5 text-amber-600" />
-                  ) : (
-                    <CheckCircle className="w-5 h-5 text-emerald-600" />
-                  )}
-                  <div>
-                    <p className="font-medium text-slate-900">
-                      {lowConfidence > 0 
-                        ? `${lowConfidence} fält behöver granskas`
-                        : mediumConfidence > 0
-                          ? `${mediumConfidence} fält har medelhög säkerhet`
-                          : 'Alla fält har hög säkerhet'}
-                    </p>
-                    <p className="text-sm text-slate-500">
-                      {highConfidence} säkra · {mediumConfidence} osäkra · {lowConfidence} behöver granskning
-                    </p>
-                  </div>
-                </div>
-                {lowConfidence === 0 && mediumConfidence === 0 && (
-                  <span className="px-3 py-1 bg-emerald-100 text-emerald-700 text-xs font-semibold rounded-full">
-                    Redo att godkänna
-                  </span>
+        {showConfidenceBanner && (
+          <div className={`mb-6 p-4 rounded-xl border ${
+            confLow > 0 
+              ? 'bg-rose-50 border-rose-200' 
+              : confMedium > 0 
+                ? 'bg-amber-50 border-amber-200'
+                : 'bg-emerald-50 border-emerald-200'
+          }`}>
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                {confLow > 0 ? (
+                  <AlertTriangle className="w-5 h-5 text-rose-600" />
+                ) : confMedium > 0 ? (
+                  <AlertCircle className="w-5 h-5 text-amber-600" />
+                ) : (
+                  <CheckCircle className="w-5 h-5 text-emerald-600" />
                 )}
+                <div>
+                  <p className="font-medium text-slate-900">
+                    {confLow > 0 
+                      ? `${confLow} fält behöver granskas`
+                      : confMedium > 0
+                        ? `${confMedium} fält har medelhög säkerhet`
+                        : 'Alla fält har hög säkerhet'}
+                  </p>
+                  <p className="text-sm text-slate-500">
+                    {confHigh} säkra · {confMedium} osäkra · {confLow} behöver granskning
+                  </p>
+                </div>
               </div>
+              {confLow === 0 && confMedium === 0 && (
+                <span className="px-3 py-1 bg-emerald-100 text-emerald-700 text-xs font-semibold rounded-full">
+                  Redo att godkänna
+                </span>
+              )}
             </div>
-          );
-        })()}
+          </div>
+        )}
 
         {/* AI SUMMARY */}
         <div className={`p-4 rounded-lg border flex items-start gap-3 ${
@@ -1085,4 +1077,23 @@ export default async function ReviewPage({
       </div>
     </div>
   );
+  } catch (error: any) {
+    console.error(`[ReviewPage] CRASH on document ${id}:`, error?.message, error?.stack);
+    return (
+      <div className="min-h-screen bg-[#f8f9fa] flex items-center justify-center">
+        <div className="bg-white rounded-xl p-8 shadow-sm border border-slate-200 max-w-md text-center">
+          <div className="w-12 h-12 bg-red-100 rounded-lg flex items-center justify-center mx-auto mb-4">
+            <svg className="w-6 h-6 text-red-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 16.5c-.77.833.192 2.5 1.732 2.5z" />
+            </svg>
+          </div>
+          <h2 className="text-lg font-semibold text-slate-900 mb-2">Kunde inte ladda dokumentet</h2>
+          <p className="text-sm text-slate-600 mb-4">Ett fel uppstod vid laddning av granskningssidan. Försök igen.</p>
+          <a href="/dashboard" className="inline-flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 text-sm font-medium">
+            Tillbaka till Dashboard
+          </a>
+        </div>
+      </div>
+    );
+  }
 }
