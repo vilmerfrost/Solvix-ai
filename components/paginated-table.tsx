@@ -6,11 +6,15 @@ import { Check } from "lucide-react";
 // Module-level helpers (outside component to avoid TDZ issues)
 function getFieldValue(item: any, col: string): any {
   if (!item) return undefined;
-  const field = item[col];
-  if (field && typeof field === 'object' && 'value' in field) {
-    return field.value;
+  let val = item[col];
+  if (val && typeof val === 'object' && 'value' in val) {
+    val = val.value;
   }
-  return field;
+  // Flatten nested objects (e.g. {name, email, phone, address}) to a string
+  if (val && typeof val === 'object' && !Array.isArray(val)) {
+    return val.name || val.label || val.title || JSON.stringify(val);
+  }
+  return val;
 }
 
 const COLUMN_TRANSLATIONS: Record<string, string> = {

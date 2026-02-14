@@ -56,7 +56,12 @@ export function SmartInput({
   showConfidenceBar = true,
   ...props 
 }: SmartInputProps) {
-  const value = fieldData?.value ?? "";
+  // Safely extract a primitive value (handle nested objects like {name, email, ...})
+  let rawValue = fieldData?.value ?? "";
+  if (rawValue && typeof rawValue === 'object') {
+    rawValue = (rawValue as any).name || (rawValue as any).label || String(rawValue);
+  }
+  const value = rawValue;
   const confidence = fieldData?.confidence ?? 0;
   
   // Use controlled mode if onChange is provided, otherwise uncontrolled

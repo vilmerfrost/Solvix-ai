@@ -8,6 +8,18 @@ import { ArrowRight, Save, Skull, Plus, Trash2, AlertTriangle, Eraser } from "lu
 import { useUnsavedChanges } from "@/hooks/use-unsaved-changes";
 
 // Module-level helpers (outside component to avoid TDZ issues in bundler)
+
+/** Safely extract a display string from a value that could be a nested object */
+function toDisplayString(val: any): string {
+  if (!val) return "";
+  if (typeof val === 'string') return val;
+  if (typeof val === 'object' && 'value' in val) {
+    return toDisplayString(val.value);
+  }
+  if (typeof val === 'object' && 'name' in val) return String(val.name || "");
+  return String(val);
+}
+
 function normalizeValue(field: any): any {
   if (!field) return null;
   if (typeof field === 'object' && 'value' in field) {
@@ -68,23 +80,23 @@ export function ReviewForm({
     const metadata = data.documentMetadata || {};
     
     setDocumentDate(
-      metadata.date || 
-      (typeof data.date === 'object' ? data.date?.value : data.date) || 
+      toDisplayString(metadata.date) || 
+      toDisplayString(data.date) || 
       ""
     );
     setDocumentSupplier(
-      metadata.supplier || 
-      (typeof data.supplier === 'object' ? data.supplier?.value : data.supplier) || 
+      toDisplayString(metadata.supplier) || 
+      toDisplayString(data.supplier) || 
       ""
     );
     setProjectAddress(
-      metadata.address || 
-      (typeof data.address === 'object' ? data.address?.value : data.address) || 
+      toDisplayString(metadata.address) || 
+      toDisplayString(data.address) || 
       ""
     );
     setMainReceiver(
-      metadata.receiver || 
-      (typeof data.receiver === 'object' ? data.receiver?.value : data.receiver) || 
+      toDisplayString(metadata.receiver) || 
+      toDisplayString(data.receiver) || 
       ""
     );
   }, [data]);

@@ -1,13 +1,19 @@
 // Utility functions for the review page data processing
 // Extracted to module scope to avoid bundler TDZ issues
 
-/** Get the underlying value from a wrapped {value, confidence} field or return as-is */
+/** Get the underlying value from a wrapped {value, confidence} field or return as-is.
+ *  If the result is still an object (e.g. {name, email, phone, address}), flatten to string. */
 export function getValue(field: any): any {
   if (!field) return null;
-  if (typeof field === 'object' && 'value' in field) {
-    return field.value;
+  let val = field;
+  if (typeof val === 'object' && 'value' in val) {
+    val = val.value;
   }
-  return field;
+  // If the unwrapped value is still an object, flatten to its most useful string
+  if (val && typeof val === 'object' && !Array.isArray(val)) {
+    return val.name || val.label || val.title || JSON.stringify(val);
+  }
+  return val;
 }
 
 /** Check if a value is a placeholder that should be replaced with fallback */
