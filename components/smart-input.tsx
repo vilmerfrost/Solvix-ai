@@ -56,10 +56,18 @@ export function SmartInput({
   showConfidenceBar = true,
   ...props 
 }: SmartInputProps) {
-  // Safely extract a primitive value (handle nested objects like {name, email, ...})
-  let rawValue = fieldData?.value ?? "";
+  // Safely extract a primitive value — recursively unwrap nested objects
+  let rawValue: any = fieldData?.value ?? "";
+  const unwrap = (v: any): any => {
+    if (!v || typeof v !== 'object') return v;
+    if ('value' in v) return unwrap(v.value);
+    if ('name' in v) return unwrap(v.name);
+    if ('label' in v) return unwrap(v.label);
+    if ('address' in v) return unwrap(v.address);
+    return "";
+  };
   if (rawValue && typeof rawValue === 'object') {
-    rawValue = (rawValue as any).name || (rawValue as any).label || String(rawValue);
+    rawValue = unwrap(rawValue);
   }
   const value = rawValue;
   const confidence = fieldData?.confidence ?? 0;

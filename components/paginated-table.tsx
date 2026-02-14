@@ -4,17 +4,21 @@ import { useState } from "react";
 import { Check } from "lucide-react";
 
 // Module-level helpers (outside component to avoid TDZ issues)
+/** Recursively unwrap a value to a displayable primitive */
+function unwrapValue(val: any): any {
+  if (!val) return val;
+  if (typeof val === 'string' || typeof val === 'number' || typeof val === 'boolean') return val;
+  if (typeof val === 'object' && 'value' in val) return unwrapValue(val.value);
+  if (typeof val === 'object' && 'name' in val) return unwrapValue(val.name);
+  if (typeof val === 'object' && 'label' in val) return unwrapValue(val.label);
+  if (typeof val === 'object' && 'title' in val) return unwrapValue(val.title);
+  if (typeof val === 'object' && 'address' in val) return unwrapValue(val.address);
+  return "";
+}
+
 function getFieldValue(item: any, col: string): any {
   if (!item) return undefined;
-  let val = item[col];
-  if (val && typeof val === 'object' && 'value' in val) {
-    val = val.value;
-  }
-  // Flatten nested objects (e.g. {name, email, phone, address}) to a string
-  if (val && typeof val === 'object' && !Array.isArray(val)) {
-    return val.name || val.label || val.title || JSON.stringify(val);
-  }
-  return val;
+  return unwrapValue(item[col]);
 }
 
 const COLUMN_TRANSLATIONS: Record<string, string> = {

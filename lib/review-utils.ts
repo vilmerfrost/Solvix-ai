@@ -1,29 +1,37 @@
 // Utility functions for the review page data processing
 // Extracted to module scope to avoid bundler TDZ issues
 
-/** Ensure ANY value becomes a safe renderable string (never [object Object]) */
+/** Ensure ANY value becomes a safe renderable string (never [object Object]).
+ *  Recursively unwraps nested {value,confidence} wrappers and named sub-fields. */
 export function toSafeString(val: any): string {
   if (!val) return "";
   if (typeof val === "string") return val;
   if (typeof val === "number" || typeof val === "boolean") return String(val);
+  // Unwrap {value, confidence} wrappers recursively
   if (typeof val === "object" && "value" in val) return toSafeString(val.value);
-  if (typeof val === "object" && "name" in val) return String(val.name || "");
-  if (typeof val === "object" && "address" in val) return String(val.address || "");
-  if (typeof val === "object" && "label" in val) return String(val.label || "");
+  // Named sub-fields may ALSO be wrapped — recurse instead of String()
+  if (typeof val === "object" && "name" in val) return toSafeString(val.name);
+  if (typeof val === "object" && "address" in val) return toSafeString(val.address);
+  if (typeof val === "object" && "label" in val) return toSafeString(val.label);
+  if (typeof val === "object" && "title" in val) return toSafeString(val.title);
   return "";
 }
 
 /** Get the underlying value from a wrapped {value, confidence} field or return as-is.
- *  If the result is still an object (e.g. {name, email, phone, address}), flatten to string. */
+ *  If the result is still an object, recursively flatten to a primitive. */
 export function getValue(field: any): any {
   if (!field) return null;
   let val = field;
   if (typeof val === 'object' && 'value' in val) {
     val = val.value;
   }
-  // If the unwrapped value is still an object, flatten to its most useful string
+  // If the unwrapped value is still an object, recursively extract best primitive
   if (val && typeof val === 'object' && !Array.isArray(val)) {
-    return val.name || val.label || val.title || toSafeString(val);
+    if ('name' in val && val.name != null) return getValue(val.name);
+    if ('label' in val && val.label != null) return getValue(val.label);
+    if ('title' in val && val.title != null) return getValue(val.title);
+    if ('address' in val && val.address != null) return getValue(val.address);
+    return "";
   }
   return val;
 }

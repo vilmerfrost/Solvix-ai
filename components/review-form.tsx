@@ -9,30 +9,32 @@ import { useUnsavedChanges } from "@/hooks/use-unsaved-changes";
 
 // Module-level helpers (outside component to avoid TDZ issues in bundler)
 
-/** Safely extract a display string from a value that could be a nested object */
+/** Safely extract a display string from a value that could be a nested object.
+ *  Recursively unwraps {value,confidence} wrappers and named sub-fields. */
 function toDisplayString(val: any): string {
   if (!val) return "";
   if (typeof val === 'string') return val;
-  if (typeof val === 'number') return String(val);
-  if (typeof val === 'object' && 'value' in val) {
-    return toDisplayString(val.value);
-  }
-  if (typeof val === 'object' && 'name' in val) return String(val.name || "");
-  if (typeof val === 'object' && 'address' in val) return String(val.address || "");
-  return String(val);
+  if (typeof val === 'number' || typeof val === 'boolean') return String(val);
+  // Unwrap {value, confidence} wrappers recursively
+  if (typeof val === 'object' && 'value' in val) return toDisplayString(val.value);
+  // Named sub-fields may ALSO be wrapped — recurse instead of String()
+  if (typeof val === 'object' && 'name' in val) return toDisplayString(val.name);
+  if (typeof val === 'object' && 'address' in val) return toDisplayString(val.address);
+  if (typeof val === 'object' && 'label' in val) return toDisplayString(val.label);
+  return "";
 }
 
-/** Flatten a value to a primitive before wrapping */
+/** Flatten a value to a primitive before wrapping — recursively unwraps nested objects */
 function flattenToPrimitive(val: any): any {
   if (!val || typeof val !== 'object') return val;
   if (Array.isArray(val)) return val;
   // Already a {value, confidence} wrapper? Don't flatten, normalizeValue handles it
   if ('value' in val && 'confidence' in val) return val;
-  // Nested object like {name, email, phone, address} — extract best string
-  if ('name' in val) return val.name || "";
-  if ('address' in val) return val.address || "";
-  if ('label' in val) return val.label || "";
-  return JSON.stringify(val);
+  // Nested object — recursively extract to a primitive string
+  if ('name' in val) return toDisplayString(val.name) || "";
+  if ('address' in val) return toDisplayString(val.address) || "";
+  if ('label' in val) return toDisplayString(val.label) || "";
+  return "";
 }
 
 function normalizeValue(field: any): any {
