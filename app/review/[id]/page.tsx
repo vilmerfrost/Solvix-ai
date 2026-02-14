@@ -19,7 +19,7 @@ import { PaginatedTable } from "@/components/paginated-table";
 import { truncateFilename } from "@/lib/filename-utils";
 import { DeleteDocumentButton } from "@/components/delete-document-button";
 import { getTenantConfigFromDB, getUIStrings } from "@/config/tenant";
-import { getValue, buildExportPreviewRows, calculateStats, detectExistingColumns, findDuplicateKeys, computeConfidenceStats } from "@/lib/review-utils";
+import { getValue, toSafeString, buildExportPreviewRows, calculateStats, detectExistingColumns, findDuplicateKeys, computeConfidenceStats } from "@/lib/review-utils";
 
 export const dynamic = "force-dynamic";
 
@@ -82,6 +82,7 @@ export default async function ReviewPage({
 
   const extractedData = doc.extracted_data || {};
   const lineItems = extractedData.lineItems || [];
+  const isInvoice = extractedData?.documentType === 'invoice';
 
   // Document-level metadata for fallbacks
   const filenameDateMatch = doc.filename.replace(/\s*\(\d+\)/g, '').match(/(\d{4}-\d{2}-\d{2})/);
@@ -93,13 +94,13 @@ export default async function ReviewPage({
   const docSupplier = getValue(extractedData.documentMetadata?.supplier) || getValue(extractedData.supplier) || "";
 
   // Export preview rows (exactly what will be in Excel)
-  const exportPreviewRows = buildExportPreviewRows(lineItems, docDate, docAddress, docReceiver);
+  const exportPreviewRows = buildExportPreviewRows(lineItems, docDate, docAddress, docReceiver, isInvoice);
   
   // Stats
   const { uniqueAddresses, uniqueReceivers, uniqueMaterials, totalWeightKg, totalCost, totalCo2 } = calculateStats(lineItems, extractedData);
 
   // Column detection
-  const { mandatory, optional } = detectExistingColumns(lineItems, extractedData);
+  const { mandatory, optional } = detectExistingColumns(lineItems, extractedData, isInvoice);
   const filteredMandatory = mandatory.filter(col => !hiddenFields.includes(col));
   const filteredOptional = optional.filter(col => !hiddenFields.includes(col));
   const allColumns = [...filteredMandatory, ...filteredOptional];
@@ -116,17 +117,20 @@ export default async function ReviewPage({
   
   // Check for missing mandatory fields in EXPORT data (after fallbacks)
   exportPreviewRows.forEach((row: any) => {
-    if (!row.material || row.material === "Okänt material") {
-      issues.push(`KRITISKT: Rad ${row.rowNum} saknar Material`);
+    if (!row.material || row.material === "Okänt material" || row.material === "Okänd post") {
+      issues.push(`KRITISKT: Rad ${row.rowNum} saknar ${isInvoice ? 'Beskrivning' : 'Material'}`);
     }
-    if (!row.weightKg || Number(row.weightKg) === 0) {
-      issues.push(`KRITISKT: Rad ${row.rowNum} saknar Vikt`);
-    }
-    if (!row.location || row.location === "SAKNAS" || String(row.location).trim() === "") {
-      issues.push(`VARNING: Rad ${row.rowNum} saknar Adress (använder dokumentnivå: "${docAddress || 'tom'}")`);
-    }
-    if (!row.receiver || row.receiver === "Okänd mottagare") {
-      issues.push(`VARNING: Rad ${row.rowNum} saknar Mottagare (använder fallback: "Okänd mottagare")`);
+    if (!isInvoice) {
+      // Weight validation only for waste documents
+      if (!row.weightKg || Number(row.weightKg) === 0) {
+        issues.push(`KRITISKT: Rad ${row.rowNum} saknar Vikt`);
+      }
+      if (!row.location || row.location === "SAKNAS" || String(row.location).trim() === "") {
+        issues.push(`VARNING: Rad ${row.rowNum} saknar Adress (använder dokumentnivå: "${docAddress || 'tom'}")`);
+      }
+      if (!row.receiver || row.receiver === "Okänd mottagare") {
+        issues.push(`VARNING: Rad ${row.rowNum} saknar Mottagare (använder fallback: "Okänd mottagare")`);
+      }
     }
   });
 
@@ -137,9 +141,10 @@ export default async function ReviewPage({
 
   // Generate AI summary
   const hasCriticalIssues = issues.some((issue: string) => issue.includes("KRITISKT"));
+  const receiverList = Array.from(new Set(lineItems.map((i: any) => toSafeString(getValue(i.receiver)) || toSafeString(getValue(extractedData.receiver)) || '').filter(Boolean))).join(", ");
   const aiSummary = hasCriticalIssues
     ? `Dokument med ${lineItems.length} rader från ${uniqueAddresses} adresser till ${uniqueReceivers} mottagare. ${issues.filter((i: string) => i.includes("KRITISKT")).length} kritiska problem måste åtgärdas.`
-    : `Dokument med ${lineItems.length} rader från ${uniqueAddresses} adresser till ${uniqueReceivers} mottagare (${Array.from(new Set(lineItems.map((i: any) => getValue(i.receiver) || getValue(extractedData.receiver) || '').filter(Boolean))).join(", ")}). All obligatorisk data komplett.`;
+    : `Dokument med ${lineItems.length} rader från ${uniqueAddresses} adresser till ${uniqueReceivers} mottagare (${receiverList}). All obligatorisk data komplett.`;
 
   // Parse issues to find rows to highlight
   const highlightedRows = new Set<number>();
@@ -367,7 +372,7 @@ export default async function ReviewPage({
                 <div>
                   <label className="text-sm font-medium text-[var(--color-info-text)] opacity-80 block mb-1">Datum</label>
                   <div className="text-[var(--color-text-primary)] font-medium">
-                    {extractedData.documentMetadata.date}
+                    {toSafeString(extractedData.documentMetadata.date)}
                   </div>
                 </div>
               )}
@@ -375,7 +380,7 @@ export default async function ReviewPage({
                 <div>
                   <label className="text-sm font-medium text-[var(--color-info-text)] opacity-80 block mb-1">Leverantör</label>
                   <div className="text-[var(--color-text-primary)] font-medium">
-                    {extractedData.documentMetadata.supplier}
+                    {toSafeString(extractedData.documentMetadata.supplier)}
                   </div>
                 </div>
               )}
@@ -383,7 +388,7 @@ export default async function ReviewPage({
                 <div>
                   <label className="text-sm font-medium text-[var(--color-info-text)] opacity-80 block mb-1">Projektadress</label>
                   <div className="text-[var(--color-text-primary)] font-medium">
-                    {extractedData.documentMetadata.address}
+                    {toSafeString(extractedData.documentMetadata.address)}
                   </div>
                 </div>
               )}
@@ -391,7 +396,7 @@ export default async function ReviewPage({
                 <div>
                   <label className="text-sm font-medium text-[var(--color-info-text)] opacity-80 block mb-1">Mottagare</label>
                   <div className="text-[var(--color-text-primary)] font-medium">
-                    {extractedData.documentMetadata.receiver}
+                    {toSafeString(extractedData.documentMetadata.receiver)}
                   </div>
                 </div>
               )}
@@ -400,29 +405,32 @@ export default async function ReviewPage({
         )}
 
         {/* DOCUMENT STATS */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+        <div className={`grid grid-cols-2 ${isInvoice ? 'md:grid-cols-3' : 'md:grid-cols-4'} gap-4 mb-6`}>
           <div className="bg-white rounded-lg border border-slate-200 p-4">
-            <div className="text-xs text-slate-600 mb-1 uppercase tracking-wide">Rader</div>
+            <div className="text-xs text-slate-600 mb-1 uppercase tracking-wide">{isInvoice ? 'Fakturarader' : 'Rader'}</div>
             <div className="text-2xl font-bold text-slate-900">{lineItems.length}</div>
           </div>
           
+          {!isInvoice && (
+            <div className="bg-white rounded-lg border border-slate-200 p-4">
+              <div className="text-xs text-slate-600 mb-1 uppercase tracking-wide">Adresser</div>
+              <div className="text-2xl font-bold text-slate-900">{uniqueAddresses || '—'}</div>
+            </div>
+          )}
+          
           <div className="bg-white rounded-lg border border-slate-200 p-4">
-            <div className="text-xs text-slate-600 mb-1 uppercase tracking-wide">Adresser</div>
-            <div className="text-2xl font-bold text-slate-900">{uniqueAddresses || '—'}</div>
+            <div className="text-xs text-slate-600 mb-1 uppercase tracking-wide">{isInvoice ? 'Leverantör' : 'Mottagare'}</div>
+            <div className="text-2xl font-bold text-slate-900">{isInvoice ? (toSafeString(docSupplier) || '—') : (uniqueReceivers || '—')}</div>
           </div>
           
           <div className="bg-white rounded-lg border border-slate-200 p-4">
-            <div className="text-xs text-slate-600 mb-1 uppercase tracking-wide">Mottagare</div>
-            <div className="text-2xl font-bold text-slate-900">{uniqueReceivers || '—'}</div>
-          </div>
-          
-          <div className="bg-white rounded-lg border border-slate-200 p-4">
-            <div className="text-xs text-slate-600 mb-1 uppercase tracking-wide">Material</div>
+            <div className="text-xs text-slate-600 mb-1 uppercase tracking-wide">{isInvoice ? 'Poster' : 'Material'}</div>
             <div className="text-2xl font-bold text-slate-900">{uniqueMaterials || '—'}</div>
           </div>
         </div>
 
-        {/* COLUMN LEGEND */}
+        {/* COLUMN LEGEND — hide for invoices since columns are different */}
+        {!isInvoice && (
         <div className="mb-6 p-4 bg-blue-50 border border-indigo-200 rounded-lg">
           <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-4">
             <div>
@@ -490,8 +498,10 @@ export default async function ReviewPage({
             </div>
           </div>
         </div>
+        )}
 
-        {/* PRIMARY KEY INFO */}
+        {/* PRIMARY KEY INFO — only for waste documents */}
+        {!isInvoice && (
         <div className="mb-6 p-4 bg-slate-50 border border-slate-200 rounded-lg">
           <h3 className="font-semibold text-slate-900 mb-2">
             Primärnyckel
@@ -510,6 +520,7 @@ export default async function ReviewPage({
             </div>
           )}
         </div>
+        )}
 
         {/* Left: Document Preview */}
         <div className="mb-6">
@@ -552,46 +563,69 @@ export default async function ReviewPage({
         </div>
 
         {/* TOTALS */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
-          <div className="bg-white rounded-lg border border-slate-200 p-4">
-            <div className="text-sm text-slate-600 mb-1">Total vikt</div>
-            <div className="text-2xl font-bold text-slate-900">
-              {(totalWeightKg / 1000).toFixed(2)} ton
-            </div>
-            <div className="text-xs text-slate-500 mt-1">
-              {totalWeightKg.toFixed(2)} kg
-            </div>
-          </div>
-
-          {hasCost && (
-            <div className="bg-white rounded-lg border border-slate-200 p-4">
-              <div className="text-sm text-slate-600 mb-1">Total kostnad</div>
-              <div className="text-2xl font-bold text-slate-900">
-                {totalCost.toLocaleString('sv-SE')} SEK
+        <div className={`grid grid-cols-1 ${isInvoice ? 'md:grid-cols-2' : 'md:grid-cols-3'} gap-6 mb-6`}>
+          {isInvoice ? (
+            <>
+              <div className="bg-white rounded-lg border border-slate-200 p-4">
+                <div className="text-sm text-slate-600 mb-1">Totalt belopp</div>
+                <div className="text-2xl font-bold text-slate-900">
+                  {totalWeightKg.toLocaleString('sv-SE')} SEK
+                </div>
               </div>
-            </div>
-          )}
-
-          {hasCo2 && (
-            <div className="bg-white rounded-lg border border-slate-200 p-4">
-              <div className="text-sm text-slate-600 mb-1">Total CO2</div>
-              <div className="text-2xl font-bold text-slate-900">
-                {totalCo2.toFixed(2)} kg
+              <div className="bg-white rounded-lg border border-slate-200 p-4">
+                <div className="text-sm text-slate-600 mb-1">Fullständighet</div>
+                <div className={`text-2xl font-bold ${
+                  validation.completeness >= 95 ? 'text-emerald-600' :
+                  validation.completeness >= 80 ? 'text-yellow-600' :
+                  'text-red-600'
+                }`}>
+                  {validation.completeness?.toFixed(0) || 100}%
+                </div>
               </div>
-            </div>
-          )}
-
-          {!hasCo2 && (
-            <div className="bg-white rounded-lg border border-slate-200 p-4">
-              <div className="text-sm text-slate-600 mb-1">Fullständighet</div>
-              <div className={`text-2xl font-bold ${
-                validation.completeness >= 95 ? 'text-emerald-600' :
-                validation.completeness >= 80 ? 'text-yellow-600' :
-                'text-red-600'
-              }`}>
-                {validation.completeness?.toFixed(0) || 100}%
+            </>
+          ) : (
+            <>
+              <div className="bg-white rounded-lg border border-slate-200 p-4">
+                <div className="text-sm text-slate-600 mb-1">Total vikt</div>
+                <div className="text-2xl font-bold text-slate-900">
+                  {(totalWeightKg / 1000).toFixed(2)} ton
+                </div>
+                <div className="text-xs text-slate-500 mt-1">
+                  {totalWeightKg.toFixed(2)} kg
+                </div>
               </div>
-            </div>
+
+              {hasCost && (
+                <div className="bg-white rounded-lg border border-slate-200 p-4">
+                  <div className="text-sm text-slate-600 mb-1">Total kostnad</div>
+                  <div className="text-2xl font-bold text-slate-900">
+                    {totalCost.toLocaleString('sv-SE')} SEK
+                  </div>
+                </div>
+              )}
+
+              {hasCo2 && (
+                <div className="bg-white rounded-lg border border-slate-200 p-4">
+                  <div className="text-sm text-slate-600 mb-1">Total CO2</div>
+                  <div className="text-2xl font-bold text-slate-900">
+                    {totalCo2.toFixed(2)} kg
+                  </div>
+                </div>
+              )}
+
+              {!hasCo2 && (
+                <div className="bg-white rounded-lg border border-slate-200 p-4">
+                  <div className="text-sm text-slate-600 mb-1">Fullständighet</div>
+                  <div className={`text-2xl font-bold ${
+                    validation.completeness >= 95 ? 'text-emerald-600' :
+                    validation.completeness >= 80 ? 'text-yellow-600' :
+                    'text-red-600'
+                  }`}>
+                    {validation.completeness?.toFixed(0) || 100}%
+                  </div>
+                </div>
+              )}
+            </>
           )}
         </div>
 
@@ -621,7 +655,7 @@ export default async function ReviewPage({
         {lineItems.length > 0 && (
           <div className="mb-6">
             <div className="flex items-center gap-3 mb-4">
-              <h2 className="text-xl font-semibold text-slate-900">Extraherad Data (Rådata från AI)</h2>
+              <h2 className="text-xl font-semibold text-slate-900">{isInvoice ? 'Extraherad Fakturadata (Rådata från AI)' : 'Extraherad Data (Rådata från AI)'}</h2>
               <span className="px-3 py-1 bg-slate-100 text-slate-600 text-sm rounded-full">
                 {lineItems.length} rader extraherade
               </span>
@@ -807,15 +841,15 @@ export default async function ReviewPage({
                   <thead className="bg-indigo-600 text-white">
                     <tr>
                       <th className="px-4 py-3 text-left text-xs font-medium uppercase">#</th>
-                      <th className="px-4 py-3 text-left text-xs font-medium uppercase">Utförtdatum</th>
-                      <th className="px-4 py-3 text-left text-xs font-medium uppercase">Hämtställe</th>
-                      <th className="px-4 py-3 text-left text-xs font-medium uppercase">Material</th>
-                      <th className="px-4 py-3 text-left text-xs font-medium uppercase">Kvantitet</th>
+                      <th className="px-4 py-3 text-left text-xs font-medium uppercase">{isInvoice ? 'Datum' : 'Utförtdatum'}</th>
+                      <th className="px-4 py-3 text-left text-xs font-medium uppercase">{isInvoice ? 'Leverantör' : 'Hämtställe'}</th>
+                      <th className="px-4 py-3 text-left text-xs font-medium uppercase">{isInvoice ? 'Beskrivning' : 'Material'}</th>
+                      <th className="px-4 py-3 text-left text-xs font-medium uppercase">{isInvoice ? 'Belopp' : 'Kvantitet'}</th>
                       <th className="px-4 py-3 text-left text-xs font-medium uppercase">Enhet</th>
-                      {!hiddenFields.includes('receiver') && (
+                      {!isInvoice && !hiddenFields.includes('receiver') && (
                         <th className="px-4 py-3 text-left text-xs font-medium uppercase">Leveransställe</th>
                       )}
-                      {!hiddenFields.includes('isHazardous') && (
+                      {!isInvoice && !hiddenFields.includes('isHazardous') && (
                         <th className="px-4 py-3 text-left text-xs font-medium uppercase">Farligt avfall</th>
                       )}
                     </tr>
@@ -824,17 +858,17 @@ export default async function ReviewPage({
                     {exportPreviewRows.map((row: any) => (
                       <tr key={row.rowNum} className="hover:bg-emerald-50">
                         <td className="px-4 py-3 text-sm text-slate-500">{row.rowNum}</td>
-                        <td className="px-4 py-3 text-sm font-medium">{row.date}</td>
-                        <td className="px-4 py-3 text-sm">{row.location || <span className="text-slate-400">-</span>}</td>
-                        <td className="px-4 py-3 text-sm">{row.material}</td>
+                        <td className="px-4 py-3 text-sm font-medium">{toSafeString(row.date)}</td>
+                        <td className="px-4 py-3 text-sm">{toSafeString(row.location) || <span className="text-slate-400">-</span>}</td>
+                        <td className="px-4 py-3 text-sm">{toSafeString(row.material)}</td>
                         <td className="px-4 py-3 text-sm font-mono">
                           {Number(row.weightKg || 0).toLocaleString('sv-SE', { minimumFractionDigits: 0, maximumFractionDigits: 2 })}
                         </td>
-                        <td className="px-4 py-3 text-sm">{row.unit}</td>
-                        {!hiddenFields.includes('receiver') && (
-                          <td className="px-4 py-3 text-sm">{row.receiver}</td>
+                        <td className="px-4 py-3 text-sm">{toSafeString(row.unit)}</td>
+                        {!isInvoice && !hiddenFields.includes('receiver') && (
+                          <td className="px-4 py-3 text-sm">{toSafeString(row.receiver)}</td>
                         )}
-                        {!hiddenFields.includes('isHazardous') && (
+                        {!isInvoice && !hiddenFields.includes('isHazardous') && (
                           <td className="px-4 py-3 text-sm">
                             {row.isHazardous ? (
                               <span className="px-2 py-1 bg-red-100 text-red-800 rounded text-xs font-medium">Ja</span>
@@ -855,19 +889,19 @@ export default async function ReviewPage({
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
                 <div>
                   <span className="text-blue-700 font-medium">Datum:</span>{' '}
-                  <span className="text-slate-900">{docDate}</span>
+                  <span className="text-slate-900">{toSafeString(docDate)}</span>
                 </div>
                 <div>
                   <span className="text-blue-700 font-medium">Adress:</span>{' '}
-                  <span className="text-slate-900">{docAddress || '-'}</span>
+                  <span className="text-slate-900">{toSafeString(docAddress) || '-'}</span>
                 </div>
                 <div>
                   <span className="text-blue-700 font-medium">Mottagare:</span>{' '}
-                  <span className="text-slate-900">{docReceiver || "Okänd mottagare"}</span>
+                  <span className="text-slate-900">{toSafeString(docReceiver) || "Okänd mottagare"}</span>
                 </div>
                 <div>
                   <span className="text-blue-700 font-medium">Leverantör:</span>{' '}
-                  <span className="text-slate-900">{docSupplier || '-'}</span>
+                  <span className="text-slate-900">{toSafeString(docSupplier) || '-'}</span>
                 </div>
               </div>
             </div>

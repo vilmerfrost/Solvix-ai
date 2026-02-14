@@ -130,10 +130,9 @@ export function ReviewForm({
   }, []);
   
   const [totals, setTotals] = useState({
-    weight: data.totalWeightKg || (typeof data.weightKg === 'object' ? data.weightKg?.value : data.weightKg) || 0,
-    cost: data.totalCostSEK || (typeof data.cost === 'object' ? data.cost?.value : data.cost) || 0,
-    co2: (typeof data.totalCo2Saved === 'object' ? data.totalCo2Saved?.value : data.totalCo2Saved) || 
-         (typeof data.co2Saved === 'object' ? data.co2Saved?.value : data.co2Saved) || 0,
+    weight: Number(toDisplayString(data.totalWeightKg) || toDisplayString(data.weightKg)) || 0,
+    cost: Number(toDisplayString(data.totalCostSEK) || toDisplayString(data.cost)) || 0,
+    co2: Number(toDisplayString(data.totalCo2Saved) || toDisplayString(data.co2Saved)) || 0,
   });
 
   // Unsaved changes warning
@@ -142,36 +141,15 @@ export function ReviewForm({
     message: "Du har osparade ändringar. Är du säker på att du vill lämna sidan?",
   });
 
-  // LIVE-RÄKNARE 🧮
+  // LIVE-RÄKNARE
   useEffect(() => {
     if (lineItems.length > 0) {
-      const newWeight = lineItems.reduce(
-        (sum: number, item: any) => {
-          const weight = typeof item.weightKg === 'object' ? item.weightKg?.value : item.weightKg;
-          return sum + (Number(weight) || 0);
-        },
-        0
-      );
-      const newCo2 = lineItems.reduce(
-        (sum: number, item: any) => {
-          const co2 = typeof item.co2Saved === 'object' ? item.co2Saved?.value : item.co2Saved;
-          return sum + (Number(co2) || 0);
-        },
-        0
-      );
-      const newCost = lineItems.reduce(
-        (sum: number, item: any) => {
-          const cost = typeof item.costSEK === 'object' ? item.costSEK?.value : item.costSEK;
-          return sum + (Number(cost) || 0);
-        },
-        0
-      );
+      const safeNum = (field: any): number => Number(toDisplayString(field)) || 0;
+      const newWeight = lineItems.reduce((sum: number, item: any) => sum + safeNum(item.weightKg), 0);
+      const newCo2 = lineItems.reduce((sum: number, item: any) => sum + safeNum(item.co2Saved), 0);
+      const newCost = lineItems.reduce((sum: number, item: any) => sum + safeNum(item.costSEK), 0);
 
-      setTotals({
-        weight: newWeight,
-        co2: newCo2,
-        cost: newCost,
-      });
+      setTotals({ weight: newWeight, co2: newCo2, cost: newCost });
     }
   }, [lineItems]);
 
@@ -253,22 +231,13 @@ export function ReviewForm({
     setLineItems(newItems);
   };
 
-  // Show address column if ANY row has address field OR if we have rows (always show for editing)
-  // This allows users to fill in missing addresses even if all rows have "SAKNAS"
-  const hasLineAddress = lineItems.length > 0 && (
-    lineItems.some((item: any) => {
-      const addr = typeof item.address === 'object' ? item.address?.value : item.address;
-      const loc = typeof item.location === 'object' ? item.location?.value : item.location;
-      return addr !== undefined || loc !== undefined;
-    }) || true // Always show if we have rows - allows editing missing addresses
-  );
-  
-  // Always show Mottagare column when rows exist — allows clearing auto-assigned values like "Ragn-Sells"
+  // Always show address/receiver columns when rows exist
+  const hasLineAddress = lineItems.length > 0;
   const hasLineReceiver = lineItems.length > 0;
   
   const hasHandling = lineItems.some((item: any) => {
-    const hand = typeof item.handling === 'object' ? item.handling?.value : item.handling;
-    return hand && String(hand).length > 0;
+    const hand = toDisplayString(item.handling);
+    return hand.length > 0;
   });
 
   // Handle form submission
@@ -583,14 +552,14 @@ export function ReviewForm({
               </thead>
               <tbody>
                 {lineItems.map((item: any, index: number) => {
-                  // Check for missing required fields (for highlighting)
-                  const materialValue = typeof item.material === 'object' ? item.material?.value : item.material;
+                  // Safely extract display values (handles nested objects like {name, email, address})
+                  const materialValue = toDisplayString(item.material);
                   const weightValue = typeof item.weightKg === 'object' ? item.weightKg?.value : item.weightKg;
-                  const addressValue = typeof item.address === 'object' ? item.address?.value : item.address;
-                  const locationValue = typeof item.location === 'object' ? item.location?.value : item.location;
-                  const receiverValue = typeof item.receiver === 'object' ? item.receiver?.value : item.receiver;
+                  const addressValue = toDisplayString(item.address);
+                  const locationValue = toDisplayString(item.location);
+                  const receiverValue = toDisplayString(item.receiver);
                   // Get row date - defaults to document date if not set
-                  const rowDateValue = typeof item.date === 'object' ? item.date?.value : item.date;
+                  const rowDateValue = toDisplayString(item.date);
                   // Display date: use row date if available, otherwise show document date
                   const displayDate = rowDateValue || documentDate || "";
                   

@@ -1,6 +1,18 @@
 // Utility functions for the review page data processing
 // Extracted to module scope to avoid bundler TDZ issues
 
+/** Ensure ANY value becomes a safe renderable string (never [object Object]) */
+export function toSafeString(val: any): string {
+  if (!val) return "";
+  if (typeof val === "string") return val;
+  if (typeof val === "number" || typeof val === "boolean") return String(val);
+  if (typeof val === "object" && "value" in val) return toSafeString(val.value);
+  if (typeof val === "object" && "name" in val) return String(val.name || "");
+  if (typeof val === "object" && "address" in val) return String(val.address || "");
+  if (typeof val === "object" && "label" in val) return String(val.label || "");
+  return "";
+}
+
 /** Get the underlying value from a wrapped {value, confidence} field or return as-is.
  *  If the result is still an object (e.g. {name, email, phone, address}), flatten to string. */
 export function getValue(field: any): any {
@@ -11,7 +23,7 @@ export function getValue(field: any): any {
   }
   // If the unwrapped value is still an object, flatten to its most useful string
   if (val && typeof val === 'object' && !Array.isArray(val)) {
-    return val.name || val.label || val.title || JSON.stringify(val);
+    return val.name || val.label || val.title || toSafeString(val);
   }
   return val;
 }
@@ -35,20 +47,23 @@ export function buildExportPreviewRows(
   lineItems: any[],
   docDate: string,
   docAddress: string,
-  docReceiver: string
+  docReceiver: string,
+  isInvoice: boolean = false
 ) {
   return lineItems.map((item: any, idx: number) => {
-    const rowReceiver = getValue(item.receiver);
-    const rowLocation = getValue(item.location) || getValue(item.address);
+    const rowReceiver = toSafeString(getValue(item.receiver));
+    const rowLocation = toSafeString(getValue(item.location) || getValue(item.address));
     return {
       rowNum: idx + 1,
-      date: getValue(item.date) || docDate,
+      date: toSafeString(getValue(item.date)) || docDate,
       location: isPlaceholderValue(rowLocation) ? docAddress : rowLocation,
-      material: getValue(item.material) || "Okänt material",
-      weightKg: parseFloat(String(getValue(item.weightKg) || getValue(item.weight) || 0)),
-      unit: getValue(item.unit) || "Kg",
-      receiver: isPlaceholderValue(rowReceiver) ? (docReceiver || "Okänd mottagare") : rowReceiver,
-      isHazardous: getValue(item.isHazardous) || false,
+      material: toSafeString(getValue(item.material)) || (isInvoice ? "Okänd post" : "Okänt material"),
+      weightKg: isInvoice
+        ? parseFloat(String(getValue(item.amount) || getValue(item.weightKg) || getValue(item.weight) || 0))
+        : parseFloat(String(getValue(item.weightKg) || getValue(item.weight) || 0)),
+      unit: toSafeString(getValue(item.unit)) || (isInvoice ? "SEK" : "Kg"),
+      receiver: isPlaceholderValue(rowReceiver) ? (docReceiver || (isInvoice ? "Okänd köpare" : "Okänd mottagare")) : rowReceiver,
+      isHazardous: isInvoice ? false : (getValue(item.isHazardous) || false),
     };
   });
 }
@@ -87,13 +102,17 @@ export function calculateStats(lineItems: any[], extractedData: any) {
 }
 
 /** Detect which columns exist in the data */
-export function detectExistingColumns(items: any[], extractedData: any) {
+export function detectExistingColumns(items: any[], extractedData: any, isInvoice: boolean = false) {
   if (!items || items.length === 0) {
     return { mandatory: [] as string[], optional: [] as string[] };
   }
 
-  const MANDATORY_FIELDS = ["date", "address", "material", "weightKg", "unit", "receiver"];
-  const OPTIONAL_FIELDS = ["wasteCode", "cost", "costSEK", "co2Saved", "co2", "notes", "quantity", "container", "handling", "isHazardous", "percentage", "referensnummer", "fordon", "avfallskod"];
+  const MANDATORY_FIELDS = isInvoice
+    ? ["date", "material", "weightKg", "unit"]
+    : ["date", "address", "material", "weightKg", "unit", "receiver"];
+  const OPTIONAL_FIELDS = isInvoice
+    ? ["quantity", "cost", "costSEK", "notes", "address", "receiver"]
+    : ["wasteCode", "cost", "costSEK", "co2Saved", "co2", "notes", "quantity", "container", "handling", "isHazardous", "percentage", "referensnummer", "fordon", "avfallskod"];
 
   const existingOptional = OPTIONAL_FIELDS.filter(field =>
     items.some(item => {
