@@ -7,6 +7,7 @@
  */
 
 import { getAnthropicClientForUser, MODELS, trackUsage } from "@/lib/ai-clients";
+import { safeStr } from "@/lib/safe-str";
 import type { LineItem, UserSettings, ReconciliationResult, AIProvider } from "@/lib/types";
 
 // =============================================================================
@@ -246,12 +247,12 @@ OUTPUT FORMAT (JSON only, no markdown)
     
     // Normalize items
     const items: LineItem[] = (parsed.items as Record<string, unknown>[]).map(item => ({
-      date: String(item.date || filenameDate || ""),
-      location: String(item.location || item.address || ""),
-      material: String(item.material || ""),
+      date: safeStr(item.date, filenameDate || ""),
+      location: safeStr(item.location || item.address),
+      material: safeStr(item.material),
       weightKg: typeof item.weightKg === 'number' ? item.weightKg : parseFloat(String(item.weightKg)) || 0,
-      unit: String(item.unit || "Kg"),
-      receiver: String(item.receiver || receiver),
+      unit: safeStr(item.unit, "Kg"),
+      receiver: safeStr(item.receiver, receiver),
       isHazardous: Boolean(item.isHazardous),
     }));
     

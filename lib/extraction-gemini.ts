@@ -7,6 +7,7 @@
 
 import * as XLSX from "xlsx";
 import { getGeminiClientForUser, MODELS, THRESHOLDS, trackUsage } from "@/lib/ai-clients";
+import { safeStr } from "@/lib/safe-str";
 import type { LineItem, UserSettings, MultiModelExtractionResult, AIProvider } from "@/lib/types";
 import { buildExtractionPrompt, parseExtractionResponse } from "@/lib/extraction/types";
 
@@ -258,12 +259,12 @@ Chunk ${chunkNum}/${totalChunks}.`;
     
     // Normalize items to LineItem format
     const items: LineItem[] = parsed.items.map(item => ({
-      date: String(item.date || ""),
-      location: String(item.location || item.address || ""),
-      material: String(item.material || ""),
+      date: safeStr(item.date),
+      location: safeStr(item.location || item.address),
+      material: safeStr(item.material),
       weightKg: typeof item.weightKg === 'number' ? item.weightKg : parseFloat(String(item.weightKg)) || 0,
-      unit: String(item.unit || "Kg"),
-      receiver: String(item.receiver || receiver),
+      unit: safeStr(item.unit, "Kg"),
+      receiver: safeStr(item.receiver, receiver),
       isHazardous: Boolean(item.isHazardous),
     }));
     

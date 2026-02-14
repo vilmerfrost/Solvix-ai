@@ -5,7 +5,10 @@
  *  Recursively unwraps nested {value,confidence} wrappers and named sub-fields. */
 export function toSafeString(val: any): string {
   if (!val) return "";
-  if (typeof val === "string") return val;
+  if (typeof val === "string") {
+    // Detect corrupt data saved by previous String() calls on objects
+    return val === "[object Object]" ? "" : val;
+  }
   if (typeof val === "number" || typeof val === "boolean") return String(val);
   // Unwrap {value, confidence} wrappers recursively
   if (typeof val === "object" && "value" in val) return toSafeString(val.value);
@@ -21,6 +24,8 @@ export function toSafeString(val: any): string {
  *  If the result is still an object, recursively flatten to a primitive. */
 export function getValue(field: any): any {
   if (!field) return null;
+  // Detect corrupt literal string from previous String() calls
+  if (typeof field === 'string') return field === "[object Object]" ? null : field;
   let val = field;
   if (typeof val === 'object' && 'value' in val) {
     val = val.value;
@@ -33,6 +38,8 @@ export function getValue(field: any): any {
     if ('address' in val && val.address != null) return getValue(val.address);
     return "";
   }
+  // Final safety check for strings
+  if (typeof val === 'string' && val === "[object Object]") return null;
   return val;
 }
 

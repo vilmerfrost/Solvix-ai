@@ -59,16 +59,16 @@ export function SmartInput({
   // Safely extract a primitive value — recursively unwrap nested objects
   let rawValue: any = fieldData?.value ?? "";
   const unwrap = (v: any): any => {
-    if (!v || typeof v !== 'object') return v;
+    if (!v) return v;
+    if (typeof v === 'string') return v === "[object Object]" ? "" : v;
+    if (typeof v !== 'object') return v;
     if ('value' in v) return unwrap(v.value);
     if ('name' in v) return unwrap(v.name);
     if ('label' in v) return unwrap(v.label);
     if ('address' in v) return unwrap(v.address);
     return "";
   };
-  if (rawValue && typeof rawValue === 'object') {
-    rawValue = unwrap(rawValue);
-  }
+  rawValue = unwrap(rawValue);
   const value = rawValue;
   const confidence = fieldData?.confidence ?? 0;
   

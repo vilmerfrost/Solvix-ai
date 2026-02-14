@@ -7,7 +7,8 @@ import { Check } from "lucide-react";
 /** Recursively unwrap a value to a displayable primitive */
 function unwrapValue(val: any): any {
   if (!val) return val;
-  if (typeof val === 'string' || typeof val === 'number' || typeof val === 'boolean') return val;
+  if (typeof val === 'string') return val === "[object Object]" ? "" : val;
+  if (typeof val === 'number' || typeof val === 'boolean') return val;
   if (typeof val === 'object' && 'value' in val) return unwrapValue(val.value);
   if (typeof val === 'object' && 'name' in val) return unwrapValue(val.name);
   if (typeof val === 'object' && 'label' in val) return unwrapValue(val.label);

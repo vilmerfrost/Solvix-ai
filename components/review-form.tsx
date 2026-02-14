@@ -13,7 +13,7 @@ import { useUnsavedChanges } from "@/hooks/use-unsaved-changes";
  *  Recursively unwraps {value,confidence} wrappers and named sub-fields. */
 function toDisplayString(val: any): string {
   if (!val) return "";
-  if (typeof val === 'string') return val;
+  if (typeof val === 'string') return val === "[object Object]" ? "" : val;
   if (typeof val === 'number' || typeof val === 'boolean') return String(val);
   // Unwrap {value, confidence} wrappers recursively
   if (typeof val === 'object' && 'value' in val) return toDisplayString(val.value);
