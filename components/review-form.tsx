@@ -13,19 +13,36 @@ import { useUnsavedChanges } from "@/hooks/use-unsaved-changes";
 function toDisplayString(val: any): string {
   if (!val) return "";
   if (typeof val === 'string') return val;
+  if (typeof val === 'number') return String(val);
   if (typeof val === 'object' && 'value' in val) {
     return toDisplayString(val.value);
   }
   if (typeof val === 'object' && 'name' in val) return String(val.name || "");
+  if (typeof val === 'object' && 'address' in val) return String(val.address || "");
   return String(val);
+}
+
+/** Flatten a value to a primitive before wrapping */
+function flattenToPrimitive(val: any): any {
+  if (!val || typeof val !== 'object') return val;
+  if (Array.isArray(val)) return val;
+  // Already a {value, confidence} wrapper? Don't flatten, normalizeValue handles it
+  if ('value' in val && 'confidence' in val) return val;
+  // Nested object like {name, email, phone, address} — extract best string
+  if ('name' in val) return val.name || "";
+  if ('address' in val) return val.address || "";
+  if ('label' in val) return val.label || "";
+  return JSON.stringify(val);
 }
 
 function normalizeValue(field: any): any {
   if (!field) return null;
-  if (typeof field === 'object' && 'value' in field) {
-    return field;
+  if (typeof field === 'object' && 'value' in field && 'confidence' in field) {
+    // Already wrapped — but flatten the inner value if it's still an object
+    return { ...field, value: flattenToPrimitive(field.value) };
   }
-  return { value: field, confidence: 1 };
+  // Flatten before wrapping
+  return { value: flattenToPrimitive(field), confidence: 1 };
 }
 
 function normalizeLineItems(items: any[]): any[] {
@@ -61,6 +78,7 @@ export function ReviewForm({
 }) {
   const router = useRouter();
   const data = initialData || {};
+  const isInvoice = data.documentType === 'invoice';
 
   // State for editable document-level metadata (pre-filled from AI extraction)
   const [documentDate, setDocumentDate] = useState("");
@@ -264,10 +282,12 @@ export function ReviewForm({
       // Helper to get value from wrapped or clean format
       const getValue = (field: any): any => {
         if (!field) return null;
-        if (typeof field === 'object' && 'value' in field) {
-          return field.value;
+        let val = field;
+        if (typeof val === 'object' && 'value' in val) val = val.value;
+        if (val && typeof val === 'object' && !Array.isArray(val)) {
+          return (val as any).name || (val as any).address || JSON.stringify(val);
         }
-        return field;
+        return val;
       };
       
       // Add lineItems to formData
@@ -426,70 +446,72 @@ export function ReviewForm({
         <h3 className="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-4">
           Totaler (Live)
         </h3>
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 bg-gray-50 p-4 rounded-lg">
-          <div>
-            <div className="text-xs text-gray-500 mb-1">CO2 Besparing</div>
-            <div className="text-xl font-bold text-green-600">
-              {totals.co2.toFixed(0)} kg
+        <div className={`grid grid-cols-1 ${isInvoice ? 'sm:grid-cols-1' : 'sm:grid-cols-3'} gap-4 bg-gray-50 p-4 rounded-lg`}>
+          {!isInvoice && (
+            <div>
+              <div className="text-xs text-gray-500 mb-1">CO2 Besparing</div>
+              <div className="text-xl font-bold text-green-600">
+                {totals.co2.toFixed(0)} kg
+              </div>
+              <input type="hidden" name="totalCo2Saved" value={totals.co2} />
             </div>
-            <input type="hidden" name="totalCo2Saved" value={totals.co2} />
-          </div>
+          )}
+          {!isInvoice && (
+            <div>
+              <div className="text-xs text-gray-500 mb-1">Total Vikt</div>
+              <div className="text-xl font-bold">{totals.weight.toFixed(0)} kg</div>
+              <input type="hidden" name="weightKg" value={totals.weight} />
+            </div>
+          )}
           <div>
-            <div className="text-xs text-gray-500 mb-1">Total Vikt</div>
-            <div className="text-xl font-bold">{totals.weight.toFixed(0)} kg</div>
-            <input type="hidden" name="weightKg" value={totals.weight} />
-          </div>
-          <div>
-            <div className="text-xs text-gray-500 mb-1">Kostnad</div>
+            <div className="text-xs text-gray-500 mb-1">{isInvoice ? 'Totalt Belopp' : 'Kostnad'}</div>
             <div className="text-xl font-bold">{totals.cost.toFixed(0)} kr</div>
             <input type="hidden" name="cost" value={totals.cost} />
           </div>
         </div>
       </div>
 
-      {/* HÄMTADRESS & MOTTAGARE (HUVUD) */}
+      {/* ADRESS & MOTTAGARE (HUVUD) */}
       <div className="border-t pt-6">
         <h3 className="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-4">
-          Hämtadress (Huvud)
+          {isInvoice ? 'Adress & Mottagare' : 'Hämtadress (Huvud)'}
         </h3>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          {/* Projektadress - EDITABLE */}
           <div>
             <label className="block text-sm font-semibold text-slate-800 mb-1.5">
-              Projektadress
+              {isInvoice ? 'Adress' : 'Projektadress'}
             </label>
             <input
               type="text"
               name="address"
               value={projectAddress}
               onChange={(e) => handleMetadataChange(setProjectAddress, e.target.value)}
-              placeholder="t.ex. Östergårds Förskola"
+              placeholder={isInvoice ? 't.ex. Kappelvägen 2F' : 't.ex. Östergårds Förskola'}
               className="w-full p-3 bg-white border border-slate-200 rounded-xl outline-none transition-all shadow-sm focus:ring-blue-100 focus:border-blue-400"
             />
           </div>
           
-          {/* Mottagare (Huvud) - EDITABLE */}
           <div>
             <label className="block text-sm font-semibold text-slate-800 mb-1.5">
-              Mottagare (Huvud)
+              {isInvoice ? 'Köpare / Mottagare' : 'Mottagare (Huvud)'}
             </label>
             <input
               type="text"
               name="receiver"
               value={mainReceiver}
               onChange={(e) => handleMetadataChange(setMainReceiver, e.target.value)}
-              placeholder="t.ex. Renova"
+              placeholder={isInvoice ? 't.ex. Stefan Frost' : 't.ex. Renova'}
               className="w-full p-3 bg-white border border-slate-200 rounded-xl outline-none transition-all shadow-sm focus:ring-blue-100 focus:border-blue-400"
             />
           </div>
         </div>
       </div>
 
-      {/* SPECIFIKATION - MATERIAL TABLE */}
+      {/* SPECIFIKATION TABLE */}
       <div className="border-t pt-6">
         <div className="flex items-center justify-between mb-4">
           <h3 className="text-sm font-semibold text-gray-500 uppercase tracking-wide">
-            Specifikation - Material ({lineItems.length} rader)
+            {isInvoice ? `Fakturarader (${lineItems.length} rader)` : `Specifikation - Material (${lineItems.length} rader)`}
           </h3>
           <div className="flex items-center gap-2">
             {lineItems.length > 0 && (
@@ -523,22 +545,26 @@ export function ReviewForm({
               <thead>
                 <tr className="border-b-2 border-gray-200">
                   <th className="text-left text-xs font-semibold text-gray-600 uppercase py-2 px-2">
-                    Material
+                    {isInvoice ? 'Beskrivning' : 'Material'}
                   </th>
                   <th className="text-left text-xs font-semibold text-gray-600 uppercase py-2 px-2">
-                    Vikt (kg)
+                    {isInvoice ? 'Belopp (kr)' : 'Vikt (kg)'}
                   </th>
-                  {hasHandling && (
+                  {!isInvoice && hasHandling && (
                     <th className="text-left text-xs font-semibold text-gray-600 uppercase py-2 px-2">
                       Hantering
                     </th>
                   )}
-                  <th className="text-left text-xs font-semibold text-gray-600 uppercase py-2 px-2">
-                    CO2
-                  </th>
-                  <th className="text-center text-xs font-semibold text-gray-600 uppercase py-2 px-2">
-                    Farligt
-                  </th>
+                  {!isInvoice && (
+                    <th className="text-left text-xs font-semibold text-gray-600 uppercase py-2 px-2">
+                      CO2
+                    </th>
+                  )}
+                  {!isInvoice && (
+                    <th className="text-center text-xs font-semibold text-gray-600 uppercase py-2 px-2">
+                      Farligt
+                    </th>
+                  )}
                   {hasLineAddress && (
                     <th className="text-left text-xs font-semibold text-gray-600 uppercase py-2 px-2">
                       Adress
@@ -546,7 +572,7 @@ export function ReviewForm({
                   )}
                   {hasLineReceiver && (
                     <th className="text-left text-xs font-semibold text-gray-600 uppercase py-2 px-2">
-                      Mottagare
+                      {isInvoice ? 'Köpare' : 'Mottagare'}
                     </th>
                   )}
                   <th className="text-left text-xs font-semibold text-gray-600 uppercase py-2 px-2">
@@ -605,7 +631,7 @@ export function ReviewForm({
                         }`}
                       />
                         </td>
-                     {hasHandling && (
+                    {!isInvoice && hasHandling && (
                       <td className="py-2 px-2">
                         <SmartInput
                           label=""
@@ -617,8 +643,9 @@ export function ReviewForm({
                           }
                           className="text-sm border-0 shadow-none focus:ring-0 p-1"
                         />
-                        </td>
+                      </td>
                     )}
+                    {!isInvoice && (
                     <td className="py-2 px-2">
                         <SmartInput 
                         label=""
@@ -631,6 +658,8 @@ export function ReviewForm({
                         className="text-sm border-0 shadow-none focus:ring-0 p-1"
                       />
                     </td>
+                    )}
+                    {!isInvoice && (
                     <td className="py-2 px-2 text-center">
                       <div className="flex items-center justify-center gap-1">
                         <input
@@ -651,6 +680,7 @@ export function ReviewForm({
                         )}
                       </div>
                     </td>
+                    )}
                     {hasLineAddress && (
                       <td className="py-2 px-2">
                         <input
