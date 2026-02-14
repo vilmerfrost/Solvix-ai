@@ -239,263 +239,215 @@ export default async function Dashboard({
   const avgConfidence = processedDocsCount > 0 ? Math.min((totalConfidence / processedDocsCount) * 100, 100) : 0;
 
   return (
-    <div className="min-h-screen bg-[var(--color-bg)]">
-      {/* Header - Clean and Professional */}
-      <div className="bg-[var(--color-bg-elevated)] border-b border-[var(--color-border)]">
-        <div className="max-w-7xl mx-auto px-6 py-6">
-          {/* Breadcrumbs */}
-          <Breadcrumbs items={getDashboardBreadcrumbs()} className="mb-4" />
-          
-          {/* Top Navigation Bar */}
-          <div className="flex items-center justify-between mb-6">
-            {/* Left: Back button */}
-            <Link
-              href="/"
-              className="flex items-center gap-2 px-4 py-2 text-sm text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] hover:bg-[var(--color-bg-secondary)] rounded-lg transition-all"
-            >
-              <ArrowLeft className="w-4 h-4" />
-              <span>{strings.back}</span>
-            </Link>
-
-            {/* Right: Action buttons */}
-            <div className="flex items-center gap-3">
+    <div className="min-h-screen bg-[#f8f9fa]">
+      {/* Premium Top Nav - Stitch inspired */}
+      <nav className="nav-premium">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex justify-between h-16">
+            <div className="flex items-center gap-8">
+              {/* Logo */}
+              <Link href="/" className="flex items-center gap-2.5">
+                <div className="w-8 h-8 bg-indigo-600 rounded-lg flex items-center justify-center text-white font-bold shadow-sm">S</div>
+                <span className="font-bold text-xl tracking-tight text-slate-900">Solvix.AI</span>
+              </Link>
+              {/* Nav links */}
+              <div className="hidden md:flex h-full items-center gap-6">
+                <a href="/dashboard" className="nav-link nav-link-active pt-0.5">Dokument</a>
+                <a href="/health" className="nav-link pt-0.5">Rapporter</a>
+                <a href="/settings" className="nav-link pt-0.5">Inställningar</a>
+              </div>
+            </div>
+            <div className="flex items-center gap-4">
+              <span className="badge-pro">Pro</span>
+              <div className="h-5 w-px bg-slate-200 mx-1" />
               {showAzure && activeTab === "active" && approvedDocs.length > 0 && (
-                <ExportToAzureButton 
-                  selectedDocuments={approvedDocs.map(d => d.id)}
-                />
+                <ExportToAzureButton selectedDocuments={approvedDocs.map(d => d.id)} />
               )}
-              
-              <Link
-                href="/health"
-                className="flex items-center gap-2 px-4 py-2 bg-[var(--color-bg-elevated)] border border-[var(--color-border)] text-[var(--color-text-secondary)] rounded-lg hover:bg-[var(--color-bg-secondary)] hover:border-[var(--color-border-strong)] transition-all text-sm font-medium"
-              >
-                <Activity className="w-4 h-4" />
-                <span>{strings.health}</span>
+              <Link href="/settings" className="text-slate-400 hover:text-indigo-600 transition-colors">
+                <Settings className="w-5 h-5" />
               </Link>
-
-              <Link
-                href="/settings"
-                className="flex items-center gap-2 px-4 py-2 bg-[var(--color-bg-elevated)] border border-[var(--color-border)] text-[var(--color-text-secondary)] rounded-lg hover:bg-[var(--color-bg-secondary)] hover:border-[var(--color-border-strong)] transition-all text-sm font-medium"
-              >
-                <Settings className="w-4 h-4" />
-                <span>{strings.settings}</span>
-              </Link>
-
+              <AutoFetchButton />
               <form action={async () => {
                 "use server";
                 const supabase = await createServerComponentClient();
                 await supabase.auth.signOut();
                 redirect("/login");
               }}>
-                <button type="submit" className="flex items-center gap-2 px-4 py-2 bg-red-50 border border-red-200 text-red-700 rounded-lg hover:bg-red-100 transition-all text-sm font-medium">
-                  <LogOut className="w-4 h-4" />
-                  Logga ut
+                <button type="submit" className="text-slate-400 hover:text-red-500 transition-colors" title="Logga ut">
+                  <LogOut className="w-5 h-5" />
                 </button>
               </form>
-
-              <ResetDocumentsButton />
-              <AutoFetchButton />
+              <div className="h-9 w-9 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-white text-xs font-bold ring-2 ring-white shadow-md">
+                {user.email?.substring(0, 2).toUpperCase() || "U"}
+              </div>
             </div>
           </div>
+        </div>
+      </nav>
 
-          {/* System Status */}
-          <div className="flex items-center gap-2 mb-4">
-            <div className="w-2 h-2 bg-[var(--color-success)] rounded-full animate-pulse" />
-            <span className="text-xs font-medium text-[var(--color-success-text)] uppercase tracking-wider">
-              {strings.systemOnline}
-            </span>
+      {/* Page Header */}
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-10 pb-6">
+        <div className="md:flex md:items-center md:justify-between mb-2">
+          <div>
+            <h1 className="text-3xl font-bold text-slate-900 tracking-tight">Dokument</h1>
+            <p className="mt-2 text-sm text-slate-500">{strings.reviewDescription}</p>
           </div>
+          <div className="mt-4 flex md:ml-4 md:mt-0 gap-3">
+            <ResetDocumentsButton />
+          </div>
+        </div>
 
-          {/* Title */}
-          <h1 className="text-3xl font-bold text-[var(--color-text-primary)] mb-2">
-            {config.companyName} {strings.review}
-          </h1>
-          <p className="text-lg text-[var(--color-accent)] font-medium mb-2">
-            {strings.dashboard}
-          </p>
-          <p className="text-sm text-[var(--color-text-muted)]">
-            {strings.reviewDescription}
-          </p>
-          
-          {/* Tabs */}
-          <div className="flex gap-2 border-b border-[var(--color-border)] mt-6 items-center justify-between">
-            <div className="flex gap-2">
-              <a
-                href={`/dashboard?tab=active${params.type ? `&type=${params.type}` : ''}`}
-                className={`px-4 py-2 text-sm font-medium transition-colors ${
-                  activeTab === "active" || !activeTab
-                    ? "text-[var(--color-accent)] border-b-2 border-[var(--color-accent)]"
-                    : "text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)]"
-                }`}
-              >
-                {strings.active} ({activeTab === "active" ? stats.total : (documents?.filter(d => !d.exported_at).length || 0)})
-              </a>
-              <a
-                href={`/dashboard?tab=archive${params.type ? `&type=${params.type}` : ''}`}
-                className={`px-4 py-2 text-sm font-medium transition-colors ${
-                  activeTab === "archive"
-                    ? "text-[var(--color-accent)] border-b-2 border-[var(--color-accent)]"
-                    : "text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)]"
-                }`}
-              >
-                {strings.archived} ({activeTab === "archive" ? stats.total : (documents?.filter(d => d.exported_at).length || 0)})
-              </a>
-            </div>
-            
-            {/* File Type Filters */}
-            <div className="flex items-center gap-1 mb-1">
-               <Link
-                 href={`/dashboard?tab=${activeTab}${statusFilter ? `&status=${statusFilter}` : ''}`}
-                 className={`px-3 py-1.5 text-xs font-medium rounded-lg transition-colors ${
-                   !params.type 
-                     ? 'bg-stone-100 text-stone-900 border border-stone-200' 
-                     : 'text-stone-500 hover:text-stone-900 hover:bg-stone-50'
-                 }`}
-               >
-                 All
-               </Link>
-               <Link
-                 href={`/dashboard?tab=${activeTab}&type=pdf${statusFilter ? `&status=${statusFilter}` : ''}`}
-                 className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg transition-colors ${
-                   params.type === 'pdf' 
-                     ? 'bg-blue-50 text-blue-700 border border-blue-200' 
-                     : 'text-stone-500 hover:text-stone-900 hover:bg-stone-50'
-                 }`}
-               >
-                 <FileText className="w-3.5 h-3.5" />
-                 PDF
-               </Link>
-               <Link
-                 href={`/dashboard?tab=${activeTab}&type=excel${statusFilter ? `&status=${statusFilter}` : ''}`}
-                 className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg transition-colors ${
-                   params.type === 'excel' 
-                     ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' 
-                     : 'text-stone-500 hover:text-stone-900 hover:bg-stone-50'
-                 }`}
-               >
-                 <FileSpreadsheet className="w-3.5 h-3.5" />
-                 Excel
-               </Link>
-            </div>
+        {/* Tabs + File Type Filters */}
+        <div className="flex items-center justify-between border-b border-slate-200 mt-6">
+          <div className="flex gap-6">
+            <a
+              href={`/dashboard?tab=active${params.type ? `&type=${params.type}` : ''}`}
+              className={`pb-3 text-sm font-medium transition-colors ${
+                activeTab === "active" || !activeTab
+                  ? "text-indigo-600 border-b-2 border-indigo-600"
+                  : "text-slate-500 hover:text-slate-900"
+              }`}
+            >
+              {strings.active} ({activeTab === "active" ? stats.total : (documents?.filter(d => !d.exported_at).length || 0)})
+            </a>
+            <a
+              href={`/dashboard?tab=archive${params.type ? `&type=${params.type}` : ''}`}
+              className={`pb-3 text-sm font-medium transition-colors ${
+                activeTab === "archive"
+                  ? "text-indigo-600 border-b-2 border-indigo-600"
+                  : "text-slate-500 hover:text-slate-900"
+              }`}
+            >
+              {strings.archived} ({activeTab === "archive" ? stats.total : (documents?.filter(d => d.exported_at).length || 0)})
+            </a>
+          </div>
+          <div className="flex items-center gap-2 pb-2">
+            <Link
+              href={`/dashboard?tab=${activeTab}${statusFilter ? `&status=${statusFilter}` : ''}`}
+              className={`px-3.5 py-1.5 text-xs font-medium rounded-full transition-all ${
+                !params.type
+                  ? 'bg-indigo-600 text-white shadow-sm'
+                  : 'text-slate-600 bg-white ring-1 ring-inset ring-slate-200 hover:bg-slate-50'
+              }`}
+            >
+              Alla
+            </Link>
+            <Link
+              href={`/dashboard?tab=${activeTab}&type=pdf${statusFilter ? `&status=${statusFilter}` : ''}`}
+              className={`flex items-center gap-1.5 px-3.5 py-1.5 text-xs font-medium rounded-full transition-all ${
+                params.type === 'pdf'
+                  ? 'bg-indigo-600 text-white shadow-sm'
+                  : 'text-slate-600 bg-white ring-1 ring-inset ring-slate-200 hover:bg-slate-50'
+              }`}
+            >
+              <FileText className="w-3.5 h-3.5" />
+              PDF
+            </Link>
+            <Link
+              href={`/dashboard?tab=${activeTab}&type=excel${statusFilter ? `&status=${statusFilter}` : ''}`}
+              className={`flex items-center gap-1.5 px-3.5 py-1.5 text-xs font-medium rounded-full transition-all ${
+                params.type === 'excel'
+                  ? 'bg-indigo-600 text-white shadow-sm'
+                  : 'text-slate-600 bg-white ring-1 ring-inset ring-slate-200 hover:bg-slate-50'
+              }`}
+            >
+              <FileSpreadsheet className="w-3.5 h-3.5" />
+              Excel
+            </Link>
           </div>
         </div>
       </div>
 
-      {/* Stats Cards */}
-      <div className="max-w-7xl mx-auto px-6 py-8">
-        {/* Upload Zone - Drag & Drop */}
-        <div className="mb-8">
-          <UploadZone />
-        </div>
-
-        {/* Batch Processing UI */}
-        {uploadedDocs.length > 0 && (
-          <BatchProcessButton uploadedDocs={uploadedDocs} />
-        )}
-        
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+      {/* Stats + Content */}
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {/* Stat Cards - Premium gradient design */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-10">
           {/* Total */}
-          <div className="bg-[var(--color-bg-elevated)] rounded-xl border border-[var(--color-border)] p-6 hover:border-[var(--color-border-strong)] transition-all">
-            <div className="flex items-center justify-between mb-2">
-              <span className="text-sm font-medium text-[var(--color-text-muted)] uppercase tracking-wide">
-                {strings.total.toUpperCase()}
-              </span>
-              <div className="w-2.5 h-2.5 rounded-full bg-[var(--color-text-muted)]" />
+          <div className="stat-card group">
+            <div className="flex justify-between items-start mb-4">
+              <p className="text-xs font-bold uppercase tracking-wider text-slate-500">{strings.total.toUpperCase()}</p>
+              <div className="rounded-full bg-indigo-50 p-1.5 group-hover:bg-indigo-100 transition-colors">
+                <FileText className="w-4 h-4 text-indigo-600" />
+              </div>
             </div>
-            <div className="text-4xl font-bold text-[var(--color-text-primary)] mb-1">
-              {stats.total}
-            </div>
-            <p className="text-xs text-[var(--color-text-muted)]">{strings.documents}</p>
+            <p className="text-[32px] font-bold text-slate-900 leading-none">{stats.total}</p>
+            <p className="mt-2 text-xs font-medium text-slate-500">{strings.documents}</p>
           </div>
 
-          {/* Needs Review - Clickable */}
-          <a 
-            href="#needs-review-section"
-            className="bg-[var(--color-bg-elevated)] rounded-xl border border-[var(--color-warning-border)] p-6 hover:shadow-[var(--shadow-md)] hover:border-[var(--color-warning)] transition-all cursor-pointer block"
-          >
-            <div className="flex items-center justify-between mb-2">
-              <span className="text-sm font-medium text-[var(--color-text-muted)] uppercase tracking-wide">
-                {strings.needsReview.toUpperCase()}
-              </span>
-              <div className="w-2.5 h-2.5 rounded-full bg-[var(--color-warning)]" />
+          {/* Needs Review */}
+          <a href="#needs-review-section" className="stat-card group cursor-pointer block">
+            <div className="flex justify-between items-start mb-4">
+              <p className="text-xs font-bold uppercase tracking-wider text-slate-500">{strings.needsReview.toUpperCase()}</p>
+              <div className="rounded-full bg-amber-50 p-1.5 group-hover:bg-amber-100 transition-colors">
+                <AlertCircle className="w-4 h-4 text-amber-500" />
+              </div>
             </div>
-            <div className="text-4xl font-bold text-[var(--color-text-primary)] mb-1">
-              {stats.needsReview}
-            </div>
-            <p className="text-xs text-[var(--color-warning-text)] font-medium">
-              {config.language === 'sv' ? 'Väntar - Klicka för att visa' : 
-               config.language === 'en' ? 'Waiting - Click to view' :
-               config.language === 'no' ? 'Venter - Klikk for å vise' :
-               'Odottaa - Klikkaa nähdäksesi'}
-            </p>
+            <p className="text-[32px] font-bold text-slate-900 leading-none">{stats.needsReview}</p>
+            <p className="mt-2 text-xs font-medium text-amber-600">Åtgärd krävs</p>
           </a>
 
           {/* Approved */}
-          <div className="bg-[var(--color-bg-elevated)] rounded-xl border border-[var(--color-success-border)] p-6 hover:border-[var(--color-success)] transition-all">
-            <div className="flex items-center justify-between mb-2">
-              <span className="text-sm font-medium text-[var(--color-text-muted)] uppercase tracking-wide">
-                {strings.approved.toUpperCase()}
-              </span>
-              <div className="w-2.5 h-2.5 rounded-full bg-[var(--color-success)]" />
+          <div className="stat-card group">
+            <div className="flex justify-between items-start mb-4">
+              <p className="text-xs font-bold uppercase tracking-wider text-slate-500">{strings.approved.toUpperCase()}</p>
+              <div className="rounded-full bg-emerald-50 p-1.5 group-hover:bg-emerald-100 transition-colors">
+                <CheckCircle2 className="w-4 h-4 text-emerald-500" />
+              </div>
             </div>
-            <div className="text-4xl font-bold text-[var(--color-text-primary)] mb-1">
-              {stats.approved}
-            </div>
-            <p className="text-xs text-[var(--color-text-muted)]">
-              {activeTab === "active" 
-                ? (config.language === 'sv' ? 'Redo för export' : 
-                   config.language === 'en' ? 'Ready for export' :
-                   config.language === 'no' ? 'Klar for eksport' :
-                   'Valmis vientiin')
-                : strings.exported}
+            <p className="text-[32px] font-bold text-slate-900 leading-none">{stats.approved}</p>
+            <p className="mt-2 text-xs font-medium text-emerald-600">
+              {activeTab === "active" ? 'Redo för export' : strings.exported}
             </p>
           </div>
 
           {/* Failed */}
-          <div className="bg-white rounded-lg border border-stone-200 p-6">
-            <div className="flex items-center justify-between mb-2">
-              <span className="text-sm font-medium text-stone-600 uppercase tracking-wide">
-                {strings.error.toUpperCase()}
-              </span>
-              <div className="w-2 h-2 rounded-full bg-red-500" />
+          <div className="stat-card group">
+            <div className="flex justify-between items-start mb-4">
+              <p className="text-xs font-bold uppercase tracking-wider text-slate-500">{strings.error.toUpperCase()}</p>
+              <div className="rounded-full bg-red-50 p-1.5 group-hover:bg-red-100 transition-colors">
+                <AlertCircle className="w-4 h-4 text-red-500" />
+              </div>
             </div>
-            <div className="text-4xl font-bold text-stone-900 mb-1">
-              {stats.failed}
-            </div>
-            <p className="text-xs text-red-600 font-medium">
-              {config.language === 'sv' ? 'Kräver åtgärd' : 
-               config.language === 'en' ? 'Requires action' :
-               config.language === 'no' ? 'Krever handling' :
-               'Vaatii toimenpiteitä'}
-            </p>
+            <p className="text-[32px] font-bold text-slate-900 leading-none">{stats.failed}</p>
+            <p className="mt-2 text-xs font-medium text-red-600">Kräver åtgärd</p>
           </div>
         </div>
 
-        {/* Quality Metrics */}
+        {/* Upload Zone */}
+        <div className="mb-8">
+          <UploadZone />
+        </div>
+
+        {/* Batch Processing */}
+        {uploadedDocs.length > 0 && (
+          <BatchProcessButton uploadedDocs={uploadedDocs} />
+        )}
+
+        {/* Quality Metrics - Premium */}
         {processedDocsCount > 0 && (
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-            <div className="bg-white rounded-lg border border-stone-200 p-4 flex items-center gap-4 shadow-sm">
+            <div className="bg-white rounded-xl border border-slate-200 p-5 flex items-center gap-4 shadow-[0_4px_20px_-2px_rgba(0,0,0,0.05)]">
               <div className="p-3 bg-purple-50 rounded-full text-purple-600">
                 <Shield className="w-6 h-6" />
               </div>
               <div>
-                <p className="text-xs text-stone-500 font-medium uppercase tracking-wide">Verifieringsgrad</p>
+                <p className="text-xs text-slate-500 font-bold uppercase tracking-wider">Verifieringsgrad</p>
                 <div className="flex items-baseline gap-2">
-                  <span className="text-2xl font-bold text-stone-900">{verificationRate.toFixed(0)}%</span>
-                  <span className="text-xs text-stone-400">felfria</span>
+                  <span className="text-2xl font-bold text-slate-900">{verificationRate.toFixed(0)}%</span>
+                  <span className="text-xs text-slate-400">felfria</span>
                 </div>
               </div>
             </div>
             
-            <div className="bg-white rounded-lg border border-stone-200 p-4 flex items-center gap-4 shadow-sm">
+            <div className="bg-white rounded-xl border border-slate-200 p-5 flex items-center gap-4 shadow-[0_4px_20px_-2px_rgba(0,0,0,0.05)]">
               <div className="p-3 bg-blue-50 rounded-full text-blue-600">
                 <Brain className="w-6 h-6" />
               </div>
               <div>
-                <p className="text-xs text-stone-500 font-medium uppercase tracking-wide">Snittkonfidens</p>
+                <p className="text-xs text-slate-500 font-bold uppercase tracking-wider">Snittkonfidens</p>
                 <div className="flex items-baseline gap-2">
-                  <span className="text-2xl font-bold text-stone-900">{avgConfidence.toFixed(0)}%</span>
-                  <span className="text-xs text-stone-400">säkerhet</span>
+                  <span className="text-2xl font-bold text-slate-900">{avgConfidence.toFixed(0)}%</span>
+                  <span className="text-xs text-slate-400">säkerhet</span>
                 </div>
               </div>
             </div>
@@ -563,11 +515,11 @@ export default async function Dashboard({
         {activeTab === "active" && (!statusFilter || statusFilter === 'needs_review') && (
           <div id="needs-review-section" className="mb-8">
             <div className="flex items-center justify-between mb-4">
-              <h2 className="text-xl font-bold text-stone-900 flex items-center gap-2">
-                <span className="w-3 h-3 bg-yellow-500 rounded-full animate-pulse"></span>
+              <h2 className="text-lg font-semibold text-slate-900 flex items-center gap-2">
+                <span className="w-2.5 h-2.5 bg-amber-500 rounded-full animate-pulse"></span>
                 {strings.needsReview}
               </h2>
-              <p className="text-sm text-stone-500">
+              <p className="text-sm text-slate-500">
                 {needsReviewTotal} {strings.documents.toLowerCase()} {config.language === 'sv' ? 'väntar' : config.language === 'en' ? 'waiting' : config.language === 'no' ? 'venter' : 'odottaa'}
               </p>
             </div>
@@ -596,12 +548,12 @@ export default async function Dashboard({
                 return (
                   <div
                     key={doc.id}
-                    className="bg-white rounded-lg border-2 border-yellow-300 overflow-hidden hover:shadow-md transition-shadow"
+                    className="bg-white rounded-xl border border-slate-200 overflow-hidden hover:shadow-md hover:border-amber-300 transition-all"
                   >
-                    <div className="p-5 border-b border-yellow-100 bg-yellow-50">
+                    <div className="p-5 border-b border-slate-100 bg-slate-50/50">
                       <div className="flex items-start gap-3 mb-3">
-                        <div className="flex-shrink-0 w-10 h-10 bg-yellow-100 rounded-lg flex items-center justify-center">
-                          <FileIcon className="w-5 h-5 text-yellow-700" />
+                        <div className="flex-shrink-0 w-10 h-10 bg-amber-50 rounded-lg flex items-center justify-center ring-1 ring-amber-100">
+                          <FileIcon className="w-5 h-5 text-amber-600" />
                         </div>
                         <div className="flex-1 min-w-0">
                           <h3 
@@ -692,54 +644,18 @@ export default async function Dashboard({
         )}
 
         {/* Filter Section */}
-        <div className="mb-6">
-          <div className="bg-white rounded-lg border border-stone-200 p-4">
-            <div className="flex flex-wrap items-center gap-4">
-              <span className="text-sm font-medium text-stone-700">
-                {config.language === 'sv' ? 'Snabbfilter:' : 'Quick filter:'}
-              </span>
-              <div className="flex flex-wrap gap-2">
-                <Link
-                  href="/dashboard?tab=active"
-                  className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
-                    activeTab === 'active' ? 'bg-stone-900 text-white' : 'bg-stone-100 text-stone-700 hover:bg-stone-200'
-                  }`}
-                >
-                  {config.language === 'sv' ? 'Alla aktiva' : 'All active'} ({stats.total})
-                </Link>
-                <Link
-                  href="/dashboard?status=needs_review"
-                  className="px-3 py-1.5 rounded-lg text-sm font-medium bg-yellow-100 text-yellow-800 hover:bg-yellow-200 transition-colors"
-                >
-                  {config.language === 'sv' ? 'Granska' : 'Review'} ({stats.needsReview})
-                </Link>
-                <Link
-                  href="/dashboard?status=approved"
-                  className="px-3 py-1.5 rounded-lg text-sm font-medium bg-green-100 text-green-800 hover:bg-green-200 transition-colors"
-                >
-                  {config.language === 'sv' ? 'Godkända' : 'Approved'} ({stats.approved})
-                </Link>
-                <Link
-                  href="/dashboard?status=error"
-                  className="px-3 py-1.5 rounded-lg text-sm font-medium bg-red-100 text-red-800 hover:bg-red-200 transition-colors"
-                >
-                  {config.language === 'sv' ? 'Fel' : 'Failed'} ({stats.failed})
-                </Link>
-              </div>
-            </div>
-          </div>
-        </div>
+        <FilterSection />
 
         {/* Senaste Dokument Section */}
         <div className="mb-8">
           <div className="flex items-center justify-between mb-4">
-            <h2 className="text-xl font-bold text-stone-900">
+            <h2 className="text-lg font-semibold text-slate-900">
               {config.language === 'sv' ? 'Senaste dokument' : 
                config.language === 'en' ? 'Recent documents' :
                config.language === 'no' ? 'Nylige dokumenter' :
                'Viimeisimmät asiakirjat'}
             </h2>
-            <p className="text-sm text-stone-500">
+            <p className="text-sm text-slate-500">
               {config.language === 'sv' ? `Visar ${recentDocs.length} av ${stats.total} dokument` : 
                config.language === 'en' ? `Showing ${recentDocs.length} of ${stats.total} documents` :
                config.language === 'no' ? `Viser ${recentDocs.length} av ${stats.total} dokumenter` :
@@ -800,8 +716,8 @@ export default async function Dashboard({
                 // Determine file icon
                 const isExcel = doc.filename?.toLowerCase().endsWith('.xlsx') || doc.filename?.toLowerCase().endsWith('.xls');
                 const FileIcon = isExcel ? FileSpreadsheet : FileText;
-                const iconColorClass = isExcel ? "text-green-600" : "text-stone-600";
-                const iconBgClass = isExcel ? "bg-green-50" : "bg-stone-100";
+                const iconColorClass = isExcel ? "text-green-600" : "text-red-500";
+                const iconBgClass = isExcel ? "bg-green-50 ring-1 ring-green-100" : "bg-red-50 ring-1 ring-red-100";
 
                 // Determine processing status and stall check
                 const isStalled = doc.status === 'uploaded' && (new Date().getTime() - new Date(doc.created_at).getTime() > 24 * 60 * 60 * 1000);
@@ -811,10 +727,10 @@ export default async function Dashboard({
                 return (
                   <div
                     key={doc.id}
-                    className="bg-white rounded-lg border border-stone-200 overflow-hidden hover:shadow-md transition-shadow"
+                    className="bg-white rounded-xl border border-slate-200 overflow-hidden hover:shadow-md transition-all"
                   >
                     {/* Document Header */}
-                    <div className="p-5 border-b border-stone-100">
+                    <div className="p-5 border-b border-slate-100">
                       <div className="flex items-start justify-between gap-3 mb-3">
                         <div className="flex items-start gap-3 flex-1 min-w-0">
                           <div className={`flex-shrink-0 w-10 h-10 ${iconBgClass} rounded-lg flex items-center justify-center`}>

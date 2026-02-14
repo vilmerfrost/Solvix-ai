@@ -301,78 +301,115 @@ export default async function ReviewPage({
     }
   });
 
+  // Quality score for the ring
+  const qualityScore = validation.completeness || 0;
+  const qualityColor = qualityScore >= 80 ? 'text-emerald-500' : qualityScore >= 50 ? 'text-amber-500' : 'text-red-500';
+  const qualityLabel = qualityScore >= 80 ? 'Hög kvalitet' : qualityScore >= 50 ? 'Medel kvalitet' : 'Låg kvalitet';
+  const ringDashoffset = 175.9 - (175.9 * qualityScore / 100);
+
   return (
-    <div className="min-h-screen bg-[var(--color-bg)]">
-      {/* Header */}
-      <div className="bg-[var(--color-bg-elevated)] border-b border-[var(--color-border)]">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 py-6">
-          {/* Breadcrumbs */}
-          <Breadcrumbs 
-            items={getReviewBreadcrumbs(doc.id, doc.filename)} 
-            className="mb-4" 
-          />
-          
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4">
-            <Link
-              href="/dashboard"
-              className="flex items-center gap-2 px-4 py-2 text-sm text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] hover:bg-[var(--color-bg-secondary)] rounded-lg transition-all"
-            >
-              <ArrowLeft className="w-4 h-4" />
-              <span>Tillbaka</span>
-            </Link>
-            <div className="flex items-center gap-3">
-              <ReverifyButton docId={doc.id} />
-              {doc.status !== 'exported' && (
-                <DeleteDocumentButton
-                  documentId={doc.id}
-                  storagePath={doc.storage_path}
-                  filename={doc.filename}
-                  redirectAfter="/dashboard"
-                  variant="button"
-                />
-              )}
-              {nextDocId && (
-                <Link
-                  href={`/review/${nextDocId}`}
-                  className="flex items-center gap-2 px-4 py-2 text-sm bg-[var(--color-accent)] text-white hover:bg-[var(--color-accent-hover)] rounded-lg transition-all shadow-sm"
-                >
-                  <span>Nästa dokument</span>
-                  <ArrowRight className="w-4 h-4" />
-                </Link>
-              )}
+    <div className="min-h-screen bg-[#f8f9fa]">
+      {/* Premium Top Nav */}
+      <nav className="nav-premium">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex justify-between h-16">
+            <div className="flex items-center gap-8">
+              <Link href="/" className="flex items-center gap-2.5">
+                <div className="w-8 h-8 bg-indigo-600 rounded-lg flex items-center justify-center text-white font-bold shadow-sm">S</div>
+                <span className="font-bold text-xl tracking-tight text-slate-900">Solvix.AI</span>
+              </Link>
+              <div className="hidden md:flex h-full items-center gap-6">
+                <Link href="/dashboard" className="nav-link nav-link-active pt-0.5">Dokument</Link>
+                <Link href="/health" className="nav-link pt-0.5">Rapporter</Link>
+                <Link href="/settings" className="nav-link pt-0.5">Inställningar</Link>
+              </div>
+            </div>
+            <div className="flex items-center gap-4">
+              <span className="badge-pro">Pro</span>
             </div>
           </div>
+        </div>
+      </nav>
 
-          <div className="flex items-center gap-2 mb-4">
-            <div className={`w-2.5 h-2.5 rounded-full ${
-              doc.status === 'approved' ? 'bg-[var(--color-success)]' :
-              doc.status === 'needs_review' ? 'bg-[var(--color-warning)]' :
-              doc.status === 'error' ? 'bg-[var(--color-error)]' :
-              'bg-[var(--color-info)]'
-            }`} />
-            <span className={`text-xs font-semibold uppercase tracking-wider ${
-              doc.status === 'approved' ? 'text-[var(--color-success-text)]' :
-              doc.status === 'needs_review' ? 'text-[var(--color-warning-text)]' :
-              doc.status === 'error' ? 'text-[var(--color-error-text)]' :
-              'text-[var(--color-accent-text)]'
-            }`}>
-              {doc.status === 'approved' ? 'GODKÄND' :
-               doc.status === 'needs_review' ? 'BEHÖVER GRANSKNING' :
-               doc.status === 'error' ? 'FEL' :
-               doc.status.toUpperCase()}
-            </span>
+      {/* Sub-header: Breadcrumbs + Actions */}
+      <div className="bg-[#f8f9fa] border-b border-slate-200 py-4">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+          <div className="flex items-center gap-4 text-sm">
+            <Link href="/dashboard" className="text-slate-500 hover:text-slate-700 flex items-center gap-1 font-medium transition-colors">
+              <ArrowLeft className="w-4 h-4" />
+              Tillbaka
+            </Link>
+            <span className="text-slate-300">/</span>
+            <span className="text-slate-500">Dokument</span>
+            <span className="text-slate-300">/</span>
+            <span className="text-slate-900 font-medium">{truncateFilename(doc.filename, 40)}</span>
           </div>
-
-          <h1 className="text-3xl font-bold text-[var(--color-text-primary)] mb-2" title={doc.filename}>
-            {truncateFilename(doc.filename, 60)}
-          </h1>
-          <p className="text-sm text-[var(--color-text-muted)]">
-            {strings.reviewDescription}
-          </p>
+          <div className="flex items-center gap-3">
+            <ReverifyButton docId={doc.id} />
+            {doc.status !== 'exported' && (
+              <DeleteDocumentButton
+                documentId={doc.id}
+                storagePath={doc.storage_path}
+                filename={doc.filename}
+                redirectAfter="/dashboard"
+                variant="button"
+              />
+            )}
+            {nextDocId && (
+              <Link
+                href={`/review/${nextDocId}`}
+                className="flex items-center gap-2 px-4 py-2 text-sm bg-indigo-600 text-white hover:bg-indigo-700 rounded-lg transition-all shadow-sm font-medium"
+              >
+                Nästa dokument
+                <ArrowRight className="w-4 h-4" />
+              </Link>
+            )}
+          </div>
         </div>
       </div>
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 py-8">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
+        {/* Document Header Card */}
+        <div className="bg-white rounded-xl p-6 shadow-[0_1px_3px_rgba(0,0,0,0.05)] border border-slate-200 flex justify-between items-center">
+          <div>
+            <div className="flex items-center gap-3 mb-2">
+              <h1 className="text-2xl font-bold text-slate-900 tracking-tight" title={doc.filename}>
+                {truncateFilename(doc.filename, 50)}
+              </h1>
+              <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold border ${
+                doc.status === 'approved' ? 'bg-emerald-50 text-emerald-800 border-emerald-200' :
+                doc.status === 'needs_review' ? 'bg-amber-50 text-amber-800 border-amber-200' :
+                doc.status === 'error' ? 'bg-red-50 text-red-800 border-red-200' :
+                'bg-blue-50 text-blue-800 border-blue-200'
+              }`}>
+                {doc.status === 'approved' ? 'GODKÄND' :
+                 doc.status === 'needs_review' ? 'BEHÖVER GRANSKNING' :
+                 doc.status === 'error' ? 'FEL' :
+                 doc.status.toUpperCase()}
+              </span>
+            </div>
+            <p className="text-sm text-slate-500">
+              {strings.reviewDescription}
+            </p>
+          </div>
+          {/* Quality Ring */}
+          <div className="flex items-center gap-4 border-l border-slate-100 pl-6">
+            <div className="text-right">
+              <div className="text-sm font-medium text-slate-900">Datakvalitet</div>
+              <div className={`text-xs font-medium ${qualityColor}`}>{qualityLabel}</div>
+            </div>
+            <div className="quality-ring">
+              <svg>
+                <circle cx="32" cy="32" r="28" fill="transparent" stroke="#e2e8f0" strokeWidth="6" />
+                <circle cx="32" cy="32" r="28" fill="transparent" stroke="currentColor" strokeWidth="6"
+                  strokeDasharray="175.9" strokeDashoffset={ringDashoffset} strokeLinecap="round"
+                  className={qualityColor} />
+              </svg>
+              <div className="quality-ring-value text-slate-900">{qualityScore.toFixed(0)}%</div>
+            </div>
+          </div>
+        </div>
+
         {/* DUPLICATE WARNING */}
         {doc.is_duplicate && (
           <div className="mb-6 p-4 bg-orange-50 border border-orange-300 rounded-xl flex items-center gap-3">
@@ -472,21 +509,21 @@ export default async function ReviewPage({
         })()}
 
         {/* AI SUMMARY */}
-        <div className={`mb-6 p-4 rounded-xl border ${
+        <div className={`p-4 rounded-lg border flex items-start gap-3 ${
           !hasCriticalIssues 
-            ? 'bg-[var(--color-success-bg)] border-[var(--color-success-border)]' 
-            : 'bg-[var(--color-warning-bg)] border-[var(--color-warning-border)]'
+            ? 'bg-emerald-50/50 border-emerald-100' 
+            : 'bg-amber-50/50 border-amber-100'
         }`}>
-          <div className="flex items-start gap-3">
+          <div className={`p-1.5 rounded-md ${!hasCriticalIssues ? 'bg-emerald-100 text-emerald-600' : 'bg-amber-100 text-amber-600'}`}>
             {!hasCriticalIssues ? (
-              <CheckCircle className="w-5 h-5 text-[var(--color-success)] mt-0.5 flex-shrink-0" />
+              <CheckCircle className="w-4 h-4" />
             ) : (
-              <AlertCircle className="w-5 h-5 text-[var(--color-warning)] mt-0.5 flex-shrink-0" />
+              <AlertCircle className="w-4 h-4" />
             )}
-            <div>
-              <h3 className="font-semibold text-[var(--color-text-primary)] mb-1">AI-sammanfattning</h3>
-              <p className="text-sm text-[var(--color-text-secondary)]">{aiSummary}</p>
-            </div>
+          </div>
+          <div>
+            <h3 className={`text-sm font-semibold ${!hasCriticalIssues ? 'text-emerald-900' : 'text-amber-900'}`}>AI Insikt</h3>
+            <p className={`text-sm mt-1 ${!hasCriticalIssues ? 'text-emerald-700' : 'text-amber-700'}`}>{aiSummary}</p>
           </div>
         </div>
 

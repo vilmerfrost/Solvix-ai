@@ -593,41 +593,34 @@ export default function SettingsPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <div className="bg-white border-b border-gray-200">
-        <div className="max-w-7xl mx-auto px-6 py-6">
-          <div className="flex items-center justify-between mb-6">
-            <Link
-              href="/dashboard"
-              className="flex items-center gap-2 px-4 py-2 text-sm text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors"
-            >
-              <ArrowLeft className="w-4 h-4" />
-              <span>Tillbaka</span>
-            </Link>
-            
-            <button
-              onClick={() => window.location.href = "/dashboard"}
-              className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg text-sm font-medium transition-colors"
-            >
-              <Save className="w-4 h-4 inline mr-2" />
-              Spara ändringar
-            </button>
+    <div className="min-h-screen bg-[#f8f9fa]">
+      {/* Premium Top Nav */}
+      <nav className="nav-premium">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex justify-between h-16">
+            <div className="flex items-center gap-8">
+              <Link href="/" className="flex items-center gap-2.5">
+                <div className="w-8 h-8 bg-indigo-600 rounded-lg flex items-center justify-center text-white font-bold shadow-sm">S</div>
+                <span className="font-bold text-xl tracking-tight text-slate-900">Solvix.AI</span>
+              </Link>
+              <div className="hidden md:flex h-full items-center gap-6">
+                <Link href="/dashboard" className="nav-link pt-0.5">Dokument</Link>
+                <Link href="/health" className="nav-link pt-0.5">Rapporter</Link>
+                <Link href="/settings" className="nav-link nav-link-active pt-0.5">Inställningar</Link>
+              </div>
+            </div>
+            <div className="flex items-center gap-4">
+              <span className="badge-pro">Pro</span>
+            </div>
           </div>
+        </div>
+      </nav>
 
-          <div className="flex items-center gap-2 mb-4">
-            <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
-            <span className="text-xs font-medium text-green-600 uppercase tracking-wider">
-              SYSTEM ONLINE
-            </span>
-          </div>
-
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">
-            Dashboard
-          </h1>
-          <p className="text-lg text-gray-600">
-            Inställningar
-          </p>
+      {/* Page Header */}
+      <div className="bg-[#f8f9fa] border-b border-slate-200">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+          <h1 className="text-2xl font-bold text-slate-900 mb-1">Inställningar</h1>
+          <p className="text-slate-500 text-sm">Hantera ditt konto och systeminställningar för Solvix.AI</p>
         </div>
       </div>
 
@@ -641,110 +634,86 @@ export default function SettingsPage() {
       )}
 
       {/* Main Content */}
-      <div className="max-w-7xl mx-auto px-6 py-8">
-        <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
-          {/* Sidebar */}
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
+          {/* Sidebar - Stitch inspired */}
           <div className="lg:col-span-1">
-            <div className="bg-white rounded-lg border border-gray-200 p-4">
-              <nav className="space-y-2">
+            <div className="bg-white rounded-xl border border-slate-200 shadow-[0_1px_3px_rgba(0,0,0,0.05)] py-4">
+              <div className="px-4 mb-3">
+                <h3 className="text-xs font-semibold text-slate-400 uppercase tracking-wider pl-3">System</h3>
+              </div>
+              <nav className="px-2 space-y-1">
                 {features.material_synonyms && (
                   <button
                     onClick={() => setActiveSection("material")}
-                    className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-colors text-left ${
-                      activeSection === "material"
-                        ? "bg-blue-50 text-blue-700 border border-blue-200"
-                        : "text-gray-700 hover:bg-gray-50"
-                    }`}
+                    className={`settings-sidebar-item w-full text-left ${activeSection === "material" ? "settings-sidebar-item-active" : ""}`}
                   >
-                    <Package className="w-5 h-5" />
-                    <span className="font-medium">Material & Synonymer</span>
+                    <Package className="w-5 h-5 flex-shrink-0" />
+                    <span>Material & Synonymer</span>
                   </button>
                 )}
 
                 <button
                   onClick={() => setActiveSection("ai")}
-                  className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-colors text-left ${
-                    activeSection === "ai"
-                      ? "bg-blue-50 text-blue-700 border border-blue-200"
-                      : "text-gray-700 hover:bg-gray-50"
-                  }`}
+                  className={`settings-sidebar-item w-full text-left ${activeSection === "ai" ? "settings-sidebar-item-active" : ""}`}
                 >
-                  <Zap className="w-5 h-5" />
-                  <span className="font-medium">AI & Automation</span>
+                  <Zap className="w-5 h-5 flex-shrink-0" />
+                  <span>AI & Automation</span>
                 </button>
 
                 <button
                   onClick={() => setActiveSection("export")}
-                  className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-colors text-left ${
-                    activeSection === "export"
-                      ? "bg-blue-50 text-blue-700 border border-blue-200"
-                      : "text-gray-700 hover:bg-gray-50"
-                  }`}
+                  className={`settings-sidebar-item w-full text-left ${activeSection === "export" ? "settings-sidebar-item-active" : ""}`}
                 >
-                  <FileText className="w-5 h-5" />
-                  <span className="font-medium">Export & Rapporter</span>
+                  <FileText className="w-5 h-5 flex-shrink-0" />
+                  <span>Export & Rapporter</span>
                 </button>
 
                 {features.azure_integration && (
                   <button
                     onClick={() => setActiveSection("azure")}
-                    className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-colors text-left ${
-                      activeSection === "azure"
-                        ? "bg-blue-50 text-blue-700 border border-blue-200"
-                        : "text-gray-700 hover:bg-gray-50"
-                    }`}
+                    className={`settings-sidebar-item w-full text-left ${activeSection === "azure" ? "settings-sidebar-item-active" : ""}`}
                   >
-                    <Cloud className="w-5 h-5" />
-                    <span className="font-medium">Azure & GUIDs</span>
+                    <Cloud className="w-5 h-5 flex-shrink-0" />
+                    <span>Azure & GUIDs</span>
                   </button>
                 )}
 
                 <button
                   onClick={() => setActiveSection("email")}
-                  className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-colors text-left ${
-                    activeSection === "email"
-                      ? "bg-blue-50 text-blue-700 border border-blue-200"
-                      : "text-gray-700 hover:bg-gray-50"
-                  }`}
+                  className={`settings-sidebar-item w-full text-left ${activeSection === "email" ? "settings-sidebar-item-active" : ""}`}
                 >
-                  <Mail className="w-5 h-5" />
-                  <span className="font-medium">E-postinkorg</span>
+                  <Mail className="w-5 h-5 flex-shrink-0" />
+                  <span>E-postinkorg</span>
                 </button>
+              </nav>
 
-                {/* Divider */}
-                <div className="border-t border-gray-200 my-3" />
+              <div className="border-t border-slate-100 my-3 mx-4" />
 
-                {/* Billing Link */}
-                <Link
-                  href="/settings/billing"
-                  className="w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-colors text-left text-gray-700 hover:bg-gray-50"
-                >
-                  <CreditCard className="w-5 h-5" />
-                  <span className="font-medium">Prenumeration & Fakturering</span>
+              <div className="px-4 mb-3">
+                <h3 className="text-xs font-semibold text-slate-400 uppercase tracking-wider pl-3">Konto</h3>
+              </div>
+              <nav className="px-2 space-y-1">
+                <Link href="/settings/billing" className="settings-sidebar-item w-full text-left">
+                  <CreditCard className="w-5 h-5 flex-shrink-0" />
+                  <span>Prenumeration</span>
                 </Link>
-
-                {/* Data & Privacy Link */}
-                <Link
-                  href="/settings/data"
-                  className="w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-colors text-left text-gray-700 hover:bg-gray-50"
-                >
-                  <Shield className="w-5 h-5" />
-                  <span className="font-medium">Data & Integritet</span>
+                <Link href="/settings/data" className="settings-sidebar-item w-full text-left">
+                  <Shield className="w-5 h-5 flex-shrink-0" />
+                  <span>Data & Integritet</span>
                 </Link>
+              </nav>
 
-                {/* Divider */}
-                <div className="border-t border-gray-200 my-3" />
+              <div className="border-t border-slate-100 my-3 mx-4" />
 
-                {/* Logout Button */}
+              <nav className="px-2">
                 <button
                   onClick={handleLogout}
                   disabled={loggingOut}
-                  className="w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-colors text-left text-red-600 hover:bg-red-50 disabled:opacity-50"
+                  className="settings-sidebar-item w-full text-left text-red-600 hover:bg-red-50 disabled:opacity-50"
                 >
-                  <LogOut className="w-5 h-5" />
-                  <span className="font-medium">
-                    {loggingOut ? "Loggar ut..." : "Logga ut"}
-                  </span>
+                  <LogOut className="w-5 h-5 flex-shrink-0" />
+                  <span>{loggingOut ? "Loggar ut..." : "Logga ut"}</span>
                 </button>
               </nav>
             </div>
