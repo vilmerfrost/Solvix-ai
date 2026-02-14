@@ -3,6 +3,40 @@
 import { useState } from "react";
 import { Check } from "lucide-react";
 
+// Module-level helpers (outside component to avoid TDZ issues)
+function getFieldValue(item: any, col: string): any {
+  if (!item) return undefined;
+  const field = item[col];
+  if (field && typeof field === 'object' && 'value' in field) {
+    return field.value;
+  }
+  return field;
+}
+
+const COLUMN_TRANSLATIONS: Record<string, string> = {
+  "date": "Datum",
+  "address": "Adress",
+  "location": "Adress",
+  "material": "Material",
+  "weightKg": "Vikt (kg)",
+  "unit": "Enhet",
+  "receiver": "Mottagare",
+  "wasteCode": "Avfallskod",
+  "costSEK": "Kostnad (kr)",
+  "co2Saved": "CO2 Besparing",
+  "co2": "CO2 Besparing",
+  "notes": "Anteckningar",
+  "quantity": "Antal",
+  "container": "Behållare",
+  "handling": "Hantering",
+  "isHazardous": "Farligt Avfall",
+  "percentage": "Procent"
+};
+
+function translateColumn(col: string): string {
+  return COLUMN_TRANSLATIONS[col] || col;
+}
+
 interface PaginatedTableProps {
   lineItems: any[];
   columns: string[];
@@ -13,7 +47,7 @@ export function PaginatedTable({ lineItems, columns, highlightedRows }: Paginate
   const [displayCount, setDisplayCount] = useState(50);
   const ROWS_PER_PAGE = 50;
   
-  // Defensive guards - prevent crash if props are undefined
+  // Defensive guards
   const items = Array.isArray(lineItems) ? lineItems : [];
   const cols = Array.isArray(columns) ? columns : [];
   
@@ -24,39 +58,6 @@ export function PaginatedTable({ lineItems, columns, highlightedRows }: Paginate
   const visibleRows = items.slice(0, displayCount);
   const hasMore = displayCount < items.length;
   const remainingRows = items.length - displayCount;
-  
-  // Helper to get value from nested structure
-  const getValue = (item: any, col: string) => {
-    const field = item[col];
-    if (field && typeof field === 'object' && 'value' in field) {
-      return field.value;
-    }
-    return field;
-  };
-  
-  // Helper to translate column names
-  const translateColumn = (col: string): string => {
-    const translations: Record<string, string> = {
-      "date": "Datum",
-      "address": "Adress",
-      "location": "Adress",
-      "material": "Material",
-      "weightKg": "Vikt (kg)",
-      "unit": "Enhet",
-      "receiver": "Mottagare",
-      "wasteCode": "Avfallskod",
-      "costSEK": "Kostnad (kr)",
-      "co2Saved": "CO2 Besparing",
-      "co2": "CO2 Besparing",
-      "notes": "Anteckningar",
-      "quantity": "Antal",
-      "container": "Behållare",
-      "handling": "Hantering",
-      "isHazardous": "Farligt Avfall",
-      "percentage": "Procent"
-    };
-    return translations[col] || col;
-  };
   
   return (
     <div>
@@ -79,25 +80,14 @@ export function PaginatedTable({ lineItems, columns, highlightedRows }: Paginate
             </thead>
             <tbody className="divide-y divide-slate-200">
               {visibleRows.map((row, idx) => {
-                const value = getValue(row, cols[0]); // Check first column for structure
-                const isWrapped = value && typeof value === 'object' && 'value' in value;
                 const isHighlighted = highlightedRows?.includes(idx);
                 
                 return (
                   <tr key={idx} className={`hover:bg-slate-50 ${isHighlighted ? "bg-yellow-50 border-l-4 border-l-yellow-400" : ""}`}>
                     <td className="px-4 py-3 text-sm text-slate-500">{idx + 1}</td>
                     {cols.map(col => {
-                      const field = row[col];
-                      let displayValue: any;
-                      let isMissing = false;
-                      
-                      if (field && typeof field === 'object' && 'value' in field) {
-                        displayValue = field.value;
-                        isMissing = displayValue === undefined || displayValue === null || displayValue === "" || displayValue === 0;
-                      } else {
-                        displayValue = field;
-                        isMissing = displayValue === undefined || displayValue === null || displayValue === "" || displayValue === 0;
-                      }
+                      const displayValue = getFieldValue(row, col);
+                      const isMissing = displayValue === undefined || displayValue === null || displayValue === "" || displayValue === 0;
                       
                       return (
                         <td key={col} className="px-4 py-3 text-sm">

@@ -3,14 +3,12 @@ import { requireAuth } from "@/lib/auth";
 import { getHiddenFields } from "@/config/industries";
 import { notFound } from "next/navigation";
 import Link from "next/link";
-import { ReactNode } from "react";
 import { 
   ArrowLeft, 
   FileText, 
   CheckCircle, 
   AlertCircle, 
   AlertTriangle,
-  Save,
   ArrowRight
 } from "lucide-react";
 import { ExtractionRunViewer } from "@/components/extraction-run-viewer";
@@ -18,27 +16,12 @@ import { ReverifyButton } from "@/components/reverify-button";
 import { ExcelViewer } from "@/components/excel-viewer";
 import { ReviewForm } from "@/components/review-form";
 import { PaginatedTable } from "@/components/paginated-table";
-import { Breadcrumbs } from "@/components/breadcrumbs";
-import { getReviewBreadcrumbs } from "@/lib/breadcrumb-utils";
 import { truncateFilename } from "@/lib/filename-utils";
 import { DeleteDocumentButton } from "@/components/delete-document-button";
 import { getTenantConfigFromDB, getUIStrings } from "@/config/tenant";
+import { getValue, buildExportPreviewRows, calculateStats, detectExistingColumns, findDuplicateKeys, computeConfidenceStats } from "@/lib/review-utils";
 
 export const dynamic = "force-dynamic";
-
-// Diagnostic helper: wraps each section to catch & log render errors individually
-function safeRender(label: string, fn: () => ReactNode): ReactNode {
-  try {
-    return fn();
-  } catch (e: any) {
-    console.error(`[ReviewPage] SECTION CRASH "${label}":`, e?.message, e?.stack);
-    return (
-      <div className="p-4 bg-red-50 border border-red-200 rounded-lg text-sm text-red-800">
-        <strong>Render error in &quot;{label}&quot;:</strong> {e?.message}
-      </div>
-    );
-  }
-}
 
 export default async function ReviewPage({
   params,
@@ -99,20 +82,8 @@ export default async function ReviewPage({
 
   const extractedData = doc.extracted_data || {};
   const lineItems = extractedData.lineItems || [];
-  
-  // Helper to get value (handle both wrapped {value, confidence} and clean formats)
-  const getValue = (field: any): any => {
-    if (!field) return null;
-    if (typeof field === 'object' && 'value' in field) {
-      return field.value;
-    }
-    return field;
-  };
 
-  // === EXPORT PREVIEW DATA ===
-  // Apply the SAME fallbacks as the export-to-azure route so users see the final result
-  // Get document-level metadata for fallbacks
-  // Extract date - try metadata, then extracted data, then filename, then today
+  // Document-level metadata for fallbacks
   const filenameDateMatch = doc.filename.replace(/\s*\(\d+\)/g, '').match(/(\d{4}-\d{2}-\d{2})/);
   const docDate = getValue(extractedData.documentMetadata?.date) || 
                   getValue(extractedData.date) || 
@@ -121,159 +92,23 @@ export default async function ReviewPage({
   const docReceiver = getValue(extractedData.documentMetadata?.receiver) || getValue(extractedData.receiver) || "";
   const docSupplier = getValue(extractedData.documentMetadata?.supplier) || getValue(extractedData.supplier) || "";
 
-  // ✅ Helper: Check if a value is a placeholder/default that should be replaced
-  const isPlaceholderValue = (val: string | null | undefined): boolean => {
-    if (!val || typeof val !== 'string') return true;
-    const trimmed = val.trim().toLowerCase();
-    return (
-      trimmed === '' ||
-      trimmed === 'okänd mottagare' ||
-      trimmed === 'okänd adress' ||
-      trimmed === 'okänt material' ||
-      trimmed === 'saknas' ||
-      trimmed === 'unknown'
-    );
-  };
-
-  // Create export preview rows (exactly what will be in Excel)
-  // ✅ FIX: Treat placeholder values like "Okänd mottagare" as empty so document-level values apply
-  const exportPreviewRows = lineItems.map((item: any, idx: number) => {
-    const rowReceiver = getValue(item.receiver);
-    const rowLocation = getValue(item.location) || getValue(item.address);
-    
-    return {
-      rowNum: idx + 1,
-      date: getValue(item.date) || docDate,
-      location: isPlaceholderValue(rowLocation) ? docAddress : rowLocation,
-      material: getValue(item.material) || "Okänt material",
-      weightKg: parseFloat(String(getValue(item.weightKg) || getValue(item.weight) || 0)),
-      unit: getValue(item.unit) || "Kg",
-      receiver: isPlaceholderValue(rowReceiver) ? (docReceiver || "Okänd mottagare") : rowReceiver,
-      isHazardous: getValue(item.isHazardous) || false,
-    };
-  });
+  // Export preview rows (exactly what will be in Excel)
+  const exportPreviewRows = buildExportPreviewRows(lineItems, docDate, docAddress, docReceiver);
   
-  // Calculate stats from lineItems
-  const uniqueAddresses = new Set(
-    lineItems
-      .map((item: any) => {
-        const addr = getValue(item.address) || getValue(item.location);
-        return addr && addr !== "SAKNAS" ? addr : null;
-      })
-      .filter(Boolean)
-  ).size;
-  
-  const uniqueReceivers = new Set(
-    lineItems
-      .map((item: any) => {
-        const rec = getValue(item.receiver);
-        return rec || null;
-      })
-      .filter(Boolean)
-  ).size;
-  
-  const uniqueMaterials = new Set(
-    lineItems
-      .map((item: any) => {
-        const mat = getValue(item.material);
-        return mat || null;
-      })
-      .filter(Boolean)
-  ).size;
+  // Stats
+  const { uniqueAddresses, uniqueReceivers, uniqueMaterials, totalWeightKg, totalCost, totalCo2 } = calculateStats(lineItems, extractedData);
 
-  const totalWeightKg = lineItems.reduce(
-    (sum: number, item: any) => {
-      const weight = getValue(item.weightKg);
-      return sum + (Number(weight) || 0);
-    },
-    0
-  );
-
-  const totalCost = lineItems.reduce(
-    (sum: number, item: any) => {
-      const cost = getValue(item.costSEK) || getValue(item.cost);
-      return sum + (Number(cost) || 0);
-    },
-    Number(getValue(extractedData.costSEK) || getValue(extractedData.cost)) || 0
-  );
-
-  const totalCo2 = lineItems.reduce(
-    (sum: number, item: any) => {
-      const co2 = getValue(item.co2Saved) || getValue(item.co2);
-      return sum + (Number(co2) || 0);
-    },
-    0
-  );
-
-  // Dynamic column detection - only show columns that exist in data
-  const detectExistingColumns = (items: any[]): {
-    mandatory: string[];
-    optional: string[];
-  } => {
-    if (!items || items.length === 0) {
-      return { mandatory: [], optional: [] };
-    }
-    
-    // These MUST always be present
-    const MANDATORY_FIELDS = ["date", "address", "material", "weightKg", "unit", "receiver"];
-    
-    // These are optional - only show if they have data
-    const OPTIONAL_FIELDS = ["wasteCode", "cost", "costSEK", "co2Saved", "co2", "notes", "quantity", "container", "handling", "isHazardous", "percentage", "referensnummer", "fordon", "avfallskod"];
-    
-    // Check which optional fields actually have data
-    const existingOptional = OPTIONAL_FIELDS.filter(field => {
-      return items.some(item => {
-        const value = item[field];
-        if (value && typeof value === 'object' && 'value' in value) {
-          const val = value.value;
-          return val !== undefined && val !== null && val !== "" && val !== 0 && val !== "0" && val !== false;
-        }
-        return value !== undefined && value !== null && value !== "" && value !== 0 && value !== "0" && value !== false;
-      });
-    });
-    
-    // Also check top-level cost
-    if (extractedData.cost?.value) {
-      if (!existingOptional.includes("cost") && !existingOptional.includes("costSEK")) {
-        existingOptional.push("cost");
-      }
-    }
-    
-    
-    return {
-      mandatory: MANDATORY_FIELDS,
-      optional: existingOptional
-    };
-  };
-
-  const { mandatory, optional } = detectExistingColumns(lineItems);
-  // Filter columns based on user's industry (hide waste-specific fields for non-waste users)
+  // Column detection
+  const { mandatory, optional } = detectExistingColumns(lineItems, extractedData);
   const filteredMandatory = mandatory.filter(col => !hiddenFields.includes(col));
   const filteredOptional = optional.filter(col => !hiddenFields.includes(col));
   const allColumns = [...filteredMandatory, ...filteredOptional];
 
-  // Check if columns exist for display (after filtering)
   const hasCost = filteredOptional.includes("cost") || filteredOptional.includes("costSEK") || extractedData.cost?.value;
   const hasCo2 = filteredOptional.includes("co2Saved") || filteredOptional.includes("co2");
 
-  // Primary key validation (Adress + Mottagare + Material + Datum)
-  const primaryKeys = new Map<string, number[]>();
-  lineItems.forEach((item: any, index: number) => {
-    const address = getValue(item.address) || getValue(item.location) || getValue(extractedData.address) || "";
-    const receiver = getValue(item.receiver) || getValue(extractedData.receiver) || "";
-    const material = getValue(item.material) || "";
-    const date = getValue(extractedData.date) || "";
-    const key = `${address}|${receiver}|${material}|${date}`;
-    
-    if (!primaryKeys.has(key)) {
-      primaryKeys.set(key, []);
-    }
-    primaryKeys.get(key)!.push(index + 1);
-  });
-
-  const duplicateKeys = Array.from(primaryKeys.entries())
-    .filter(([_, indices]) => indices.length > 1)
-    .map(([key, indices]) => ({ key, indices }));
+  // Primary key validation
+  const duplicateKeys = findDuplicateKeys(lineItems, extractedData);
 
   // Validation issues - now using export preview data (with fallbacks applied)
   const validation = extractedData._validation || { completeness: 100, issues: [] };
@@ -322,34 +157,8 @@ export default async function ReviewPage({
   const qualityLabel = qualityScore >= 80 ? 'Hög kvalitet' : qualityScore >= 50 ? 'Medel kvalitet' : 'Låg kvalitet';
   const ringDashoffset = 175.9 - (175.9 * qualityScore / 100);
 
-  // Pre-compute confidence summary (extracted from JSX IIFE to avoid Turbopack bundler issues)
-  let confTotalFields = 0;
-  let confHigh = 0;
-  let confMedium = 0;
-  let confLow = 0;
-  const checkConf = (field: any) => {
-    if (!field || typeof field !== 'object' || !('confidence' in field)) return;
-    confTotalFields++;
-    const conf = field.confidence;
-    if (conf >= 0.9) confHigh++;
-    else if (conf >= 0.6) confMedium++;
-    else confLow++;
-  };
-  checkConf(extractedData.date);
-  checkConf(extractedData.supplier);
-  checkConf(extractedData.address);
-  checkConf(extractedData.receiver);
-  checkConf(extractedData.material);
-  checkConf(extractedData.weightKg);
-  checkConf(extractedData.cost);
-  if (Array.isArray(lineItems)) {
-    for (const item of lineItems) {
-      checkConf(item.material);
-      checkConf(item.weightKg);
-      checkConf(item.address);
-      checkConf(item.receiver);
-    }
-  }
+  // Confidence summary
+  const { totalFields: confTotalFields, high: confHigh, medium: confMedium, low: confLow } = computeConfidenceStats(extractedData, lineItems);
   const showConfidenceBanner = confTotalFields > 0;
 
   // Diagnostic logging - identify data shape for crashing documents
@@ -539,15 +348,12 @@ export default async function ReviewPage({
         </div>
 
         {/* EXTRACTION PIPELINE */}
-        {safeRender('extraction-pipeline', () => {
-          if (!doc.extraction_run_id) return null;
-          return (
+        {doc.extraction_run_id && (
           <div className="mb-6 bg-white rounded-xl border border-gray-200 p-6">
              <h2 className="text-lg font-semibold text-[var(--color-text-primary)] mb-4">Bearbetningshistorik</h2>
              <ExtractionRunViewer runId={doc.extraction_run_id} />
           </div>
-          );
-        })}
+        )}
 
         {/* DOCUMENT METADATA */}
         {extractedData.documentMetadata && (
@@ -812,9 +618,7 @@ export default async function ReviewPage({
         )}
 
         {/* RAW EXTRACTED DATA TABLE */}
-        {safeRender('paginated-table', () => {
-          if (lineItems.length === 0) return null;
-          return (
+        {lineItems.length > 0 && (
           <div className="mb-6">
             <div className="flex items-center gap-3 mb-4">
               <h2 className="text-xl font-semibold text-slate-900">Extraherad Data (Rådata från AI)</h2>
@@ -831,12 +635,10 @@ export default async function ReviewPage({
               highlightedRows={Array.from(highlightedRows)}
             />
           </div>
-          );
-        })}
+        )}
 
         {/* Invoice-specific fields — shown when document type is invoice */}
-        {safeRender('invoice-section', () => {
-          if (extractedData?.documentType !== 'invoice') return null;
+        {extractedData?.documentType === 'invoice' && (() => {
           const invoiceItems = Array.isArray(extractedData.invoiceLineItems) ? extractedData.invoiceLineItems : [];
           return (
           <div className="mb-6 p-6 bg-white rounded-lg border border-slate-200 space-y-6">
@@ -922,22 +724,19 @@ export default async function ReviewPage({
             )}
           </div>
           );
-        })}
+        })()}
 
         {/* Right: Review Form */}
-        {safeRender('review-form', () => (
-          <div className="mb-6">
-            <ReviewForm
-              initialData={extractedData}
-              documentId={doc.id}
-              nextDocId={nextDocId}
-            />
-          </div>
-        ))}
+        <div className="mb-6">
+          <ReviewForm
+            initialData={extractedData}
+            documentId={doc.id}
+            nextDocId={nextDocId}
+          />
+        </div>
 
         {/* SWEDISH METADATA */}
-        {safeRender('swedish-metadata', () => {
-          if (!extractedData.swedishMetadata) return null;
+        {extractedData.swedishMetadata && (() => {
           const sm = extractedData.swedishMetadata;
           return (
           <div className="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
@@ -978,13 +777,11 @@ export default async function ReviewPage({
             </div>
           </div>
           );
-        })}
+        })()}
 
         {/* === EXPORT PREVIEW === */}
         {/* Shows EXACTLY what will be in the Excel file uploaded to Azure */}
-        {safeRender('export-preview', () => {
-          if (exportPreviewRows.length === 0) return null;
-          return (
+        {exportPreviewRows.length > 0 && (
           <div className="mb-6">
             <div className="flex items-center gap-3 mb-4">
               <h2 className="text-xl font-semibold text-slate-900">
@@ -1075,8 +872,7 @@ export default async function ReviewPage({
               </div>
             </div>
           </div>
-          );
-        })}
+        )}
 
         {/* Audit Trail Section */}
         <div className="mt-8 border-t border-slate-200 pt-6">

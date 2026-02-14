@@ -7,6 +7,37 @@ import { saveDocument } from "@/app/actions";
 import { ArrowRight, Save, Skull, Plus, Trash2, AlertTriangle, Eraser } from "lucide-react";
 import { useUnsavedChanges } from "@/hooks/use-unsaved-changes";
 
+// Module-level helpers (outside component to avoid TDZ issues in bundler)
+function normalizeValue(field: any): any {
+  if (!field) return null;
+  if (typeof field === 'object' && 'value' in field) {
+    return field;
+  }
+  return { value: field, confidence: 1 };
+}
+
+function normalizeLineItems(items: any[]): any[] {
+  if (!Array.isArray(items)) return [];
+  return items.map(item => {
+    const normalizedItem: any = {};
+    for (const key of Object.keys(item)) {
+      normalizedItem[key] = normalizeValue(item[key]);
+    }
+    normalizedItem.material = normalizeValue(item.material);
+    normalizedItem.weightKg = normalizeValue(item.weightKg);
+    normalizedItem.location = normalizeValue(item.location || item.address);
+    normalizedItem.address = normalizeValue(item.address || item.location);
+    normalizedItem.receiver = normalizeValue(item.receiver);
+    normalizedItem.date = normalizeValue(item.date);
+    normalizedItem.handling = normalizeValue(item.handling);
+    normalizedItem.isHazardous = normalizeValue(item.isHazardous);
+    normalizedItem.co2Saved = normalizeValue(item.co2Saved || item.co2);
+    normalizedItem.costSEK = normalizeValue(item.costSEK || item.cost);
+    normalizedItem.unit = normalizeValue(item.unit || "Kg");
+    return normalizedItem;
+  });
+}
+
 export function ReviewForm({
   initialData,
   documentId,
@@ -36,7 +67,6 @@ export function ReviewForm({
   useEffect(() => {
     const metadata = data.documentMetadata || {};
     
-    // Pre-fill from documentMetadata (from PDF extraction) or fallback to top-level fields
     setDocumentDate(
       metadata.date || 
       (typeof data.date === 'object' ? data.date?.value : data.date) || 
@@ -59,50 +89,15 @@ export function ReviewForm({
     );
   }, [data]);
 
-  // Helper function to normalize data (handle both wrapped {value, confidence} and clean formats)
-  const normalizeValue = (field: any): any => {
-    if (!field) return null;
-    if (typeof field === 'object' && 'value' in field) {
-      return field; // Already wrapped
-    }
-    return { value: field, confidence: 1 }; // Wrap clean data
-  };
-
-  // Normalize lineItems to ensure consistent format
-  // IMPORTANT: Preserve ALL original fields, not just the ones we display in the form
-  const normalizeLineItems = (items: any[]): any[] => {
-    if (!Array.isArray(items)) return [];
-    return items.map(item => {
-      // Start with ALL original fields to preserve data like wasteCode, referensnummer, fordon, etc.
-      const normalizedItem: any = {};
-      
-      // Copy ALL original fields, normalizing their format
-      for (const key of Object.keys(item)) {
-        normalizedItem[key] = normalizeValue(item[key]);
-      }
-      
-      // Ensure critical fields are properly set (with fallbacks)
-      normalizedItem.material = normalizeValue(item.material);
-      normalizedItem.weightKg = normalizeValue(item.weightKg);
-      normalizedItem.location = normalizeValue(item.location || item.address);
-      normalizedItem.address = normalizeValue(item.address || item.location);
-      normalizedItem.receiver = normalizeValue(item.receiver);
-      normalizedItem.date = normalizeValue(item.date);
-      normalizedItem.handling = normalizeValue(item.handling);
-      normalizedItem.isHazardous = normalizeValue(item.isHazardous);
-      normalizedItem.co2Saved = normalizeValue(item.co2Saved || item.co2);
-      normalizedItem.costSEK = normalizeValue(item.costSEK || item.cost);
-      normalizedItem.unit = normalizeValue(item.unit || "Kg");
-      
-      return normalizedItem;
-    });
-  };
+  // State for line items - use simple initial value, populate via effect
+  const [lineItems, setLineItems] = useState<any[]>([]);
   
-  // State för rader så vi kan loopa och räkna
-  const [lineItems, setLineItems] = useState(() => {
+  // Initialize lineItems from props (avoids lazy initializer TDZ)
+  useEffect(() => {
     const items = data.lineItems || [];
-    return normalizeLineItems(items);
-  });
+    setLineItems(normalizeLineItems(items));
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
   
   const [totals, setTotals] = useState({
     weight: data.totalWeightKg || (typeof data.weightKg === 'object' ? data.weightKg?.value : data.weightKg) || 0,

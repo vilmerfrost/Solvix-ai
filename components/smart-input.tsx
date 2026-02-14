@@ -1,5 +1,5 @@
 import { AlertTriangle, CheckCircle2, HelpCircle } from "lucide-react";
-import { SmartFieldValue } from "@/lib/schemas";
+import type { SmartFieldValue } from "@/lib/schemas";
 
 interface SmartInputProps extends React.InputHTMLAttributes<HTMLInputElement> {
   label: string;
