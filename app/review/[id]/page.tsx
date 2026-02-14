@@ -3,6 +3,7 @@ import { requireAuth } from "@/lib/auth";
 import { getHiddenFields } from "@/config/industries";
 import { notFound } from "next/navigation";
 import Link from "next/link";
+import { ReactNode } from "react";
 import { 
   ArrowLeft, 
   FileText, 
@@ -24,6 +25,20 @@ import { DeleteDocumentButton } from "@/components/delete-document-button";
 import { getTenantConfigFromDB, getUIStrings } from "@/config/tenant";
 
 export const dynamic = "force-dynamic";
+
+// Diagnostic helper: wraps each section to catch & log render errors individually
+function safeRender(label: string, fn: () => ReactNode): ReactNode {
+  try {
+    return fn();
+  } catch (e: any) {
+    console.error(`[ReviewPage] SECTION CRASH "${label}":`, e?.message, e?.stack);
+    return (
+      <div className="p-4 bg-red-50 border border-red-200 rounded-lg text-sm text-red-800">
+        <strong>Render error in &quot;{label}&quot;:</strong> {e?.message}
+      </div>
+    );
+  }
+}
 
 export default async function ReviewPage({
   params,
@@ -337,6 +352,10 @@ export default async function ReviewPage({
   }
   const showConfidenceBanner = confTotalFields > 0;
 
+  // Diagnostic logging - identify data shape for crashing documents
+  console.log(`[ReviewPage] doc=${id} status=${doc.status} type=${extractedData?.documentType} lineItems=${lineItems.length} keys=${Object.keys(extractedData).join(',')}`);
+  console.log(`[ReviewPage] doc=${id} hasInvoiceLineItems=${Array.isArray(extractedData.invoiceLineItems)} hasSwedishMeta=${!!extractedData.swedishMetadata} hasDuplicate=${doc.is_duplicate} hasExtractionRun=${!!doc.extraction_run_id}`);
+
   return (
     <div className="min-h-screen bg-[#f8f9fa]">
       {/* Premium Top Nav */}
@@ -520,12 +539,15 @@ export default async function ReviewPage({
         </div>
 
         {/* EXTRACTION PIPELINE */}
-        {doc.extraction_run_id && (
+        {safeRender('extraction-pipeline', () => {
+          if (!doc.extraction_run_id) return null;
+          return (
           <div className="mb-6 bg-white rounded-xl border border-gray-200 p-6">
              <h2 className="text-lg font-semibold text-[var(--color-text-primary)] mb-4">Bearbetningshistorik</h2>
              <ExtractionRunViewer runId={doc.extraction_run_id} />
           </div>
-        )}
+          );
+        })}
 
         {/* DOCUMENT METADATA */}
         {extractedData.documentMetadata && (
@@ -790,7 +812,9 @@ export default async function ReviewPage({
         )}
 
         {/* RAW EXTRACTED DATA TABLE */}
-        {lineItems.length > 0 && (
+        {safeRender('paginated-table', () => {
+          if (lineItems.length === 0) return null;
+          return (
           <div className="mb-6">
             <div className="flex items-center gap-3 mb-4">
               <h2 className="text-xl font-semibold text-slate-900">Extraherad Data (Rådata från AI)</h2>
@@ -799,7 +823,7 @@ export default async function ReviewPage({
               </span>
             </div>
             <p className="text-sm text-slate-500 mb-4">
-              Rå data som AI:n extraherade. Fält med "SAKNAS" fylls i med fallback-värden vid export.
+              Rå data som AI:n extraherade. Fält med &quot;SAKNAS&quot; fylls i med fallback-värden vid export.
             </p>
             <PaginatedTable 
               lineItems={lineItems}
@@ -807,10 +831,14 @@ export default async function ReviewPage({
               highlightedRows={Array.from(highlightedRows)}
             />
           </div>
-        )}
+          );
+        })}
 
         {/* Invoice-specific fields — shown when document type is invoice */}
-        {extractedData?.documentType === 'invoice' && (
+        {safeRender('invoice-section', () => {
+          if (extractedData?.documentType !== 'invoice') return null;
+          const invoiceItems = Array.isArray(extractedData.invoiceLineItems) ? extractedData.invoiceLineItems : [];
+          return (
           <div className="mb-6 p-6 bg-white rounded-lg border border-slate-200 space-y-6">
             <h3 className="text-lg font-semibold text-slate-900 flex items-center gap-2">
               <FileText className="w-5 h-5" />
@@ -842,8 +870,7 @@ export default async function ReviewPage({
               <div><span className="text-slate-500">Att betala:</span> <span className="font-bold text-slate-900">{typeof getValue(extractedData.totalAmount) === 'number' ? `${getValue(extractedData.totalAmount).toLocaleString('sv-SE')} kr` : '—'}</span></div>
             </div>
 
-            {/* Invoice line items table */}
-            {Array.isArray(extractedData.invoiceLineItems) && extractedData.invoiceLineItems.length > 0 && (
+            {invoiceItems.length > 0 && (
               <div>
                 <h4 className="text-sm font-medium text-slate-700 mb-2">Fakturarader</h4>
                 <div className="border border-slate-200 rounded-lg overflow-hidden">
@@ -858,7 +885,7 @@ export default async function ReviewPage({
                       </tr>
                     </thead>
                     <tbody>
-                      {extractedData.invoiceLineItems.map((item: any, i: number) => (
+                      {invoiceItems.map((item: any, i: number) => (
                         <tr key={i} className="border-t border-slate-100">
                           <td className="px-3 py-2">{String(getValue(item.description) || '')}</td>
                           <td className="px-3 py-2 text-right">{String(getValue(item.quantity) ?? '')}</td>
@@ -894,68 +921,77 @@ export default async function ReviewPage({
               </div>
             )}
           </div>
-        )}
+          );
+        })}
 
         {/* Right: Review Form */}
-        <div className="mb-6">
-          <ReviewForm
-            initialData={extractedData}
-            documentId={doc.id}
-            nextDocId={nextDocId}
-          />
-        </div>
+        {safeRender('review-form', () => (
+          <div className="mb-6">
+            <ReviewForm
+              initialData={extractedData}
+              documentId={doc.id}
+              nextDocId={nextDocId}
+            />
+          </div>
+        ))}
 
         {/* SWEDISH METADATA */}
-        {extractedData.swedishMetadata && (
+        {safeRender('swedish-metadata', () => {
+          if (!extractedData.swedishMetadata) return null;
+          const sm = extractedData.swedishMetadata;
+          return (
           <div className="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
             <h4 className="text-sm font-medium text-blue-900 mb-2 flex items-center gap-2">
               Svenska format identifierade
             </h4>
             <div className="grid grid-cols-2 gap-2 text-sm">
-              {Array.isArray(extractedData.swedishMetadata.orgNr) && extractedData.swedishMetadata.orgNr.map((nr: string) => (
+              {Array.isArray(sm.orgNr) && sm.orgNr.map((nr: string) => (
                 <div key={nr} className="text-blue-700">
                   <span className="text-blue-400">Org.nr:</span> {nr}
                 </div>
               ))}
-              {Array.isArray(extractedData.swedishMetadata.plusgiro) && extractedData.swedishMetadata.plusgiro.map((pg: string) => (
+              {Array.isArray(sm.plusgiro) && sm.plusgiro.map((pg: string) => (
                 <div key={pg} className="text-blue-700">
                   <span className="text-blue-400">Plusgiro:</span> {pg}
                 </div>
               ))}
-              {Array.isArray(extractedData.swedishMetadata.bankgiro) && extractedData.swedishMetadata.bankgiro.map((bg: string) => (
+              {Array.isArray(sm.bankgiro) && sm.bankgiro.map((bg: string) => (
                 <div key={bg} className="text-blue-700">
                   <span className="text-blue-400">Bankgiro:</span> {bg}
                 </div>
               ))}
-              {Array.isArray(extractedData.swedishMetadata.ocrReferences) && extractedData.swedishMetadata.ocrReferences.map((ocr: string) => (
+              {Array.isArray(sm.ocrReferences) && sm.ocrReferences.map((ocr: string) => (
                 <div key={ocr} className="text-blue-700">
                   <span className="text-blue-400">OCR:</span> {ocr}
                 </div>
               ))}
-              {extractedData.swedishMetadata.vatRate && (
+              {sm.vatRate && (
                 <div className="text-blue-700">
-                  <span className="text-blue-400">Moms:</span> {extractedData.swedishMetadata.vatRate}%
+                  <span className="text-blue-400">Moms:</span> {sm.vatRate}%
                 </div>
               )}
-              {extractedData.swedishMetadata.vatAmount && (
+              {sm.vatAmount && (
                 <div className="text-blue-700">
-                  <span className="text-blue-400">Momsbelopp:</span> {extractedData.swedishMetadata.vatAmount.toLocaleString('sv-SE')} kr
+                  <span className="text-blue-400">Momsbelopp:</span> {Number(sm.vatAmount).toLocaleString('sv-SE')} kr
                 </div>
               )}
             </div>
           </div>
-        )}
+          );
+        })}
 
         {/* === EXPORT PREVIEW === */}
         {/* Shows EXACTLY what will be in the Excel file uploaded to Azure */}
-        {exportPreviewRows.length > 0 && (
+        {safeRender('export-preview', () => {
+          if (exportPreviewRows.length === 0) return null;
+          return (
           <div className="mb-6">
             <div className="flex items-center gap-3 mb-4">
               <h2 className="text-xl font-semibold text-slate-900">
                 Förhandsgranskning av Export
               </h2>
               <span className="px-3 py-1 bg-green-100 text-green-800 text-sm rounded-full font-medium">
-                {exportPreviewRows.length} rader → Excel
+                {exportPreviewRows.length} rader &rarr; Excel
               </span>
             </div>
             <p className="text-sm text-slate-600 mb-4">
@@ -995,7 +1031,7 @@ export default async function ReviewPage({
                         <td className="px-4 py-3 text-sm">{row.location || <span className="text-slate-400">-</span>}</td>
                         <td className="px-4 py-3 text-sm">{row.material}</td>
                         <td className="px-4 py-3 text-sm font-mono">
-                          {row.weightKg.toLocaleString('sv-SE', { minimumFractionDigits: 0, maximumFractionDigits: 2 })}
+                          {Number(row.weightKg || 0).toLocaleString('sv-SE', { minimumFractionDigits: 0, maximumFractionDigits: 2 })}
                         </td>
                         <td className="px-4 py-3 text-sm">{row.unit}</td>
                         {!hiddenFields.includes('receiver') && (
@@ -1017,7 +1053,6 @@ export default async function ReviewPage({
               </div>
             </div>
             
-            {/* Summary of fallbacks applied */}
             <div className="mt-3 p-3 bg-blue-50 border border-indigo-200 rounded-lg">
               <h4 className="text-sm font-semibold text-blue-900 mb-2">Fallback-värden (dokumentnivå):</h4>
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
@@ -1027,7 +1062,7 @@ export default async function ReviewPage({
                 </div>
                 <div>
                   <span className="text-blue-700 font-medium">Adress:</span>{' '}
-                  <span className="text-slate-900">{docAddress || <span className="text-slate-400">-</span>}</span>
+                  <span className="text-slate-900">{docAddress || '-'}</span>
                 </div>
                 <div>
                   <span className="text-blue-700 font-medium">Mottagare:</span>{' '}
@@ -1035,12 +1070,13 @@ export default async function ReviewPage({
                 </div>
                 <div>
                   <span className="text-blue-700 font-medium">Leverantör:</span>{' '}
-                  <span className="text-slate-900">{docSupplier || <span className="text-slate-400">-</span>}</span>
+                  <span className="text-slate-900">{docSupplier || '-'}</span>
                 </div>
               </div>
             </div>
           </div>
-        )}
+          );
+        })}
 
         {/* Audit Trail Section */}
         <div className="mt-8 border-t border-slate-200 pt-6">
