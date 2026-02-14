@@ -48,7 +48,7 @@ export default function HealthDashboard() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="min-h-screen bg-[#f8f9fa] flex items-center justify-center">
         <Loader2 className="w-8 h-8 animate-spin text-indigo-600" />
       </div>
     );
@@ -56,10 +56,10 @@ export default function HealthDashboard() {
 
   if (error || !health) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="min-h-screen bg-[#f8f9fa] flex items-center justify-center">
         <div className="text-center">
           <XCircle className="w-12 h-12 text-red-500 mx-auto mb-4" />
-          <p className="text-gray-700">{error || "Kunde inte ladda data"}</p>
+          <p className="text-slate-700">{error || "Kunde inte ladda data"}</p>
           <button
             onClick={fetchHealth}
             className="mt-4 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700"
@@ -72,31 +72,40 @@ export default function HealthDashboard() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <div className="bg-white border-b">
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-4">
-              <Link
-                href="/dashboard"
-                className="flex items-center gap-2 text-gray-600 hover:text-gray-900 transition-colors"
-              >
-                <ArrowLeft className="w-5 h-5" />
-                <span className="font-medium">Tillbaka</span>
+    <div className="min-h-screen bg-[#f8f9fa]">
+      {/* Premium Top Nav */}
+      <nav className="nav-premium">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex justify-between h-16">
+            <div className="flex items-center gap-8">
+              <Link href="/" className="flex items-center gap-2.5">
+                <div className="w-8 h-8 bg-indigo-600 rounded-lg flex items-center justify-center text-white font-bold shadow-sm">S</div>
+                <span className="font-bold text-xl tracking-tight text-slate-900">Solvix.AI</span>
               </Link>
-              <div className="h-6 w-px bg-gray-300" />
-              <div>
-                <h1 className="text-2xl font-semibold text-gray-900">Systemhälsa</h1>
-                <p className="mt-1 text-sm text-gray-500">
-                  Senast uppdaterad: {new Date(health.timestamp).toLocaleString("sv-SE")}
-                </p>
+              <div className="hidden md:flex h-full items-center gap-6">
+                <Link href="/dashboard" className="nav-link pt-0.5">Dokument</Link>
+                <Link href="/health" className="nav-link nav-link-active pt-0.5">Rapporter</Link>
+                <Link href="/settings" className="nav-link pt-0.5">Inställningar</Link>
               </div>
+            </div>
+          </div>
+        </div>
+      </nav>
+
+      {/* Header */}
+      <div className="border-b border-slate-200 bg-white">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-5">
+          <div className="flex items-center justify-between">
+            <div>
+              <h1 className="text-2xl font-bold text-slate-900 tracking-tight">Systemhälsa</h1>
+              <p className="mt-1 text-sm text-slate-500">
+                Senast uppdaterad: {new Date(health.timestamp).toLocaleString("sv-SE")}
+              </p>
             </div>
             <div className="flex items-center gap-3">
               <button
                 onClick={fetchHealth}
-                className="p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors"
+                className="p-2 text-slate-600 hover:text-slate-900 hover:bg-slate-100 rounded-lg transition-colors"
               >
                 <RefreshCw className="w-5 h-5" />
               </button>
@@ -114,30 +123,30 @@ export default function HealthDashboard() {
         </div>
       </div>
 
-      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Overview */}
         <div className="grid grid-cols-3 gap-4 mb-8">
-          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-            <div className="text-3xl font-bold text-gray-900">{health.latency}ms</div>
-            <div className="text-sm text-gray-600 mt-1">Svarstid</div>
+          <div className="bg-white rounded-lg shadow-sm border border-slate-200 p-6">
+            <div className="text-3xl font-bold text-slate-900">{health.latency}ms</div>
+            <div className="text-sm text-slate-600 mt-1">Svarstid</div>
           </div>
-          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-            <div className="text-3xl font-bold text-gray-900">v{health.version}</div>
-            <div className="text-sm text-gray-600 mt-1">Version</div>
+          <div className="bg-white rounded-lg shadow-sm border border-slate-200 p-6">
+            <div className="text-3xl font-bold text-slate-900">v{health.version}</div>
+            <div className="text-sm text-slate-600 mt-1">Version</div>
           </div>
-          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+          <div className="bg-white rounded-lg shadow-sm border border-slate-200 p-6">
             <div className="text-3xl font-bold text-green-600">
               {Object.values(health.services).filter(Boolean).length}/
               {Object.values(health.services).length}
             </div>
-            <div className="text-sm text-gray-600 mt-1">Tjänster aktiva</div>
+            <div className="text-sm text-slate-600 mt-1">Tjänster aktiva</div>
           </div>
         </div>
 
         {/* Core Checks */}
         <div className="mb-8">
-          <h2 className="text-lg font-semibold text-gray-900 mb-4">Systemkontroller</h2>
-          <div className="bg-white rounded-lg shadow-sm border border-gray-200 divide-y">
+          <h2 className="text-lg font-semibold text-slate-900 mb-4">Systemkontroller</h2>
+          <div className="bg-white rounded-lg shadow-sm border border-slate-200 divide-y">
             {/* Database */}
             <div className="flex items-center justify-between p-4">
               <div className="flex items-center gap-3">
@@ -147,8 +156,8 @@ export default function HealthDashboard() {
                   <XCircle className="w-5 h-5 text-red-500" />
                 )}
                 <div>
-                  <p className="font-medium text-gray-900">Databas (Supabase)</p>
-                  <p className="text-sm text-gray-500">
+                  <p className="font-medium text-slate-900">Databas (Supabase)</p>
+                  <p className="text-sm text-slate-500">
                     {health.checks.database.latency
                       ? `${health.checks.database.latency}ms svarstid`
                       : health.checks.database.message}
@@ -175,8 +184,8 @@ export default function HealthDashboard() {
                   <XCircle className="w-5 h-5 text-red-500" />
                 )}
                 <div>
-                  <p className="font-medium text-gray-900">Miljövariabler</p>
-                  <p className="text-sm text-gray-500">{health.checks.environment.message}</p>
+                  <p className="font-medium text-slate-900">Miljövariabler</p>
+                  <p className="text-sm text-slate-500">{health.checks.environment.message}</p>
                 </div>
               </div>
               <span
@@ -194,7 +203,7 @@ export default function HealthDashboard() {
 
         {/* External Services */}
         <div>
-          <h2 className="text-lg font-semibold text-gray-900 mb-4">Externa tjänster</h2>
+          <h2 className="text-lg font-semibold text-slate-900 mb-4">Externa tjänster</h2>
           <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
             <ServiceCard name="Stripe" active={health.services.stripe} />
             <ServiceCard name="Resend" active={health.services.resend} />
@@ -210,16 +219,16 @@ export default function HealthDashboard() {
 
 function ServiceCard({ name, active }: { name: string; active: boolean }) {
   return (
-    <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 text-center">
+    <div className="bg-white rounded-lg shadow-sm border border-slate-200 p-4 text-center">
       <div className="flex items-center justify-center mb-2">
         {active ? (
           <CheckCircle className="w-6 h-6 text-green-500" />
         ) : (
-          <XCircle className="w-6 h-6 text-gray-300" />
+          <XCircle className="w-6 h-6 text-slate-300" />
         )}
       </div>
-      <p className="text-sm font-medium text-gray-700">{name}</p>
-      <p className={`text-xs ${active ? "text-green-600" : "text-gray-400"}`}>
+      <p className="text-sm font-medium text-slate-700">{name}</p>
+      <p className={`text-xs ${active ? "text-green-600" : "text-slate-400"}`}>
         {active ? "Konfigurerad" : "Ej konfigurerad"}
       </p>
     </div>

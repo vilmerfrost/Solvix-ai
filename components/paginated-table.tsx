@@ -13,9 +13,17 @@ export function PaginatedTable({ lineItems, columns, highlightedRows }: Paginate
   const [displayCount, setDisplayCount] = useState(50);
   const ROWS_PER_PAGE = 50;
   
-  const visibleRows = lineItems.slice(0, displayCount);
-  const hasMore = displayCount < lineItems.length;
-  const remainingRows = lineItems.length - displayCount;
+  // Defensive guards - prevent crash if props are undefined
+  const items = Array.isArray(lineItems) ? lineItems : [];
+  const cols = Array.isArray(columns) ? columns : [];
+  
+  if (items.length === 0 || cols.length === 0) {
+    return <div className="p-4 text-sm text-slate-500">Ingen data att visa</div>;
+  }
+  
+  const visibleRows = items.slice(0, displayCount);
+  const hasMore = displayCount < items.length;
+  const remainingRows = items.length - displayCount;
   
   // Helper to get value from nested structure
   const getValue = (item: any, col: string) => {
@@ -56,29 +64,29 @@ export function PaginatedTable({ lineItems, columns, highlightedRows }: Paginate
       <div className="bg-white rounded-lg border overflow-hidden mb-4">
         <div className="overflow-x-auto">
           <table className="w-full">
-            <thead className="bg-gray-50 border-b sticky top-0">
+            <thead className="bg-slate-50 border-b sticky top-0">
               <tr>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-700 uppercase">#</th>
-                {columns.map(col => (
+                <th className="px-4 py-3 text-left text-xs font-medium text-slate-700 uppercase">#</th>
+                {cols.map(col => (
                   <th 
                     key={col}
-                    className="px-4 py-3 text-left text-xs font-medium text-gray-700 uppercase"
+                    className="px-4 py-3 text-left text-xs font-medium text-slate-700 uppercase"
                   >
                     {translateColumn(col)}
                   </th>
                 ))}
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-200">
+            <tbody className="divide-y divide-slate-200">
               {visibleRows.map((row, idx) => {
-                const value = getValue(row, columns[0]); // Check first column for structure
+                const value = getValue(row, cols[0]); // Check first column for structure
                 const isWrapped = value && typeof value === 'object' && 'value' in value;
                 const isHighlighted = highlightedRows?.includes(idx);
                 
                 return (
-                  <tr key={idx} className={`hover:bg-gray-50 ${isHighlighted ? "bg-yellow-50 border-l-4 border-l-yellow-400" : ""}`}>
-                    <td className="px-4 py-3 text-sm text-gray-500">{idx + 1}</td>
-                    {columns.map(col => {
+                  <tr key={idx} className={`hover:bg-slate-50 ${isHighlighted ? "bg-yellow-50 border-l-4 border-l-yellow-400" : ""}`}>
+                    <td className="px-4 py-3 text-sm text-slate-500">{idx + 1}</td>
+                    {cols.map(col => {
                       const field = row[col];
                       let displayValue: any;
                       let isMissing = false;
@@ -117,13 +125,13 @@ export function PaginatedTable({ lineItems, columns, highlightedRows }: Paginate
       {/* Show More Button */}
       {hasMore && (
         <div className="flex flex-col items-center gap-3 py-6">
-          <div className="text-sm text-gray-600">
-            Visar {displayCount} av {lineItems.length} rader
+          <div className="text-sm text-slate-600">
+            Visar {displayCount} av {items.length} rader
             {remainingRows > 0 && ` (${remainingRows} rader kvar)`}
           </div>
           
           <button
-            onClick={() => setDisplayCount(prev => Math.min(prev + ROWS_PER_PAGE, lineItems.length))}
+            onClick={() => setDisplayCount(prev => Math.min(prev + ROWS_PER_PAGE, items.length))}
             className="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-colors flex items-center gap-2"
           >
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -134,20 +142,20 @@ export function PaginatedTable({ lineItems, columns, highlightedRows }: Paginate
           
           {remainingRows > ROWS_PER_PAGE && (
             <button
-              onClick={() => setDisplayCount(lineItems.length)}
+              onClick={() => setDisplayCount(items.length)}
               className="text-sm text-blue-600 hover:text-blue-800 underline"
             >
-              Visa alla ({lineItems.length} rader)
+              Visa alla ({items.length} rader)
             </button>
           )}
         </div>
       )}
       
-      {!hasMore && lineItems.length > ROWS_PER_PAGE && (
+      {!hasMore && items.length > ROWS_PER_PAGE && (
         <div className="flex flex-col items-center gap-3 py-6">
           <div className="text-sm text-green-600 font-medium flex items-center gap-2">
             <Check className="w-4 h-4" />
-            Visar alla {lineItems.length} rader
+            Visar alla {items.length} rader
           </div>
           
           <button

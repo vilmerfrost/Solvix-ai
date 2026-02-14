@@ -175,7 +175,7 @@ export function ExtractionRunViewer({ runId, className }: ExtractionRunViewerPro
         <div className="p-3 bg-white border border-gray-200 rounded-lg">
           <p className="text-xs text-gray-500 mb-1">Modellväg</p>
           <div className="flex items-center gap-1 text-xs font-medium overflow-hidden whitespace-nowrap">
-            {run.modelPath.map((m, i) => (
+            {(Array.isArray(run.modelPath) ? run.modelPath : []).map((m, i) => (
               <span key={i} className="flex items-center">
                 {i > 0 && <ArrowRight className="w-3 h-3 mx-1 text-gray-400" />}
                 <span className="px-1.5 py-0.5 bg-gray-100 rounded text-gray-700">{m}</span>
@@ -204,7 +204,7 @@ export function ExtractionRunViewer({ runId, className }: ExtractionRunViewerPro
         <div className="absolute left-6 top-4 bottom-4 w-0.5 bg-gray-200" />
         
         <div className="space-y-4">
-          {run.steps.map((step, index) => {
+          {(Array.isArray(run.steps) ? run.steps : []).map((step, index) => {
             const isExpanded = expandedStep === step.id;
             const isCompleted = step.status === "completed";
             const isSkipped = step.status === "skipped";

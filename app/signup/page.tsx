@@ -126,23 +126,18 @@ export default function SignupPage() {
 
   if (success) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-indigo-50/50 via-stone-50 to-stone-100 flex items-center justify-center p-4">
+      <div className="min-h-screen bg-gradient-to-br from-indigo-50/30 via-slate-50 to-white flex items-center justify-center p-4">
         <div className="w-full max-w-md">
-          <div className="bg-white rounded-2xl shadow-xl shadow-stone-200/50 border border-stone-200 p-8 text-center">
-            <div className="inline-flex items-center justify-center w-16 h-16 bg-emerald-100 rounded-full mb-4">
+          <div className="bg-white rounded-xl shadow-[0_2px_8px_rgba(0,0,0,0.06)] border border-slate-200 p-8 text-center">
+            <div className="inline-flex items-center justify-center w-16 h-16 bg-emerald-50 rounded-full mb-4">
               <CheckCircle2 className="w-8 h-8 text-emerald-600" />
             </div>
-            <h2 className="text-xl font-semibold text-stone-900 mb-2">
-              Kolla din e-post!
-            </h2>
-            <p className="text-stone-500 mb-6">
-              Vi har skickat en bekräftelselänk till <strong className="text-stone-700">{email}</strong>. 
+            <h2 className="text-xl font-semibold text-slate-900 mb-2">Kolla din e-post!</h2>
+            <p className="text-slate-500 mb-6">
+              Vi har skickat en bekräftelselänk till <strong className="text-slate-700">{email}</strong>. 
               Klicka på länken för att aktivera ditt konto.
             </p>
-            <Link
-              href="/login"
-              className="inline-block px-6 py-3 bg-indigo-600 text-white rounded-xl font-semibold hover:bg-indigo-700 transition-colors shadow-sm"
-            >
+            <Link href="/login" className="inline-block px-6 py-3 bg-indigo-600 text-white rounded-lg font-semibold hover:bg-indigo-700 transition-colors shadow-sm">
               Tillbaka till inloggning
             </Link>
           </div>
@@ -152,195 +147,114 @@ export default function SignupPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-indigo-50/50 via-stone-50 to-stone-100 flex items-center justify-center p-4">
-      <div className="w-full max-w-md">
-        {/* Logo/Brand */}
-        <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-14 h-14 bg-indigo-600 rounded-xl mb-4 shadow-lg shadow-indigo-500/20">
-            <span className="text-xl font-bold text-white">V</span>
-          </div>
-          <h1 className="text-2xl font-bold text-stone-900">Solvix.ai</h1>
-          <p className="text-stone-500 mt-1">Skapa ditt konto</p>
+    <div className="flex flex-col md:flex-row h-screen overflow-hidden font-[family-name:var(--font-inter)]">
+      {/* Left: Brand Panel */}
+      <div className="hidden md:flex md:w-1/2 relative flex-col justify-between p-12 bg-gradient-to-br from-indigo-50 via-white to-slate-50 overflow-hidden">
+        <div className="relative z-10 flex items-center gap-2.5">
+          <div className="w-9 h-9 bg-indigo-600 rounded-lg flex items-center justify-center text-white font-bold shadow-sm">S</div>
+          <span className="font-bold text-xl tracking-tight text-slate-900">Solvix.AI</span>
         </div>
+        <div className="relative flex-1 flex items-center justify-center">
+          <div className="absolute w-64 h-64 bg-indigo-100/50 rounded-full blur-3xl -top-20 -left-20" />
+          <div className="absolute w-96 h-96 bg-indigo-50/80 rounded-full blur-3xl bottom-0 right-0" />
+          <div className="relative z-10 text-center max-w-sm">
+            <div className="mb-8 flex justify-center">
+              <div className="bg-white/60 backdrop-blur-sm p-6 rounded-xl shadow-lg border border-white/40 transform -rotate-3">
+                <User className="w-12 h-12 text-indigo-500 mb-3" />
+                <div className="h-2 w-28 bg-indigo-200/50 rounded mb-2" />
+                <div className="h-2 w-20 bg-indigo-100/50 rounded" />
+              </div>
+            </div>
+            <h2 className="text-2xl font-bold text-slate-900 mb-3">Effektivisera din dokumenthantering med AI</h2>
+            <p className="text-slate-500 text-sm">Automatisera dataextraktion och arbetsflöden med nästa generations språkmodeller.</p>
+          </div>
+        </div>
+        <div className="relative z-10">
+          <p className="text-[11px] font-medium text-slate-400 uppercase tracking-widest mb-4">Betrodd av ledande företag</p>
+          <div className="flex gap-6 opacity-30">
+            {[1,2,3,4].map(i => <div key={i} className="w-16 h-6 bg-slate-300 rounded" />)}
+          </div>
+        </div>
+      </div>
 
-        {/* Signup Card */}
-        <div className="bg-white rounded-2xl shadow-xl shadow-stone-200/50 border border-stone-200 p-8">
-          <h2 className="text-xl font-semibold text-stone-900 mb-6 text-center">
-            Registrera dig
-          </h2>
+      {/* Right: Signup Form */}
+      <div className="w-full md:w-1/2 flex items-center justify-center p-6 sm:p-12 bg-white">
+        <div className="w-full max-w-md space-y-6">
+          <div className="md:hidden flex items-center gap-2 mb-4">
+            <div className="w-8 h-8 bg-indigo-600 rounded-lg flex items-center justify-center text-white font-bold">S</div>
+            <span className="text-xl font-bold tracking-tight text-slate-900">Solvix.AI</span>
+          </div>
 
-          {/* Error Message */}
+          <div>
+            <h1 className="text-2xl font-bold text-slate-900 tracking-tight">Skapa ditt konto</h1>
+            <p className="text-slate-500 mt-1">Börja din resa mot automatiserad dokumenthantering.</p>
+          </div>
+
           {error && (
-            <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-xl flex items-start gap-3">
+            <div className="p-4 bg-red-50 border border-red-200 rounded-lg flex items-start gap-3">
               <AlertCircle className="w-5 h-5 text-red-600 flex-shrink-0 mt-0.5" />
               <p className="text-sm text-red-700">{error}</p>
             </div>
           )}
 
-          {/* OAuth Buttons */}
-          <div className="space-y-3 mb-6">
-            <button
-              onClick={() => handleOAuthSignup("google")}
-              disabled={!!socialLoading}
-              type="button"
-              className="w-full flex items-center justify-center gap-3 px-4 py-3 border border-stone-200 rounded-xl bg-white hover:bg-stone-50 hover:border-stone-300 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              {socialLoading === "google" ? (
-                <Loader2 className="w-5 h-5 animate-spin text-stone-500" />
-              ) : (
-                <GoogleIcon />
-              )}
-              <span className="font-medium text-stone-700">
-                Fortsätt med Google
-              </span>
+          {/* OAuth */}
+          <div className="grid grid-cols-2 gap-3">
+            <button onClick={() => handleOAuthSignup("google")} disabled={!!socialLoading} type="button"
+              className="flex items-center justify-center gap-2.5 px-4 py-2.5 border border-slate-200 rounded-lg hover:bg-slate-50 transition-colors disabled:opacity-50 text-sm font-medium text-slate-700">
+              {socialLoading === "google" ? <Loader2 className="w-4 h-4 animate-spin" /> : <GoogleIcon />}
+              Google
             </button>
-
-            <button
-              onClick={() => handleOAuthSignup("azure")}
-              disabled={!!socialLoading}
-              type="button"
-              className="w-full flex items-center justify-center gap-3 px-4 py-3 border border-stone-200 rounded-xl bg-white hover:bg-stone-50 hover:border-stone-300 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              {socialLoading === "azure" ? (
-                <Loader2 className="w-5 h-5 animate-spin text-stone-500" />
-              ) : (
-                <MicrosoftIcon />
-              )}
-              <span className="font-medium text-stone-700">
-                Fortsätt med Microsoft
-              </span>
+            <button onClick={() => handleOAuthSignup("azure")} disabled={!!socialLoading} type="button"
+              className="flex items-center justify-center gap-2.5 px-4 py-2.5 border border-slate-200 rounded-lg hover:bg-slate-50 transition-colors disabled:opacity-50 text-sm font-medium text-slate-700">
+              {socialLoading === "azure" ? <Loader2 className="w-4 h-4 animate-spin" /> : <MicrosoftIcon />}
+              Microsoft
             </button>
           </div>
 
-          {/* Divider */}
-          <div className="relative mb-6">
-            <div className="absolute inset-0 flex items-center">
-              <div className="w-full border-t border-stone-200" />
-            </div>
-            <div className="relative flex justify-center text-sm">
-              <span className="px-4 bg-white text-stone-400">eller</span>
-            </div>
+          <div className="relative">
+            <div className="absolute inset-0 flex items-center"><div className="w-full border-t border-slate-200" /></div>
+            <div className="relative flex justify-center text-xs"><span className="px-3 bg-white text-slate-400 uppercase tracking-widest font-medium">eller</span></div>
           </div>
 
-          {/* Signup Form */}
           <form onSubmit={handleSignup} className="space-y-4">
             <div>
-              <label className="block text-sm font-medium text-stone-700 mb-2">
-                Fullständigt namn
-              </label>
-              <div className="relative">
-                <User className="absolute left-3.5 top-1/2 -translate-y-1/2 w-5 h-5 text-stone-400" />
-                <input
-                  type="text"
-                  value={fullName}
-                  onChange={(e) => setFullName(e.target.value)}
-                  placeholder="Anna Andersson"
-                  required
-                  className="w-full pl-11 pr-4 py-3 border border-stone-200 rounded-xl bg-white text-stone-900 placeholder:text-stone-400 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition-all"
-                />
-              </div>
+              <label className="block text-sm font-medium text-slate-700 mb-1.5">Namn</label>
+              <input type="text" value={fullName} onChange={(e) => setFullName(e.target.value)} placeholder="Ditt fullständiga namn" required
+                className="w-full px-4 py-3 border border-slate-200 rounded-lg text-slate-900 placeholder:text-slate-400 focus:ring-2 focus:ring-indigo-600/20 focus:border-indigo-600 outline-none transition-all" />
             </div>
-
             <div>
-              <label className="block text-sm font-medium text-stone-700 mb-2">
-                E-postadress
-              </label>
-              <div className="relative">
-                <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 w-5 h-5 text-stone-400" />
-                <input
-                  type="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  placeholder="namn@foretag.se"
-                  required
-                  className="w-full pl-11 pr-4 py-3 border border-stone-200 rounded-xl bg-white text-stone-900 placeholder:text-stone-400 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition-all"
-                />
-              </div>
+              <label className="block text-sm font-medium text-slate-700 mb-1.5">E-post</label>
+              <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="namn@företag.se" required
+                className="w-full px-4 py-3 border border-slate-200 rounded-lg text-slate-900 placeholder:text-slate-400 focus:ring-2 focus:ring-indigo-600/20 focus:border-indigo-600 outline-none transition-all" />
             </div>
-
             <div>
-              <label className="block text-sm font-medium text-stone-700 mb-2">
-                Lösenord
-              </label>
-              <div className="relative">
-                <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 w-5 h-5 text-stone-400" />
-                <input
-                  type="password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  placeholder="Minst 8 tecken"
-                  required
-                  minLength={8}
-                  className="w-full pl-11 pr-4 py-3 border border-stone-200 rounded-xl bg-white text-stone-900 placeholder:text-stone-400 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition-all"
-                />
-              </div>
+              <label className="block text-sm font-medium text-slate-700 mb-1.5">Lösenord</label>
+              <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="Minst 8 tecken" required minLength={8}
+                className="w-full px-4 py-3 border border-slate-200 rounded-lg text-slate-900 placeholder:text-slate-400 focus:ring-2 focus:ring-indigo-600/20 focus:border-indigo-600 outline-none transition-all" />
             </div>
-
             <div>
-              <label className="block text-sm font-medium text-stone-700 mb-2">
-                Bekräfta lösenord
-              </label>
-              <div className="relative">
-                <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 w-5 h-5 text-stone-400" />
-                <input
-                  type="password"
-                  value={confirmPassword}
-                  onChange={(e) => setConfirmPassword(e.target.value)}
-                  placeholder="Upprepa lösenordet"
-                  required
-                  className="w-full pl-11 pr-4 py-3 border border-stone-200 rounded-xl bg-white text-stone-900 placeholder:text-stone-400 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition-all"
-                />
-              </div>
+              <label className="block text-sm font-medium text-slate-700 mb-1.5">Bekräfta lösenord</label>
+              <input type="password" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} placeholder="Upprepa ditt lösenord" required
+                className="w-full px-4 py-3 border border-slate-200 rounded-lg text-slate-900 placeholder:text-slate-400 focus:ring-2 focus:ring-indigo-600/20 focus:border-indigo-600 outline-none transition-all" />
             </div>
 
-            {/* Terms Checkbox */}
-            <div className="flex items-start gap-3">
-              <input
-                type="checkbox"
-                id="terms"
-                checked={acceptTerms}
-                onChange={(e) => setAcceptTerms(e.target.checked)}
-                className="mt-1 w-4 h-4 text-indigo-600 border-stone-300 rounded focus:ring-indigo-500"
-              />
-              <label htmlFor="terms" className="text-sm text-stone-500">
-                Jag godkänner{" "}
-                <Link href="/terms" className="text-indigo-600 hover:underline">
-                  användarvillkoren
-                </Link>{" "}
-                och{" "}
-                <Link href="/privacy" className="text-indigo-600 hover:underline">
-                  integritetspolicyn
-                </Link>
-                , inklusive behandling av personuppgifter enligt GDPR.
+            <div className="flex items-start gap-3 pt-1">
+              <input type="checkbox" id="terms" checked={acceptTerms} onChange={(e) => setAcceptTerms(e.target.checked)}
+                className="mt-1 w-4 h-4 text-indigo-600 border-slate-300 rounded focus:ring-indigo-500" />
+              <label htmlFor="terms" className="text-sm text-slate-500">
+                Jag godkänner <Link href="/terms" className="text-indigo-600 hover:underline">användarvillkoren</Link> och <Link href="/privacy" className="text-indigo-600 hover:underline">integritetspolicyn</Link>.
               </label>
             </div>
 
-            <button
-              type="submit"
-              disabled={loading}
-              className="w-full bg-indigo-600 text-white py-3 rounded-xl font-semibold hover:bg-indigo-700 transition-colors shadow-sm disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
-            >
-              {loading ? (
-                <>
-                  <Loader2 className="w-5 h-5 animate-spin" />
-                  Skapar konto...
-                </>
-              ) : (
-                "Skapa konto"
-              )}
+            <button type="submit" disabled={loading}
+              className="w-full bg-indigo-600 text-white py-3 rounded-lg font-semibold hover:bg-indigo-700 transition-colors shadow-sm shadow-indigo-600/20 disabled:opacity-50 flex items-center justify-center gap-2">
+              {loading ? (<><Loader2 className="w-5 h-5 animate-spin" /> Skapar konto...</>) : "Skapa konto"}
             </button>
           </form>
 
-          {/* Login Link */}
-          <div className="mt-6 text-center">
-            <p className="text-sm text-stone-500">
-              Har du redan ett konto?{" "}
-              <Link
-                href="/login"
-                className="font-semibold text-indigo-600 hover:text-indigo-700"
-              >
-                Logga in
-              </Link>
+          <div className="text-center">
+            <p className="text-sm text-slate-500">
+              Redan har ett konto? <Link href="/login" className="font-semibold text-indigo-600 hover:underline">Logga in</Link>
             </p>
           </div>
         </div>

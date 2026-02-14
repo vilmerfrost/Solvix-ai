@@ -71,6 +71,7 @@ export function ReviewForm({
   // Normalize lineItems to ensure consistent format
   // IMPORTANT: Preserve ALL original fields, not just the ones we display in the form
   const normalizeLineItems = (items: any[]): any[] => {
+    if (!Array.isArray(items)) return [];
     return items.map(item => {
       // Start with ALL original fields to preserve data like wasteCode, referensnummer, fordon, etc.
       const normalizedItem: any = {};

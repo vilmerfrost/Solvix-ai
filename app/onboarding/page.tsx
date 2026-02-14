@@ -59,42 +59,42 @@ export default function OnboardingPage() {
   return (
     <div className="min-h-screen bg-white flex flex-col">
       {/* Header with Logo */}
-      <header className="flex items-center justify-between px-8 py-6 border-b border-slate-200">
-        <div className="flex items-center gap-2">
-          <div className="w-8 h-8 bg-[#4A90E2] rounded-lg flex items-center justify-center">
-            <span className="text-white font-bold text-sm">V</span>
+      <header className="nav-premium">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex items-center justify-between h-16">
+          <div className="flex items-center gap-2.5">
+            <div className="w-8 h-8 bg-indigo-600 rounded-lg flex items-center justify-center">
+              <span className="text-white font-bold text-sm">S</span>
+            </div>
+            <span className="text-xl font-bold tracking-tight text-slate-900">Solvix.AI</span>
           </div>
-          <span className="text-xl font-bold text-slate-900">Solvix.ai</span>
+          <button className="w-9 h-9 rounded-lg border border-slate-200 flex items-center justify-center text-slate-400 hover:text-slate-600 hover:border-slate-300 transition-all text-sm">
+            ?
+          </button>
         </div>
-        <button className="w-10 h-10 rounded-xl border border-slate-200 flex items-center justify-center text-slate-400 hover:text-slate-600 hover:border-slate-300 transition-all">
-          ?
-        </button>
       </header>
 
       {/* Progress Bar */}
-      <div className="px-8 py-6 border-b border-slate-100">
+      <div className="px-8 py-5 border-b border-slate-100 bg-white">
         <div className="max-w-[500px] mx-auto">
           <div className="flex justify-between items-center mb-2">
-            <span className="text-xs font-semibold text-[#4A90E2] uppercase tracking-wider">
-              Steg 1 av 1
-            </span>
+            <span className="text-xs font-semibold text-indigo-600 uppercase tracking-wider">Steg 1 av 1</span>
             <span className="text-xs font-medium text-slate-500">100% slutfört</span>
           </div>
-          <div className="h-2 w-full bg-slate-200 rounded-full overflow-hidden">
-            <div className="h-full bg-[#4A90E2] rounded-full transition-all duration-500 w-full" />
+          <div className="h-1.5 w-full bg-slate-100 rounded-full overflow-hidden">
+            <div className="h-full bg-indigo-600 rounded-full transition-all duration-500 w-full" />
           </div>
         </div>
       </div>
 
       {/* Main Content */}
-      <main className="flex-1 px-8 py-12 flex flex-col items-center">
+      <main className="flex-1 px-8 py-12 flex flex-col items-center bg-[#f8f9fa]">
         {/* Header */}
         <div className="max-w-[960px] w-full text-center mb-12">
-          <h1 className="text-4xl font-bold text-slate-900 mb-3 tracking-tight">
-            Välkommen till Solvix.ai
+          <h1 className="text-3xl font-bold text-slate-900 mb-3 tracking-tight">
+            Välkommen till Solvix.AI
           </h1>
-          <p className="text-lg text-slate-500">
-            Vi anpassar verktyget efter dina behov
+          <p className="text-base text-slate-500">
+            Välj din bransch för att anpassa din upplevelse
           </p>
         </div>
 
@@ -113,15 +113,15 @@ export default function OnboardingPage() {
         {/* Feature Callouts */}
         <div className="flex flex-wrap justify-center gap-8 mb-12 w-full max-w-[960px]">
           <div className="flex items-center gap-2 text-slate-600">
-            <Zap className="w-5 h-5 text-[#4A90E2]" />
+            <Zap className="w-5 h-5 text-indigo-600" />
             <span className="text-sm font-medium">Ingen setup</span>
           </div>
           <div className="flex items-center gap-2 text-slate-600">
-            <CheckCircle className="w-5 h-5 text-[#4A90E2]" />
+            <CheckCircle className="w-5 h-5 text-indigo-600" />
             <span className="text-sm font-medium">97% accuracy</span>
           </div>
           <div className="flex items-center gap-2 text-slate-600">
-            <Shield className="w-5 h-5 text-[#4A90E2]" />
+            <Shield className="w-5 h-5 text-indigo-600" />
             <span className="text-sm font-medium">Krypterad data</span>
           </div>
         </div>
@@ -131,7 +131,7 @@ export default function OnboardingPage() {
           <button
             onClick={handleSubmit}
             disabled={!selectedIndustry || saving}
-            className="w-full py-4 bg-[#4A90E2] hover:bg-[#4A90E2]/90 text-white font-bold rounded-xl shadow-lg shadow-[#4A90E2]/20 transition-all flex items-center justify-center gap-2 group disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-[#4A90E2]"
+            className="w-full py-3.5 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold rounded-lg shadow-sm shadow-indigo-600/20 transition-all flex items-center justify-center gap-2 group disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-indigo-600"
           >
             {saving ? (
               <>
@@ -152,16 +152,12 @@ export default function OnboardingPage() {
       </main>
 
       {/* Footer */}
-      <footer className="py-10 px-8 flex justify-center border-t border-slate-100">
+      <footer className="py-8 px-8 flex justify-center border-t border-slate-100 bg-white">
         <div className="max-w-[960px] w-full flex justify-between items-center text-slate-400 text-sm">
-          <p>© 2024 Solvix.ai - Scandinavian Document Intelligence</p>
+          <p>© 2026 Solvix.AI - Scandinavian Document Intelligence</p>
           <div className="flex gap-4">
-            <a href="/privacy" className="hover:text-[#4A90E2] transition-colors">
-              Integritet
-            </a>
-            <a href="mailto:kontakt@solvix.ai" className="hover:text-[#4A90E2] transition-colors">
-              Support
-            </a>
+            <a href="/privacy" className="hover:text-indigo-600 transition-colors">Integritet</a>
+            <a href="mailto:kontakt@solvix.ai" className="hover:text-indigo-600 transition-colors">Support</a>
           </div>
         </div>
       </footer>
@@ -184,13 +180,13 @@ function IndustryCard({
       onClick={onSelect}
       className={`group relative flex flex-col p-6 rounded-xl text-left transition-all ${
         selected
-          ? "bg-[#4A90E2]/10 border-2 border-[#4A90E2] shadow-sm"
-          : "bg-white border border-slate-200 hover:border-[#4A90E2]/50 hover:shadow-md"
+          ? "bg-indigo-50 border-2 border-indigo-500 shadow-sm"
+          : "bg-white border border-slate-200 hover:border-indigo-300 hover:shadow-md"
       }`}
     >
       {/* Checkmark */}
       {selected && (
-        <div className="absolute top-4 right-4 bg-[#4A90E2] text-white rounded-full p-0.5">
+        <div className="absolute top-4 right-4 bg-indigo-600 text-white rounded-full p-0.5">
           <Check className="w-4 h-4" strokeWidth={3} />
         </div>
       )}
@@ -215,7 +211,7 @@ function IndustryCard({
             key={type}
             className={`px-2 py-1 text-[10px] font-bold uppercase tracking-wide rounded border ${
               selected
-                ? "bg-white text-[#4A90E2] border-[#4A90E2]/20"
+                ? "bg-white text-indigo-600 border-indigo-200"
                 : "bg-slate-50 text-slate-500 border-slate-200"
             }`}
           >

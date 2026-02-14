@@ -23,19 +23,38 @@ export default async function ArchivePage() {
     .order("created_at", { ascending: false });
 
   return (
-    <main className="min-h-screen bg-slate-100 p-8">
-      <div className="max-w-5xl mx-auto">
-        <header className="mb-8 flex items-center gap-4">
-          <Link href="/" className="p-2 bg-white rounded-full hover:bg-slate-200 transition">
-             <ArrowLeft className="w-5 h-5 text-slate-600" />
+    <div className="min-h-screen bg-[#f8f9fa]">
+      {/* Premium Top Nav */}
+      <nav className="nav-premium">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex justify-between h-16">
+            <div className="flex items-center gap-8">
+              <Link href="/" className="flex items-center gap-2.5">
+                <div className="w-8 h-8 bg-indigo-600 rounded-lg flex items-center justify-center text-white font-bold shadow-sm">S</div>
+                <span className="font-bold text-xl tracking-tight text-slate-900">Solvix.AI</span>
+              </Link>
+              <div className="hidden md:flex h-full items-center gap-6">
+                <Link href="/dashboard" className="nav-link pt-0.5">Dokument</Link>
+                <Link href="/health" className="nav-link pt-0.5">Rapporter</Link>
+                <Link href="/settings" className="nav-link pt-0.5">Inställningar</Link>
+              </div>
+            </div>
+          </div>
+        </div>
+      </nav>
+
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <header className="mb-6 flex items-center gap-4">
+          <Link href="/dashboard" className="p-2 bg-white rounded-lg border border-slate-200 hover:bg-slate-50 transition">
+            <ArrowLeft className="w-4 h-4 text-slate-600" />
           </Link>
           <div>
-            <h1 className="text-3xl font-bold text-slate-900">Arkiv</h1>
-            <p className="text-slate-500">Gamla dokument och historik</p>
+            <h1 className="text-2xl font-bold text-slate-900 tracking-tight">Arkiv</h1>
+            <p className="text-sm text-slate-500">Gamla dokument och historik</p>
           </div>
         </header>
 
-        <section className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+        <section className="bg-white rounded-xl shadow-[0_1px_3px_rgba(0,0,0,0.05)] border border-slate-200 overflow-hidden">
           <div className="overflow-x-auto">
             <table className="w-full text-left text-sm text-slate-600">
               <thead className="bg-slate-50 text-slate-700 uppercase font-medium text-xs">
@@ -70,7 +89,7 @@ export default async function ArchivePage() {
             </table>
           </div>
         </section>
-      </div>
-    </main>
+      </main>
+    </div>
   );
 }

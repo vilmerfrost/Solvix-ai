@@ -581,24 +581,24 @@ export default async function ReviewPage({
 
         {/* DOCUMENT STATS */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-          <div className="bg-white rounded-lg border border-stone-200 p-4">
-            <div className="text-xs text-stone-600 mb-1 uppercase tracking-wide">Rader</div>
-            <div className="text-2xl font-bold text-stone-900">{lineItems.length}</div>
+          <div className="bg-white rounded-lg border border-slate-200 p-4">
+            <div className="text-xs text-slate-600 mb-1 uppercase tracking-wide">Rader</div>
+            <div className="text-2xl font-bold text-slate-900">{lineItems.length}</div>
           </div>
           
-          <div className="bg-white rounded-lg border border-stone-200 p-4">
-            <div className="text-xs text-stone-600 mb-1 uppercase tracking-wide">Adresser</div>
-            <div className="text-2xl font-bold text-stone-900">{uniqueAddresses || '—'}</div>
+          <div className="bg-white rounded-lg border border-slate-200 p-4">
+            <div className="text-xs text-slate-600 mb-1 uppercase tracking-wide">Adresser</div>
+            <div className="text-2xl font-bold text-slate-900">{uniqueAddresses || '—'}</div>
           </div>
           
-          <div className="bg-white rounded-lg border border-stone-200 p-4">
-            <div className="text-xs text-stone-600 mb-1 uppercase tracking-wide">Mottagare</div>
-            <div className="text-2xl font-bold text-stone-900">{uniqueReceivers || '—'}</div>
+          <div className="bg-white rounded-lg border border-slate-200 p-4">
+            <div className="text-xs text-slate-600 mb-1 uppercase tracking-wide">Mottagare</div>
+            <div className="text-2xl font-bold text-slate-900">{uniqueReceivers || '—'}</div>
           </div>
           
-          <div className="bg-white rounded-lg border border-stone-200 p-4">
-            <div className="text-xs text-stone-600 mb-1 uppercase tracking-wide">Material</div>
-            <div className="text-2xl font-bold text-stone-900">{uniqueMaterials || '—'}</div>
+          <div className="bg-white rounded-lg border border-slate-200 p-4">
+            <div className="text-xs text-slate-600 mb-1 uppercase tracking-wide">Material</div>
+            <div className="text-2xl font-bold text-slate-900">{uniqueMaterials || '—'}</div>
           </div>
         </div>
 
@@ -647,7 +647,7 @@ export default async function ReviewPage({
               
               {/* Show which optional columns were NOT found */}
               {["wasteCode", "costSEK", "co2Saved", "notes"].filter(f => !optional.includes(f) && !optional.includes("cost") && !optional.includes("co2")).length > 0 && (
-                <div className="mt-3 text-xs text-stone-600">
+                <div className="mt-3 text-xs text-slate-600">
                   Saknas i detta dokument: {
                     ["wasteCode", "costSEK", "co2Saved", "notes"]
                       .filter(f => !optional.includes(f) && !optional.includes("cost") && !optional.includes("co2"))
@@ -672,14 +672,14 @@ export default async function ReviewPage({
         </div>
 
         {/* PRIMARY KEY INFO */}
-        <div className="mb-6 p-4 bg-stone-50 border border-stone-200 rounded-lg">
-          <h3 className="font-semibold text-stone-900 mb-2">
+        <div className="mb-6 p-4 bg-slate-50 border border-slate-200 rounded-lg">
+          <h3 className="font-semibold text-slate-900 mb-2">
             Primärnyckel
           </h3>
-          <p className="text-sm text-stone-700 mb-3">
+          <p className="text-sm text-slate-700 mb-3">
             Varje unik kombination av <strong>Adress + Mottagare + Material + Datum</strong> är en rad.
           </p>
-          <div className="text-xs text-stone-600 space-y-1">
+          <div className="text-xs text-slate-600 space-y-1">
             <div>• Samma material till olika mottagare = olika rader</div>
             <div>• Samma adress med olika material = olika rader</div>
             <div>• Samma allt = EN rad (duplicerad primärnyckel - VARNING!)</div>
@@ -693,7 +693,7 @@ export default async function ReviewPage({
 
         {/* Left: Document Preview */}
         <div className="mb-6">
-          <div className="bg-white rounded-lg border border-stone-200 p-6">
+          <div className="bg-white rounded-lg border border-slate-200 p-6">
             <h2 className="text-lg font-semibold mb-4">Förhandsvisning</h2>
             {previewUrl ? (
               isExcel ? (
@@ -702,15 +702,15 @@ export default async function ReviewPage({
                 <object
                   data={previewUrl}
                   type="application/pdf"
-                  className="w-full h-full min-h-[600px] rounded border border-stone-200"
+                  className="w-full h-full min-h-[600px] rounded border border-slate-200"
                   title="PDF Viewer"
                 >
                   <embed
                     src={previewUrl}
                     type="application/pdf"
-                    className="w-full h-full min-h-[600px] rounded border border-stone-200"
+                    className="w-full h-full min-h-[600px] rounded border border-slate-200"
                   />
-                  <div className="text-center py-8 text-stone-500">
+                  <div className="text-center py-8 text-slate-500">
                     <p>Din webbläsare stödjer inte PDF-förhandsvisning.</p>
                     <a
                       href={previewUrl}
@@ -724,7 +724,7 @@ export default async function ReviewPage({
                 </object>
               )
             ) : (
-              <div className="text-center py-8 text-stone-500">
+              <div className="text-center py-8 text-slate-500">
                 Förhandsvisning inte tillgänglig
               </div>
             )}
@@ -733,37 +733,37 @@ export default async function ReviewPage({
 
         {/* TOTALS */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
-          <div className="bg-white rounded-lg border border-stone-200 p-4">
-            <div className="text-sm text-stone-600 mb-1">Total vikt</div>
-            <div className="text-2xl font-bold text-stone-900">
+          <div className="bg-white rounded-lg border border-slate-200 p-4">
+            <div className="text-sm text-slate-600 mb-1">Total vikt</div>
+            <div className="text-2xl font-bold text-slate-900">
               {(totalWeightKg / 1000).toFixed(2)} ton
             </div>
-            <div className="text-xs text-stone-500 mt-1">
+            <div className="text-xs text-slate-500 mt-1">
               {totalWeightKg.toFixed(2)} kg
             </div>
           </div>
 
           {hasCost && (
-            <div className="bg-white rounded-lg border border-stone-200 p-4">
-              <div className="text-sm text-stone-600 mb-1">Total kostnad</div>
-              <div className="text-2xl font-bold text-stone-900">
+            <div className="bg-white rounded-lg border border-slate-200 p-4">
+              <div className="text-sm text-slate-600 mb-1">Total kostnad</div>
+              <div className="text-2xl font-bold text-slate-900">
                 {totalCost.toLocaleString('sv-SE')} SEK
               </div>
             </div>
           )}
 
           {hasCo2 && (
-            <div className="bg-white rounded-lg border border-stone-200 p-4">
-              <div className="text-sm text-stone-600 mb-1">Total CO2</div>
-              <div className="text-2xl font-bold text-stone-900">
+            <div className="bg-white rounded-lg border border-slate-200 p-4">
+              <div className="text-sm text-slate-600 mb-1">Total CO2</div>
+              <div className="text-2xl font-bold text-slate-900">
                 {totalCo2.toFixed(2)} kg
               </div>
             </div>
           )}
 
           {!hasCo2 && (
-            <div className="bg-white rounded-lg border border-stone-200 p-4">
-              <div className="text-sm text-stone-600 mb-1">Fullständighet</div>
+            <div className="bg-white rounded-lg border border-slate-200 p-4">
+              <div className="text-sm text-slate-600 mb-1">Fullständighet</div>
               <div className={`text-2xl font-bold ${
                 validation.completeness >= 95 ? 'text-emerald-600' :
                 validation.completeness >= 80 ? 'text-yellow-600' :
@@ -801,12 +801,12 @@ export default async function ReviewPage({
         {lineItems.length > 0 && (
           <div className="mb-6">
             <div className="flex items-center gap-3 mb-4">
-              <h2 className="text-xl font-semibold text-stone-900">Extraherad Data (Rådata från AI)</h2>
-              <span className="px-3 py-1 bg-stone-100 text-stone-600 text-sm rounded-full">
+              <h2 className="text-xl font-semibold text-slate-900">Extraherad Data (Rådata från AI)</h2>
+              <span className="px-3 py-1 bg-slate-100 text-slate-600 text-sm rounded-full">
                 {lineItems.length} rader extraherade
               </span>
             </div>
-            <p className="text-sm text-stone-500 mb-4">
+            <p className="text-sm text-slate-500 mb-4">
               Rå data som AI:n extraherade. Fält med "SAKNAS" fylls i med fallback-värden vid export.
             </p>
             <PaginatedTable 
@@ -819,7 +819,7 @@ export default async function ReviewPage({
 
         {/* Invoice-specific fields — shown when document type is invoice */}
         {extractedData?.documentType === 'invoice' && (
-          <div className="mb-6 p-6 bg-white rounded-lg border border-stone-200 space-y-6">
+          <div className="mb-6 p-6 bg-white rounded-lg border border-slate-200 space-y-6">
             <h3 className="text-lg font-semibold text-slate-900 flex items-center gap-2">
               <FileText className="w-5 h-5" />
               Fakturadetaljer
@@ -959,14 +959,14 @@ export default async function ReviewPage({
         {exportPreviewRows.length > 0 && (
           <div className="mb-6">
             <div className="flex items-center gap-3 mb-4">
-              <h2 className="text-xl font-semibold text-stone-900">
+              <h2 className="text-xl font-semibold text-slate-900">
                 Förhandsgranskning av Export
               </h2>
               <span className="px-3 py-1 bg-green-100 text-green-800 text-sm rounded-full font-medium">
                 {exportPreviewRows.length} rader → Excel
               </span>
             </div>
-            <p className="text-sm text-stone-600 mb-4">
+            <p className="text-sm text-slate-600 mb-4">
               Detta är exakt vad som kommer att exporteras till Excel-filen i Azure. 
               Fallback-värden från dokumentnivå har applicerats där data saknas.
             </p>
@@ -998,9 +998,9 @@ export default async function ReviewPage({
                   <tbody className="divide-y divide-gray-200">
                     {exportPreviewRows.map((row: any) => (
                       <tr key={row.rowNum} className="hover:bg-emerald-50">
-                        <td className="px-4 py-3 text-sm text-stone-500">{row.rowNum}</td>
+                        <td className="px-4 py-3 text-sm text-slate-500">{row.rowNum}</td>
                         <td className="px-4 py-3 text-sm font-medium">{row.date}</td>
-                        <td className="px-4 py-3 text-sm">{row.location || <span className="text-stone-400">-</span>}</td>
+                        <td className="px-4 py-3 text-sm">{row.location || <span className="text-slate-400">-</span>}</td>
                         <td className="px-4 py-3 text-sm">{row.material}</td>
                         <td className="px-4 py-3 text-sm font-mono">
                           {row.weightKg.toLocaleString('sv-SE', { minimumFractionDigits: 0, maximumFractionDigits: 2 })}
@@ -1014,7 +1014,7 @@ export default async function ReviewPage({
                             {row.isHazardous ? (
                               <span className="px-2 py-1 bg-red-100 text-red-800 rounded text-xs font-medium">Ja</span>
                             ) : (
-                              <span className="text-stone-500">Nej</span>
+                              <span className="text-slate-500">Nej</span>
                             )}
                           </td>
                         )}
@@ -1031,19 +1031,19 @@ export default async function ReviewPage({
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
                 <div>
                   <span className="text-blue-700 font-medium">Datum:</span>{' '}
-                  <span className="text-stone-900">{docDate}</span>
+                  <span className="text-slate-900">{docDate}</span>
                 </div>
                 <div>
                   <span className="text-blue-700 font-medium">Adress:</span>{' '}
-                  <span className="text-stone-900">{docAddress || <span className="text-stone-400">-</span>}</span>
+                  <span className="text-slate-900">{docAddress || <span className="text-slate-400">-</span>}</span>
                 </div>
                 <div>
                   <span className="text-blue-700 font-medium">Mottagare:</span>{' '}
-                  <span className="text-stone-900">{docReceiver || "Okänd mottagare"}</span>
+                  <span className="text-slate-900">{docReceiver || "Okänd mottagare"}</span>
                 </div>
                 <div>
                   <span className="text-blue-700 font-medium">Leverantör:</span>{' '}
-                  <span className="text-stone-900">{docSupplier || <span className="text-stone-400">-</span>}</span>
+                  <span className="text-slate-900">{docSupplier || <span className="text-slate-400">-</span>}</span>
                 </div>
               </div>
             </div>

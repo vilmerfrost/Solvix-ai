@@ -68,20 +68,20 @@ export default function SubscriptionRequiredPage() {
   const isPastDue = subscription?.status === "past_due";
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-stone-50 to-white flex items-center justify-center p-4">
+    <div className="min-h-screen bg-gradient-to-br from-indigo-50/30 via-slate-50 to-white flex items-center justify-center p-4">
       <div className="max-w-md w-full">
         {/* Logo */}
         <div className="text-center mb-8">
-          <Link href="/" className="inline-flex items-center gap-2">
-            <div className="w-10 h-10 bg-indigo-600 rounded-xl flex items-center justify-center">
-              <span className="text-white font-bold text-lg">V</span>
+          <Link href="/" className="inline-flex items-center gap-2.5">
+            <div className="w-9 h-9 bg-indigo-600 rounded-lg flex items-center justify-center shadow-sm">
+              <span className="text-white font-bold text-base">S</span>
             </div>
-            <span className="font-semibold text-xl text-stone-900">Solvix.ai AI</span>
+            <span className="font-bold text-xl tracking-tight text-slate-900">Solvix.AI</span>
           </Link>
         </div>
 
         {/* Main Card */}
-        <div className="bg-white rounded-2xl shadow-xl border border-stone-200 p-8">
+        <div className="bg-white rounded-xl shadow-[0_2px_8px_rgba(0,0,0,0.06)] border border-slate-200 p-8">
           {loading ? (
             <div className="flex items-center justify-center py-8">
               <div className="w-8 h-8 border-2 border-indigo-600 border-t-transparent rounded-full animate-spin" />
@@ -104,7 +104,7 @@ export default function SubscriptionRequiredPage() {
               </div>
 
               {/* Title */}
-              <h1 className="text-2xl font-bold text-stone-900 text-center mb-2">
+              <h1 className="text-2xl font-bold text-slate-900 text-center mb-2">
                 {isTrialExpired
                   ? "Din provperiod har slutat"
                   : isPastDue
@@ -115,7 +115,7 @@ export default function SubscriptionRequiredPage() {
               </h1>
 
               {/* Description */}
-              <p className="text-stone-600 text-center mb-6">
+              <p className="text-slate-600 text-center mb-6">
                 {isTrialExpired
                   ? "Tack för att du testade Solvix.ai AI! För att fortsätta använda alla funktioner, välj en plan nedan."
                   : isPastDue
@@ -147,7 +147,7 @@ export default function SubscriptionRequiredPage() {
                 {(isPastDue || isCanceled) && (
                   <Link
                     href="/settings/billing"
-                    className="w-full flex items-center justify-center gap-2 bg-stone-100 text-stone-900 py-3 px-4 rounded-lg font-semibold hover:bg-stone-200 transition-colors"
+                    className="w-full flex items-center justify-center gap-2 bg-slate-100 text-slate-900 py-3 px-4 rounded-lg font-semibold hover:bg-slate-200 transition-colors"
                   >
                     <CreditCard className="w-4 h-4" />
                     Hantera betalning
@@ -156,10 +156,10 @@ export default function SubscriptionRequiredPage() {
               </div>
 
               {/* Sign out link */}
-              <div className="mt-6 pt-6 border-t border-stone-200">
+              <div className="mt-6 pt-6 border-t border-slate-200">
                 <button
                   onClick={handleSignOut}
-                  className="w-full flex items-center justify-center gap-2 text-stone-500 hover:text-stone-700 text-sm transition-colors"
+                  className="w-full flex items-center justify-center gap-2 text-slate-500 hover:text-slate-700 text-sm transition-colors"
                 >
                   <LogOut className="w-4 h-4" />
                   Logga ut och byt konto
@@ -170,7 +170,7 @@ export default function SubscriptionRequiredPage() {
         </div>
 
         {/* Footer */}
-        <p className="text-center text-stone-500 text-sm mt-6">
+        <p className="text-center text-slate-500 text-sm mt-6">
           Har du frågor?{" "}
           <a href="mailto:support@solvix.ai" className="text-indigo-600 hover:underline">
             Kontakta oss
