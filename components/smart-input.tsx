@@ -1,5 +1,5 @@
 import { AlertTriangle, CheckCircle2, HelpCircle } from "lucide-react";
-import { SmartFieldValue } from "@/lib/schemas";
+import type { SmartFieldValue } from "@/lib/schemas";
 
 interface SmartInputProps extends React.InputHTMLAttributes<HTMLInputElement> {
   label: string;
@@ -56,7 +56,20 @@ export function SmartInput({
   showConfidenceBar = true,
   ...props 
 }: SmartInputProps) {
-  const value = fieldData?.value ?? "";
+  // Safely extract a primitive value — recursively unwrap nested objects
+  let rawValue: any = fieldData?.value ?? "";
+  const unwrap = (v: any): any => {
+    if (!v) return v;
+    if (typeof v === 'string') return v === "[object Object]" ? "" : v;
+    if (typeof v !== 'object') return v;
+    if ('value' in v) return unwrap(v.value);
+    if ('name' in v) return unwrap(v.name);
+    if ('label' in v) return unwrap(v.label);
+    if ('address' in v) return unwrap(v.address);
+    return "";
+  };
+  rawValue = unwrap(rawValue);
+  const value = rawValue;
   const confidence = fieldData?.confidence ?? 0;
   
   // Use controlled mode if onChange is provided, otherwise uncontrolled

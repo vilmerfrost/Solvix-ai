@@ -7,6 +7,68 @@ import { saveDocument } from "@/app/actions";
 import { ArrowRight, Save, Skull, Plus, Trash2, AlertTriangle, Eraser } from "lucide-react";
 import { useUnsavedChanges } from "@/hooks/use-unsaved-changes";
 
+// Module-level helpers (outside component to avoid TDZ issues in bundler)
+
+/** Safely extract a display string from a value that could be a nested object.
+ *  Recursively unwraps {value,confidence} wrappers and named sub-fields. */
+function toDisplayString(val: any): string {
+  if (!val) return "";
+  if (typeof val === 'string') return val === "[object Object]" ? "" : val;
+  if (typeof val === 'number' || typeof val === 'boolean') return String(val);
+  // Unwrap {value, confidence} wrappers recursively
+  if (typeof val === 'object' && 'value' in val) return toDisplayString(val.value);
+  // Named sub-fields may ALSO be wrapped — recurse instead of String()
+  if (typeof val === 'object' && 'name' in val) return toDisplayString(val.name);
+  if (typeof val === 'object' && 'address' in val) return toDisplayString(val.address);
+  if (typeof val === 'object' && 'label' in val) return toDisplayString(val.label);
+  return "";
+}
+
+/** Flatten a value to a primitive before wrapping — recursively unwraps nested objects */
+function flattenToPrimitive(val: any): any {
+  if (!val || typeof val !== 'object') return val;
+  if (Array.isArray(val)) return val;
+  // Already a {value, confidence} wrapper? Don't flatten, normalizeValue handles it
+  if ('value' in val && 'confidence' in val) return val;
+  // Nested object — recursively extract to a primitive string
+  if ('name' in val) return toDisplayString(val.name) || "";
+  if ('address' in val) return toDisplayString(val.address) || "";
+  if ('label' in val) return toDisplayString(val.label) || "";
+  return "";
+}
+
+function normalizeValue(field: any): any {
+  if (!field) return null;
+  if (typeof field === 'object' && 'value' in field && 'confidence' in field) {
+    // Already wrapped — but flatten the inner value if it's still an object
+    return { ...field, value: flattenToPrimitive(field.value) };
+  }
+  // Flatten before wrapping
+  return { value: flattenToPrimitive(field), confidence: 1 };
+}
+
+function normalizeLineItems(items: any[]): any[] {
+  if (!Array.isArray(items)) return [];
+  return items.map(item => {
+    const normalizedItem: any = {};
+    for (const key of Object.keys(item)) {
+      normalizedItem[key] = normalizeValue(item[key]);
+    }
+    normalizedItem.material = normalizeValue(item.material);
+    normalizedItem.weightKg = normalizeValue(item.weightKg);
+    normalizedItem.location = normalizeValue(item.location || item.address);
+    normalizedItem.address = normalizeValue(item.address || item.location);
+    normalizedItem.receiver = normalizeValue(item.receiver);
+    normalizedItem.date = normalizeValue(item.date);
+    normalizedItem.handling = normalizeValue(item.handling);
+    normalizedItem.isHazardous = normalizeValue(item.isHazardous);
+    normalizedItem.co2Saved = normalizeValue(item.co2Saved || item.co2);
+    normalizedItem.costSEK = normalizeValue(item.costSEK || item.cost);
+    normalizedItem.unit = normalizeValue(item.unit || "Kg");
+    return normalizedItem;
+  });
+}
+
 export function ReviewForm({
   initialData,
   documentId,
@@ -18,6 +80,7 @@ export function ReviewForm({
 }) {
   const router = useRouter();
   const data = initialData || {};
+  const isInvoice = data.documentType === 'invoice';
 
   // State for editable document-level metadata (pre-filled from AI extraction)
   const [documentDate, setDocumentDate] = useState("");
@@ -36,79 +99,42 @@ export function ReviewForm({
   useEffect(() => {
     const metadata = data.documentMetadata || {};
     
-    // Pre-fill from documentMetadata (from PDF extraction) or fallback to top-level fields
     setDocumentDate(
-      metadata.date || 
-      (typeof data.date === 'object' ? data.date?.value : data.date) || 
+      toDisplayString(metadata.date) || 
+      toDisplayString(data.date) || 
       ""
     );
     setDocumentSupplier(
-      metadata.supplier || 
-      (typeof data.supplier === 'object' ? data.supplier?.value : data.supplier) || 
+      toDisplayString(metadata.supplier) || 
+      toDisplayString(data.supplier) || 
       ""
     );
     setProjectAddress(
-      metadata.address || 
-      (typeof data.address === 'object' ? data.address?.value : data.address) || 
+      toDisplayString(metadata.address) || 
+      toDisplayString(data.address) || 
       ""
     );
     setMainReceiver(
-      metadata.receiver || 
-      (typeof data.receiver === 'object' ? data.receiver?.value : data.receiver) || 
+      toDisplayString(metadata.receiver) || 
+      toDisplayString(data.receiver) || 
       ""
     );
   }, [data]);
 
-  // Helper function to normalize data (handle both wrapped {value, confidence} and clean formats)
-  const normalizeValue = (field: any): any => {
-    if (!field) return null;
-    if (typeof field === 'object' && 'value' in field) {
-      return field; // Already wrapped
-    }
-    return { value: field, confidence: 1 }; // Wrap clean data
-  };
-
-  // Normalize lineItems to ensure consistent format
-  // IMPORTANT: Preserve ALL original fields, not just the ones we display in the form
-  const normalizeLineItems = (items: any[]): any[] => {
-    if (!Array.isArray(items)) return [];
-    return items.map(item => {
-      // Start with ALL original fields to preserve data like wasteCode, referensnummer, fordon, etc.
-      const normalizedItem: any = {};
-      
-      // Copy ALL original fields, normalizing their format
-      for (const key of Object.keys(item)) {
-        normalizedItem[key] = normalizeValue(item[key]);
-      }
-      
-      // Ensure critical fields are properly set (with fallbacks)
-      normalizedItem.material = normalizeValue(item.material);
-      normalizedItem.weightKg = normalizeValue(item.weightKg);
-      normalizedItem.location = normalizeValue(item.location || item.address);
-      normalizedItem.address = normalizeValue(item.address || item.location);
-      normalizedItem.receiver = normalizeValue(item.receiver);
-      normalizedItem.date = normalizeValue(item.date);
-      normalizedItem.handling = normalizeValue(item.handling);
-      normalizedItem.isHazardous = normalizeValue(item.isHazardous);
-      normalizedItem.co2Saved = normalizeValue(item.co2Saved || item.co2);
-      normalizedItem.costSEK = normalizeValue(item.costSEK || item.cost);
-      normalizedItem.unit = normalizeValue(item.unit || "Kg");
-      
-      return normalizedItem;
-    });
-  };
+  // State for line items - use simple initial value, populate via effect
+  const [lineItems, setLineItems] = useState<any[]>([]);
   
-  // State för rader så vi kan loopa och räkna
-  const [lineItems, setLineItems] = useState(() => {
+  // Initialize lineItems from props (avoids lazy initializer TDZ)
+  useEffect(() => {
     const items = data.lineItems || [];
-    return normalizeLineItems(items);
-  });
+    setLineItems(normalizeLineItems(items));
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
   
   const [totals, setTotals] = useState({
-    weight: data.totalWeightKg || (typeof data.weightKg === 'object' ? data.weightKg?.value : data.weightKg) || 0,
-    cost: data.totalCostSEK || (typeof data.cost === 'object' ? data.cost?.value : data.cost) || 0,
-    co2: (typeof data.totalCo2Saved === 'object' ? data.totalCo2Saved?.value : data.totalCo2Saved) || 
-         (typeof data.co2Saved === 'object' ? data.co2Saved?.value : data.co2Saved) || 0,
+    weight: Number(toDisplayString(data.totalWeightKg) || toDisplayString(data.weightKg)) || 0,
+    cost: Number(toDisplayString(data.totalCostSEK) || toDisplayString(data.cost)) || 0,
+    co2: Number(toDisplayString(data.totalCo2Saved) || toDisplayString(data.co2Saved)) || 0,
   });
 
   // Unsaved changes warning
@@ -117,36 +143,15 @@ export function ReviewForm({
     message: "Du har osparade ändringar. Är du säker på att du vill lämna sidan?",
   });
 
-  // LIVE-RÄKNARE 🧮
+  // LIVE-RÄKNARE
   useEffect(() => {
     if (lineItems.length > 0) {
-      const newWeight = lineItems.reduce(
-        (sum: number, item: any) => {
-          const weight = typeof item.weightKg === 'object' ? item.weightKg?.value : item.weightKg;
-          return sum + (Number(weight) || 0);
-        },
-        0
-      );
-      const newCo2 = lineItems.reduce(
-        (sum: number, item: any) => {
-          const co2 = typeof item.co2Saved === 'object' ? item.co2Saved?.value : item.co2Saved;
-          return sum + (Number(co2) || 0);
-        },
-        0
-      );
-      const newCost = lineItems.reduce(
-        (sum: number, item: any) => {
-          const cost = typeof item.costSEK === 'object' ? item.costSEK?.value : item.costSEK;
-          return sum + (Number(cost) || 0);
-        },
-        0
-      );
+      const safeNum = (field: any): number => Number(toDisplayString(field)) || 0;
+      const newWeight = lineItems.reduce((sum: number, item: any) => sum + safeNum(item.weightKg), 0);
+      const newCo2 = lineItems.reduce((sum: number, item: any) => sum + safeNum(item.co2Saved), 0);
+      const newCost = lineItems.reduce((sum: number, item: any) => sum + safeNum(item.costSEK), 0);
 
-      setTotals({
-        weight: newWeight,
-        co2: newCo2,
-        cost: newCost,
-      });
+      setTotals({ weight: newWeight, co2: newCo2, cost: newCost });
     }
   }, [lineItems]);
 
@@ -228,22 +233,13 @@ export function ReviewForm({
     setLineItems(newItems);
   };
 
-  // Show address column if ANY row has address field OR if we have rows (always show for editing)
-  // This allows users to fill in missing addresses even if all rows have "SAKNAS"
-  const hasLineAddress = lineItems.length > 0 && (
-    lineItems.some((item: any) => {
-      const addr = typeof item.address === 'object' ? item.address?.value : item.address;
-      const loc = typeof item.location === 'object' ? item.location?.value : item.location;
-      return addr !== undefined || loc !== undefined;
-    }) || true // Always show if we have rows - allows editing missing addresses
-  );
-  
-  // Always show Mottagare column when rows exist — allows clearing auto-assigned values like "Ragn-Sells"
+  // Always show address/receiver columns when rows exist
+  const hasLineAddress = lineItems.length > 0;
   const hasLineReceiver = lineItems.length > 0;
   
   const hasHandling = lineItems.some((item: any) => {
-    const hand = typeof item.handling === 'object' ? item.handling?.value : item.handling;
-    return hand && String(hand).length > 0;
+    const hand = toDisplayString(item.handling);
+    return hand.length > 0;
   });
 
   // Handle form submission
@@ -257,10 +253,12 @@ export function ReviewForm({
       // Helper to get value from wrapped or clean format
       const getValue = (field: any): any => {
         if (!field) return null;
-        if (typeof field === 'object' && 'value' in field) {
-          return field.value;
+        let val = field;
+        if (typeof val === 'object' && 'value' in val) val = val.value;
+        if (val && typeof val === 'object' && !Array.isArray(val)) {
+          return (val as any).name || (val as any).address || JSON.stringify(val);
         }
-        return field;
+        return val;
       };
       
       // Add lineItems to formData
@@ -419,70 +417,72 @@ export function ReviewForm({
         <h3 className="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-4">
           Totaler (Live)
         </h3>
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 bg-gray-50 p-4 rounded-lg">
-          <div>
-            <div className="text-xs text-gray-500 mb-1">CO2 Besparing</div>
-            <div className="text-xl font-bold text-green-600">
-              {totals.co2.toFixed(0)} kg
+        <div className={`grid grid-cols-1 ${isInvoice ? 'sm:grid-cols-1' : 'sm:grid-cols-3'} gap-4 bg-gray-50 p-4 rounded-lg`}>
+          {!isInvoice && (
+            <div>
+              <div className="text-xs text-gray-500 mb-1">CO2 Besparing</div>
+              <div className="text-xl font-bold text-green-600">
+                {totals.co2.toFixed(0)} kg
+              </div>
+              <input type="hidden" name="totalCo2Saved" value={totals.co2} />
             </div>
-            <input type="hidden" name="totalCo2Saved" value={totals.co2} />
-          </div>
+          )}
+          {!isInvoice && (
+            <div>
+              <div className="text-xs text-gray-500 mb-1">Total Vikt</div>
+              <div className="text-xl font-bold">{totals.weight.toFixed(0)} kg</div>
+              <input type="hidden" name="weightKg" value={totals.weight} />
+            </div>
+          )}
           <div>
-            <div className="text-xs text-gray-500 mb-1">Total Vikt</div>
-            <div className="text-xl font-bold">{totals.weight.toFixed(0)} kg</div>
-            <input type="hidden" name="weightKg" value={totals.weight} />
-          </div>
-          <div>
-            <div className="text-xs text-gray-500 mb-1">Kostnad</div>
+            <div className="text-xs text-gray-500 mb-1">{isInvoice ? 'Totalt Belopp' : 'Kostnad'}</div>
             <div className="text-xl font-bold">{totals.cost.toFixed(0)} kr</div>
             <input type="hidden" name="cost" value={totals.cost} />
           </div>
         </div>
       </div>
 
-      {/* HÄMTADRESS & MOTTAGARE (HUVUD) */}
+      {/* ADRESS & MOTTAGARE (HUVUD) */}
       <div className="border-t pt-6">
         <h3 className="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-4">
-          Hämtadress (Huvud)
+          {isInvoice ? 'Adress & Mottagare' : 'Hämtadress (Huvud)'}
         </h3>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          {/* Projektadress - EDITABLE */}
           <div>
             <label className="block text-sm font-semibold text-slate-800 mb-1.5">
-              Projektadress
+              {isInvoice ? 'Adress' : 'Projektadress'}
             </label>
             <input
               type="text"
               name="address"
               value={projectAddress}
               onChange={(e) => handleMetadataChange(setProjectAddress, e.target.value)}
-              placeholder="t.ex. Östergårds Förskola"
+              placeholder={isInvoice ? 't.ex. Kappelvägen 2F' : 't.ex. Östergårds Förskola'}
               className="w-full p-3 bg-white border border-slate-200 rounded-xl outline-none transition-all shadow-sm focus:ring-blue-100 focus:border-blue-400"
             />
           </div>
           
-          {/* Mottagare (Huvud) - EDITABLE */}
           <div>
             <label className="block text-sm font-semibold text-slate-800 mb-1.5">
-              Mottagare (Huvud)
+              {isInvoice ? 'Köpare / Mottagare' : 'Mottagare (Huvud)'}
             </label>
             <input
               type="text"
               name="receiver"
               value={mainReceiver}
               onChange={(e) => handleMetadataChange(setMainReceiver, e.target.value)}
-              placeholder="t.ex. Renova"
+              placeholder={isInvoice ? 't.ex. Stefan Frost' : 't.ex. Renova'}
               className="w-full p-3 bg-white border border-slate-200 rounded-xl outline-none transition-all shadow-sm focus:ring-blue-100 focus:border-blue-400"
             />
           </div>
         </div>
       </div>
 
-      {/* SPECIFIKATION - MATERIAL TABLE */}
+      {/* SPECIFIKATION TABLE */}
       <div className="border-t pt-6">
         <div className="flex items-center justify-between mb-4">
           <h3 className="text-sm font-semibold text-gray-500 uppercase tracking-wide">
-            Specifikation - Material ({lineItems.length} rader)
+            {isInvoice ? `Fakturarader (${lineItems.length} rader)` : `Specifikation - Material (${lineItems.length} rader)`}
           </h3>
           <div className="flex items-center gap-2">
             {lineItems.length > 0 && (
@@ -516,22 +516,26 @@ export function ReviewForm({
               <thead>
                 <tr className="border-b-2 border-gray-200">
                   <th className="text-left text-xs font-semibold text-gray-600 uppercase py-2 px-2">
-                    Material
+                    {isInvoice ? 'Beskrivning' : 'Material'}
                   </th>
                   <th className="text-left text-xs font-semibold text-gray-600 uppercase py-2 px-2">
-                    Vikt (kg)
+                    {isInvoice ? 'Belopp (kr)' : 'Vikt (kg)'}
                   </th>
-                  {hasHandling && (
+                  {!isInvoice && hasHandling && (
                     <th className="text-left text-xs font-semibold text-gray-600 uppercase py-2 px-2">
                       Hantering
                     </th>
                   )}
-                  <th className="text-left text-xs font-semibold text-gray-600 uppercase py-2 px-2">
-                    CO2
-                  </th>
-                  <th className="text-center text-xs font-semibold text-gray-600 uppercase py-2 px-2">
-                    Farligt
-                  </th>
+                  {!isInvoice && (
+                    <th className="text-left text-xs font-semibold text-gray-600 uppercase py-2 px-2">
+                      CO2
+                    </th>
+                  )}
+                  {!isInvoice && (
+                    <th className="text-center text-xs font-semibold text-gray-600 uppercase py-2 px-2">
+                      Farligt
+                    </th>
+                  )}
                   {hasLineAddress && (
                     <th className="text-left text-xs font-semibold text-gray-600 uppercase py-2 px-2">
                       Adress
@@ -539,7 +543,7 @@ export function ReviewForm({
                   )}
                   {hasLineReceiver && (
                     <th className="text-left text-xs font-semibold text-gray-600 uppercase py-2 px-2">
-                      Mottagare
+                      {isInvoice ? 'Köpare' : 'Mottagare'}
                     </th>
                   )}
                   <th className="text-left text-xs font-semibold text-gray-600 uppercase py-2 px-2">
@@ -550,14 +554,14 @@ export function ReviewForm({
               </thead>
               <tbody>
                 {lineItems.map((item: any, index: number) => {
-                  // Check for missing required fields (for highlighting)
-                  const materialValue = typeof item.material === 'object' ? item.material?.value : item.material;
+                  // Safely extract display values (handles nested objects like {name, email, address})
+                  const materialValue = toDisplayString(item.material);
                   const weightValue = typeof item.weightKg === 'object' ? item.weightKg?.value : item.weightKg;
-                  const addressValue = typeof item.address === 'object' ? item.address?.value : item.address;
-                  const locationValue = typeof item.location === 'object' ? item.location?.value : item.location;
-                  const receiverValue = typeof item.receiver === 'object' ? item.receiver?.value : item.receiver;
+                  const addressValue = toDisplayString(item.address);
+                  const locationValue = toDisplayString(item.location);
+                  const receiverValue = toDisplayString(item.receiver);
                   // Get row date - defaults to document date if not set
-                  const rowDateValue = typeof item.date === 'object' ? item.date?.value : item.date;
+                  const rowDateValue = toDisplayString(item.date);
                   // Display date: use row date if available, otherwise show document date
                   const displayDate = rowDateValue || documentDate || "";
                   
@@ -598,7 +602,7 @@ export function ReviewForm({
                         }`}
                       />
                         </td>
-                     {hasHandling && (
+                    {!isInvoice && hasHandling && (
                       <td className="py-2 px-2">
                         <SmartInput
                           label=""
@@ -610,8 +614,9 @@ export function ReviewForm({
                           }
                           className="text-sm border-0 shadow-none focus:ring-0 p-1"
                         />
-                        </td>
+                      </td>
                     )}
+                    {!isInvoice && (
                     <td className="py-2 px-2">
                         <SmartInput 
                         label=""
@@ -624,6 +629,8 @@ export function ReviewForm({
                         className="text-sm border-0 shadow-none focus:ring-0 p-1"
                       />
                     </td>
+                    )}
+                    {!isInvoice && (
                     <td className="py-2 px-2 text-center">
                       <div className="flex items-center justify-center gap-1">
                         <input
@@ -644,6 +651,7 @@ export function ReviewForm({
                         )}
                       </div>
                     </td>
+                    )}
                     {hasLineAddress && (
                       <td className="py-2 px-2">
                         <input

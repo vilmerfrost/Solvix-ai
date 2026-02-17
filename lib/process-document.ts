@@ -14,6 +14,7 @@
 import { createServiceRoleClient } from "@/lib/supabase";
 import { processDocumentMultiModel } from "@/lib/document-processor";
 import { processOfficeDocument } from "@/lib/office/orchestrator";
+import { safeStr } from "@/lib/safe-str";
 import type { 
   DocumentStatus, 
   ExtractedDocumentData, 
@@ -216,16 +217,16 @@ export async function processDocument(
       documentType: multiModelResult.documentType || "waste_report",
       // For invoices: pick ONLY known fields (never blind-spread AI data)
       ...(multiModelResult.documentType === 'invoice' && multiModelResult.invoiceData ? {
-        invoiceNumber: String(multiModelResult.invoiceData.invoiceNumber || ''),
-        invoiceDate: String(multiModelResult.invoiceData.invoiceDate || ''),
-        dueDate: String(multiModelResult.invoiceData.dueDate || ''),
-        supplier: String(multiModelResult.invoiceData.supplier || ''),
-        supplierOrgNr: String(multiModelResult.invoiceData.supplierOrgNr || ''),
-        buyerName: String(multiModelResult.invoiceData.buyerName || ''),
-        buyerOrgNr: String(multiModelResult.invoiceData.buyerOrgNr || ''),
-        bankgiro: String(multiModelResult.invoiceData.bankgiro || ''),
-        plusgiro: String(multiModelResult.invoiceData.plusgiro || ''),
-        ocrReference: String(multiModelResult.invoiceData.ocrReference || ''),
+        invoiceNumber: safeStr(multiModelResult.invoiceData.invoiceNumber),
+        invoiceDate: safeStr(multiModelResult.invoiceData.invoiceDate),
+        dueDate: safeStr(multiModelResult.invoiceData.dueDate),
+        supplier: safeStr(multiModelResult.invoiceData.supplier),
+        supplierOrgNr: safeStr(multiModelResult.invoiceData.supplierOrgNr),
+        buyerName: safeStr(multiModelResult.invoiceData.buyerName),
+        buyerOrgNr: safeStr(multiModelResult.invoiceData.buyerOrgNr),
+        bankgiro: safeStr(multiModelResult.invoiceData.bankgiro),
+        plusgiro: safeStr(multiModelResult.invoiceData.plusgiro),
+        ocrReference: safeStr(multiModelResult.invoiceData.ocrReference),
         subtotal: Number(multiModelResult.invoiceData.subtotal) || 0,
         vatAmount: Number(multiModelResult.invoiceData.vatAmount) || 0,
         totalAmount: Number(multiModelResult.invoiceData.totalAmount) || 0,

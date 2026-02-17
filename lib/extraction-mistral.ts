@@ -7,6 +7,7 @@
 
 import { getMistralClientForUser, MODELS, trackUsage } from "@/lib/ai-clients";
 import { isLikelyInvoice } from "@/lib/extraction/invoice-prompt";
+import { safeStr } from "@/lib/safe-str";
 import type { LineItem, UserSettings, MultiModelExtractionResult, AIProvider } from "@/lib/types";
 
 // =============================================================================
@@ -285,14 +286,14 @@ Extract ALL line items. Output ONLY valid JSON.`;
     
     // Map invoice line items → LineItem format so the rest of the pipeline works
     const rawItems = (parsed.items || parsed.invoiceLineItems || []) as Record<string, unknown>[];
-    const invoiceDate = String(parsed.invoiceDate || fallbackDate);
-    const supplier = String(parsed.supplier || '');
-    const buyer = String(parsed.buyerName || '');
+    const invoiceDate = safeStr(parsed.invoiceDate, fallbackDate);
+    const supplier = safeStr(parsed.supplier);
+    const buyer = safeStr(parsed.buyerName);
     
     const items: LineItem[] = rawItems.map((item: Record<string, unknown>) => ({
-      date: String(item.date || invoiceDate),
+      date: safeStr(item.date, invoiceDate),
       location: buyer,
-      material: String(item.description || item.text || ''),
+      material: safeStr(item.description || item.text),
       weightKg: typeof item.amount === 'number' ? item.amount : parseFloat(String(item.amount)) || 0,
       unit: "SEK",
       receiver: supplier,
@@ -401,12 +402,12 @@ Extract ALL rows. Output ONLY valid JSON.`;
     }
     
     const items: LineItem[] = parsed.items.map((item: Record<string, unknown>) => ({
-      date: String(item.date || fallbackDate),
-      location: String(item.location || item.address || ""),
-      material: String(item.material || ""),
+      date: safeStr(item.date, fallbackDate),
+      location: safeStr(item.location || item.address),
+      material: safeStr(item.material),
       weightKg: typeof item.weightKg === 'number' ? item.weightKg : parseFloat(String(item.weightKg)) || 0,
-      unit: String(item.unit || "Kg"),
-      receiver: String(item.receiver || receiver),
+      unit: safeStr(item.unit, "Kg"),
+      receiver: safeStr(item.receiver, receiver),
       isHazardous: Boolean(item.isHazardous),
     }));
     
