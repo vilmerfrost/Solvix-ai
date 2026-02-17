@@ -18,6 +18,7 @@ import { ReverifyButton } from "@/components/reverify-button";
 import { ExcelViewer } from "@/components/excel-viewer";
 import { ReviewForm } from "@/components/review-form";
 import { PaginatedTable } from "@/components/paginated-table";
+import { OfficeDocumentReview } from "@/components/office/office-document-review";
 import { Breadcrumbs } from "@/components/breadcrumbs";
 import { getReviewBreadcrumbs } from "@/lib/breadcrumb-utils";
 import { truncateFilename } from "@/lib/filename-utils";
@@ -99,6 +100,36 @@ export default async function ReviewPage({
 
   const extractedData = doc.extracted_data || {};
   const lineItems = extractedData.lineItems || [];
+
+  if (doc.document_domain === "office_it") {
+    const { data: task } = await supabase
+      .from("review_tasks")
+      .select("id")
+      .eq("document_id", id)
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+
+    return (
+      <div className="min-h-screen bg-slate-50">
+        <div className="mx-auto max-w-5xl px-4 py-6 sm:px-6 lg:px-8">
+          <div className="mb-4">
+            <Link href="/dashboard/office" className="text-sm text-slate-600 hover:text-slate-900">
+              ← Back to Office/IT Queue
+            </Link>
+          </div>
+          <div className="rounded border border-slate-200 bg-white p-6">
+            <OfficeDocumentReview
+              documentId={doc.id}
+              filename={doc.filename}
+              extractedData={extractedData}
+              taskId={task?.id || null}
+            />
+          </div>
+        </div>
+      </div>
+    );
+  }
   
   // Helper to get value (handle both wrapped {value, confidence} and clean formats)
   const getValue = (field: any): any => {

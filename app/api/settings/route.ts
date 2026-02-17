@@ -18,7 +18,8 @@ const DEFAULT_SETTINGS = {
   // Azure folder settings - empty by default, user must configure
   // Format: [{ container: "arrivalwastedata", folder: "output/subfolder", enabled: true }]
   azure_input_folders: [],
-  azure_output_folder: "completed"
+  azure_output_folder: "completed",
+  default_document_domain: "waste"
 };
 
 // GET /api/settings - Fetch current settings
@@ -105,7 +106,8 @@ export async function POST(request: Request) {
       enable_verification,
       verification_confidence_threshold,
       azure_input_folders,
-      azure_output_folder
+      azure_output_folder,
+      default_document_domain
     } = body;
 
     // Validate threshold
@@ -146,7 +148,8 @@ export async function POST(request: Request) {
       ...(enable_verification !== undefined && { enable_verification }),
       ...(verification_confidence_threshold !== undefined && { verification_confidence_threshold }),
       ...(azure_input_folders !== undefined && { azure_input_folders }),
-      ...(azure_output_folder !== undefined && { azure_output_folder })
+      ...(azure_output_folder !== undefined && { azure_output_folder }),
+      ...(default_document_domain !== undefined && { default_document_domain })
     };
 
     // Use upsert to handle case where settings row doesn't exist yet
@@ -177,4 +180,3 @@ export async function POST(request: Request) {
     );
   }
 }
-

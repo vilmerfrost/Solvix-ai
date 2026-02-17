@@ -253,6 +253,7 @@ export default async function Dashboard({
               {/* Nav links */}
               <div className="hidden md:flex h-full items-center gap-6">
                 <a href="/dashboard" className="nav-link nav-link-active pt-0.5">Dokument</a>
+                <a href="/dashboard/office" className="nav-link pt-0.5">Office/IT Queue</a>
                 <a href="/health" className="nav-link pt-0.5">Rapporter</a>
                 <a href="/settings" className="nav-link pt-0.5">Inställningar</a>
               </div>

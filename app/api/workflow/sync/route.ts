@@ -40,7 +40,7 @@ export async function POST() {
     // Fetch folder settings from database
     const { data: settings, error: settingsError } = await supabase
       .from("settings")
-      .select("azure_input_folders")
+      .select("azure_input_folders, industry, default_document_domain")
       .eq("user_id", user.id)
       .single();
 
@@ -49,6 +49,9 @@ export async function POST() {
     }
 
     const inputFolders = settings?.azure_input_folders;
+    const defaultDomain =
+      settings?.default_document_domain ||
+      (settings?.industry && settings.industry !== "waste" ? "office_it" : "waste");
     
     if (inputFolders && Array.isArray(inputFolders) && inputFolders.length > 0) {
       const enabledFolders = inputFolders.filter((f: any) => f.enabled !== false);
@@ -171,6 +174,9 @@ export async function POST() {
               original_blob_path: fileInfo.full_path,
               source_folder: fileInfo.source_folder,
             },
+            document_domain: defaultDomain,
+            doc_type: defaultDomain === "office_it" ? "unknown_office" : null,
+            review_status: defaultDomain === "office_it" ? "new" : null,
           })
           .select()
           .single();
@@ -233,4 +239,3 @@ export async function POST() {
     );
   }
 }
-

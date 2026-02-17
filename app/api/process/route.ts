@@ -4,6 +4,9 @@ import Anthropic from "@anthropic-ai/sdk";
 import * as XLSX from "xlsx";
 import { extractAdaptive } from "@/lib/adaptive-extraction";
 import { MODELS } from "@/lib/ai-clients";
+import { processOfficeDocument } from "@/lib/office/orchestrator";
+import { processDocument as processDocumentDirect } from "@/lib/process-document";
+import { getApiUser } from "@/lib/api-auth";
 
 // ============================================================================
 // DATE EXTRACTION HELPERS
@@ -1001,6 +1004,46 @@ export async function GET(req: Request) {
     const isPDF = doc.filename.match(/\.pdf$/i);
     
     let extractedData: any;
+    const inferredDomain =
+      doc.document_domain ||
+      settings.default_document_domain ||
+      (settings.industry && settings.industry !== "waste" ? "office_it" : "waste");
+
+    if (inferredDomain === "office_it") {
+      const officeResult = await processOfficeDocument({
+        documentId: doc.id,
+        userId: doc.user_id,
+        filename: doc.filename,
+        fileBuffer: arrayBuffer,
+        settings,
+      });
+
+      await supabase
+        .from("documents")
+        .update({
+          status: officeResult.status,
+          extracted_data: officeResult.extractedData,
+          document_domain: "office_it",
+          doc_type: officeResult.classification.finalDocType,
+          schema_id: officeResult.classification.schemaId || null,
+          schema_version: (officeResult.extractedData as any).schemaVersion || 1,
+          classification_confidence: officeResult.classification.modelConfidence,
+          review_status: officeResult.status === "approved" ? "approved" : "new",
+          updated_at: new Date().toISOString(),
+        })
+        .eq("id", doc.id);
+
+      return NextResponse.json({
+        success: true,
+        file: doc.filename,
+        data: officeResult.extractedData,
+        status: officeResult.status,
+        documentDomain: "office_it",
+        docType: officeResult.classification.finalDocType,
+        schemaId: officeResult.classification.schemaId || null,
+        classification: officeResult.classification,
+      });
+    }
     
     if (isExcel) {
       
@@ -1207,6 +1250,48 @@ export async function GET(req: Request) {
       errorType,
       errorDetails: errorMessage
     }, { status: 500 });
+  }
+}
+
+export async function POST(req: Request) {
+  try {
+    const { user, error: authError } = await getApiUser();
+    if (authError || !user) return authError!;
+
+    const body = await req.json();
+    const documentId = body?.id || body?.documentId;
+    if (!documentId) {
+      return NextResponse.json({ success: false, error: "Missing document id" }, { status: 400 });
+    }
+
+    const supabase = createServiceRoleClient();
+    const { data: doc, error: docError } = await supabase
+      .from("documents")
+      .select("id, user_id")
+      .eq("id", documentId)
+      .single();
+
+    if (docError || !doc || doc.user_id !== user.id) {
+      return NextResponse.json({ success: false, error: "Document not found" }, { status: 404 });
+    }
+
+    await supabase
+      .from("documents")
+      .update({ status: "processing", updated_at: new Date().toISOString() })
+      .eq("id", documentId);
+
+    const result = await processDocumentDirect(documentId);
+    return NextResponse.json({
+      success: result.success,
+      status: result.status,
+      error: result.error,
+      data: result.extractedData,
+    });
+  } catch (error) {
+    return NextResponse.json(
+      { success: false, error: (error instanceof Error ? error.message : String(error)) },
+      { status: 500 }
+    );
   }
 }
 

@@ -13,6 +13,7 @@
 
 import { createServiceRoleClient } from "@/lib/supabase";
 import { processDocumentMultiModel } from "@/lib/document-processor";
+import { processOfficeDocument } from "@/lib/office/orchestrator";
 import type { 
   DocumentStatus, 
   ExtractedDocumentData, 
@@ -33,6 +34,8 @@ const DEFAULT_SETTINGS: Partial<UserSettings> = {
 // Settings with custom instructions extension
 interface ProcessingSettings extends Partial<UserSettings> {
   custom_instructions?: string;
+  industry?: string;
+  default_document_domain?: "waste" | "office_it";
 }
 
 // Import settings getter
@@ -129,7 +132,50 @@ export async function processDocument(
       throw new Error(`Unsupported file type: ${doc.filename}`);
     }
     
-    let extractedData: ExtractedDocumentData;
+    const inferredDomain =
+      doc.document_domain ||
+      settings.default_document_domain ||
+      (settings.industry && settings.industry !== "waste" ? "office_it" : "waste");
+
+    if (inferredDomain === "office_it") {
+      const office = await processOfficeDocument({
+        documentId: doc.id,
+        userId: doc.user_id,
+        filename: doc.filename,
+        fileBuffer: arrayBuffer,
+        settings: settings as unknown as Record<string, unknown>,
+      });
+
+      const officeData = office.extractedData as unknown as ExtractedDocumentData;
+      const updateStatus = office.status;
+
+      const { error: saveOfficeError } = await supabase
+        .from("documents")
+        .update({
+          status: updateStatus,
+          extracted_data: officeData,
+          document_domain: "office_it",
+          doc_type: office.classification.finalDocType,
+          schema_id: office.classification.schemaId || null,
+          schema_version: officeData.schemaVersion ?? 1,
+          classification_confidence: office.classification.modelConfidence,
+          review_status: updateStatus === "approved" ? "approved" : "new",
+          updated_at: new Date().toISOString(),
+        })
+        .eq("id", doc.id);
+
+      if (saveOfficeError) {
+        throw new Error(`Failed to save office/it data: ${saveOfficeError.message}`);
+      }
+
+      return {
+        success: true,
+        documentId: doc.id,
+        filename: doc.filename,
+        status: updateStatus,
+        extractedData: officeData,
+      };
+    }
     
     // ALWAYS use the multi-model pipeline (correct orchestrator)
     // Pipeline: Gemini Flash (assess) → Mistral OCR (PDF) / Gemini (Excel) → Haiku (verify) → Sonnet (reconcile if <80%)
@@ -153,7 +199,7 @@ export async function processDocument(
     const uniqueMaterials = new Set(multiModelResult.items.map(item => item.material)).size;
     const uniqueReceivers = new Set(multiModelResult.items.map(item => item.receiver)).size;
     
-    extractedData = {
+    const extractedData: ExtractedDocumentData = {
       lineItems: multiModelResult.items,
       metadata: {
         totalRows: multiModelResult.items.length,
@@ -209,6 +255,7 @@ export async function processDocument(
         })),
       } : undefined,
       _processingLog: multiModelResult.log,
+      documentDomain: "waste",
     };
     
     // Calculate quality score
@@ -219,7 +266,7 @@ export async function processDocument(
       : confidence;
     
     const qualityScore = (completeness + overallConfidence) / 2;
-    const newStatus = qualityScore >= settings.auto_approve_threshold 
+    const newStatus = qualityScore >= (settings.auto_approve_threshold ?? 80)
       ? "approved" 
       : "needs_review";
     
@@ -237,6 +284,7 @@ export async function processDocument(
       .update({
         status: newStatus,
         extracted_data: extractedData,
+        document_domain: "waste",
         updated_at: new Date().toISOString()
       })
       .eq("id", doc.id);

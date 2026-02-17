@@ -31,7 +31,7 @@ export async function GET(request: Request) {
     // Get all users with configured input folders
     const { data: users } = await supabase
       .from("settings")
-      .select("user_id, azure_input_folders");
+      .select("user_id, azure_input_folders, industry, default_document_domain");
     
     if (!users || users.length === 0) {
       return NextResponse.json({
@@ -55,6 +55,9 @@ export async function GET(request: Request) {
     for (const userSettings of users) {
       const userId = userSettings.user_id;
       const inputFolders = userSettings.azure_input_folders;
+      const defaultDomain =
+        userSettings.default_document_domain ||
+        (userSettings.industry && userSettings.industry !== "waste" ? "office_it" : "waste");
       
       // Skip users without configured folders
       if (!inputFolders || !Array.isArray(inputFolders) || inputFolders.length === 0) {
@@ -179,6 +182,9 @@ export async function GET(request: Request) {
                   source_folder: fileInfo.source_folder,
                   auto_fetched_at: new Date().toISOString(),
                 },
+                document_domain: defaultDomain,
+                doc_type: defaultDomain === "office_it" ? "unknown_office" : null,
+                review_status: defaultDomain === "office_it" ? "new" : null,
               })
               .select()
               .single();

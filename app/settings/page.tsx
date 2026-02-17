@@ -686,6 +686,11 @@ export default function SettingsPage() {
                   <Mail className="w-5 h-5 flex-shrink-0" />
                   <span>E-postinkorg</span>
                 </button>
+
+                <Link href="/settings/office-it" className="settings-sidebar-item w-full text-left">
+                  <Bot className="w-5 h-5 flex-shrink-0" />
+                  <span>Office/IT Platform</span>
+                </Link>
               </nav>
 
               <div className="border-t border-slate-100 my-3 mx-4" />

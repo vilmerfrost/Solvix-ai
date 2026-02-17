@@ -3,6 +3,7 @@ import { extractAdaptive } from "@/lib/adaptive-extraction";
 import { getApiUser } from "@/lib/api-auth";
 import { canProcessDocument } from "@/lib/stripe";
 import * as XLSX from "xlsx";
+import { processOfficeDocument } from "@/lib/office/orchestrator";
 
 // SSE helper to format messages
 function formatSSE(data: any): string {
@@ -112,6 +113,48 @@ export async function GET(req: Request) {
         }
         
         onLog(`✓ File downloaded (${(arrayBuffer.byteLength / 1024).toFixed(0)} KB)`, 'success');
+        const inferredDomain =
+          doc.document_domain ||
+          settings.default_document_domain ||
+          (settings.industry && settings.industry !== "waste" ? "office_it" : "waste");
+
+        if (inferredDomain === "office_it") {
+          onLog("🏢 Processing with Office/IT orchestrator...", "info");
+          const office = await processOfficeDocument({
+            documentId: doc.id,
+            userId: doc.user_id,
+            filename: doc.filename,
+            fileBuffer: arrayBuffer,
+            settings,
+          });
+
+          await supabase
+            .from("documents")
+            .update({
+              status: office.status,
+              extracted_data: office.extractedData,
+              document_domain: "office_it",
+              doc_type: office.classification.finalDocType,
+              schema_id: office.classification.schemaId || null,
+              schema_version: (office.extractedData as any).schemaVersion || 1,
+              classification_confidence: office.classification.modelConfidence,
+              review_status: office.status === "approved" ? "approved" : "new",
+              updated_at: new Date().toISOString(),
+            })
+            .eq("id", doc.id);
+
+          send("complete", {
+            status: office.status,
+            documentDomain: "office_it",
+            docType: office.classification.finalDocType,
+            schemaId: office.classification.schemaId || null,
+            classification: office.classification,
+            completeness: (office.extractedData as any)?._validation?.completeness || 0,
+            confidence: (office.extractedData as any)?._validation?.confidence || 0,
+          });
+          controller.close();
+          return;
+        }
         
         // Check file type
         const isExcel = doc.filename.match(/\.(xlsx|xls)$/i);
@@ -165,7 +208,7 @@ export async function GET(req: Request) {
         );
         
         // Convert to expected format
-        const extractedData = {
+        const extractedData: any = {
           ...adaptiveResult,
           totalCostSEK: 0,
           documentType: "waste_report",

@@ -14,9 +14,13 @@ import crypto from "crypto";
 export const WEBHOOK_EVENTS = [
   "document.uploaded",
   "document.processed",
+  "document.classified",
+  "document.review_assigned",
   "document.approved",
   "document.rejected",
   "document.failed",
+  "sla.breach_risk",
+  "sla.breached",
   "export.complete",
   "batch.complete",
 ] as const;
@@ -342,6 +346,34 @@ export const webhookEvents = {
   
   documentProcessed: (userId: string, documentId: string, filename: string, status: string) =>
     dispatchWebhook(userId, "document.processed", { documentId, filename, status }),
+
+  documentClassified: (
+    userId: string,
+    documentId: string,
+    documentDomain: string,
+    docType: string,
+    schemaId?: string | null
+  ) =>
+    dispatchWebhook(userId, "document.classified", {
+      eventVersion: 1,
+      documentId,
+      documentDomain,
+      docType,
+      schemaId: schemaId || null,
+    }),
+
+  documentReviewAssigned: (
+    userId: string,
+    documentId: string,
+    taskId: string,
+    assignedTo?: string | null
+  ) =>
+    dispatchWebhook(userId, "document.review_assigned", {
+      eventVersion: 1,
+      documentId,
+      taskId,
+      assignedTo: assignedTo || null,
+    }),
   
   documentApproved: (userId: string, documentId: string, filename: string) =>
     dispatchWebhook(userId, "document.approved", { documentId, filename }),
@@ -351,6 +383,12 @@ export const webhookEvents = {
   
   documentFailed: (userId: string, documentId: string, filename: string, error: string) =>
     dispatchWebhook(userId, "document.failed", { documentId, filename, error }),
+
+  slaBreachRisk: (userId: string, documentId: string, docType: string, details: Record<string, unknown>) =>
+    dispatchWebhook(userId, "sla.breach_risk", { eventVersion: 1, documentId, docType, ...details }),
+
+  slaBreached: (userId: string, documentId: string, docType: string, details: Record<string, unknown>) =>
+    dispatchWebhook(userId, "sla.breached", { eventVersion: 1, documentId, docType, ...details }),
   
   exportComplete: (userId: string, exportId: string, documentCount: number, destination: string) =>
     dispatchWebhook(userId, "export.complete", { exportId, documentCount, destination }),

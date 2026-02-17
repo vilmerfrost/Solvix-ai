@@ -48,6 +48,15 @@ export async function uploadAndEnqueueDocument(formData: FormData) {
 
     // Check for duplicates before creating record
     const duplicateCheck = await checkForDuplicate(user.id, contentHash, null, file.name);
+
+    const { data: userSettings } = await supabase
+      .from("settings")
+      .select("industry, default_document_domain")
+      .eq("user_id", user.id)
+      .maybeSingle();
+    const defaultDomain =
+      userSettings?.default_document_domain ||
+      (userSettings?.industry && userSettings.industry !== "waste" ? "office_it" : "waste");
     
     // Save to database with real user ID + content hash + duplicate info
     const { data: document, error: documentError } = await supabase
@@ -60,6 +69,9 @@ export async function uploadAndEnqueueDocument(formData: FormData) {
         content_hash: contentHash,
         is_duplicate: duplicateCheck.isDuplicate,
         duplicate_of: duplicateCheck.matchedDocumentId || null,
+        document_domain: defaultDomain,
+        doc_type: defaultDomain === "office_it" ? "unknown_office" : null,
+        review_status: defaultDomain === "office_it" ? "new" : null,
       })
       .select()
       .single();

@@ -20,6 +20,7 @@ export async function POST(request: NextRequest) {
 
     const supabase = createServiceRoleClient();
     const features = getDefaultFeatures(industry);
+    const defaultDocumentDomain = industry === "waste" ? "waste" : "office_it";
 
     // Upsert settings with industry and features
     const { error } = await supabase
@@ -30,6 +31,7 @@ export async function POST(request: NextRequest) {
           industry,
           onboarding_complete: true,
           features_enabled: features,
+          default_document_domain: defaultDocumentDomain,
         },
         { onConflict: "user_id" }
       );
@@ -39,7 +41,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Failed to save" }, { status: 500 });
     }
 
-    return NextResponse.json({ success: true, industry, features });
+    return NextResponse.json({ success: true, industry, features, defaultDocumentDomain });
   } catch (err) {
     console.error("Onboarding error:", err);
     return NextResponse.json({ error: "Internal error" }, { status: 500 });

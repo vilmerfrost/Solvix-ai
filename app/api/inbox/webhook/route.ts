@@ -49,7 +49,7 @@ export async function POST(request: NextRequest) {
     // Look up user by inbox code
     const { data: settings } = await supabase
       .from("settings")
-      .select("user_id, inbox_enabled, inbox_auto_process")
+      .select("user_id, inbox_enabled, inbox_auto_process, industry, default_document_domain")
       .eq("inbox_code", inboxCode)
       .single();
 
@@ -59,6 +59,9 @@ export async function POST(request: NextRequest) {
     }
 
     const userId = settings.user_id;
+    const defaultDomain =
+      settings.default_document_domain ||
+      (settings.industry && settings.industry !== "waste" ? "office_it" : "waste");
 
     // Extract valid attachments (Postmark format)
     const attachments = emailData.Attachments || emailData.attachments || [];
@@ -123,6 +126,9 @@ export async function POST(request: NextRequest) {
           filename: fileName,
           storage_path: storagePath,
           status: settings.inbox_auto_process ? "uploaded" : "uploaded",
+          document_domain: defaultDomain,
+          doc_type: defaultDomain === "office_it" ? "unknown_office" : null,
+          review_status: defaultDomain === "office_it" ? "new" : null,
           metadata: { source: "email", from: fromAddress, subject },
         });
 

@@ -23,6 +23,22 @@ export type DocumentStatus =
   | 'error' 
   | 'rejected';
 
+export type DocumentDomain = 'waste' | 'office_it';
+
+export type DocType =
+  | 'invoice'
+  | 'po'
+  | 'credit_note'
+  | 'receipt'
+  | 'contract'
+  | 'nda'
+  | 'employment_agreement'
+  | 'ticket_incident'
+  | 'ticket_change'
+  | 'delivery_note'
+  | 'unknown_office'
+  | 'waste_report';
+
 export interface Document {
   id: string;
   user_id: string;
@@ -33,6 +49,14 @@ export interface Document {
   extracted_data: ExtractedDocumentData | null;
   archived: boolean;
   exported_at: string | null;
+  document_domain?: DocumentDomain;
+  doc_type?: DocType | string | null;
+  schema_id?: string | null;
+  schema_version?: number | null;
+  classification_confidence?: number | null;
+  assigned_reviewer_id?: string | null;
+  due_at?: string | null;
+  review_status?: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -43,6 +67,15 @@ export interface ExtractedDocumentData {
   totalWeightKg: number;
   totalCostSEK?: number;
   documentType: string;
+  documentDomain?: DocumentDomain;
+  docType?: DocType | string;
+  schemaId?: string | null;
+  schemaVersion?: number | null;
+  classification?: Record<string, unknown>;
+  fields?: Record<string, unknown>;
+  tables?: Array<{ key: string; rows: Record<string, unknown>[] }>;
+  links?: Record<string, string | null>;
+  statusSignals?: Record<string, string | number | boolean | null>;
   uniqueAddresses: number;
   uniqueReceivers: number;
   uniqueMaterials: number;
