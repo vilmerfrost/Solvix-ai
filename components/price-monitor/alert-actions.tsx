@@ -1,7 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { CheckCircle, XCircle, Zap, ChevronDown, ChevronUp } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { CheckCircle, ChevronDown, ChevronUp, Phone, Repeat, Zap } from "lucide-react";
 import { Button } from "@/components/ui/index";
 import { Alert, updateAlert } from "@/lib/price-monitor-api";
 
@@ -9,11 +10,18 @@ interface AlertActionsProps {
   alert: Alert;
   session: { access_token: string };
   onUpdated: (alertId: string, newStatus: Alert["status"]) => void;
+  comparisonHref?: string;
 }
 
-export function AlertActions({ alert, session, onUpdated }: AlertActionsProps) {
+export function AlertActions({
+  alert,
+  session,
+  onUpdated,
+  comparisonHref = "/price-monitor/spend/compare",
+}: AlertActionsProps) {
+  const router = useRouter();
   const [loading, setLoading] = useState<string | null>(null);
-  const [showNotes, setShowNotes] = useState(false);
+  const [showMenu, setShowMenu] = useState(false);
   const [notes, setNotes] = useState(alert.notes ?? "");
 
   if (alert.status !== "new") {
@@ -30,11 +38,13 @@ export function AlertActions({ alert, session, onUpdated }: AlertActionsProps) {
     );
   }
 
-  async function act(status: "reviewed" | "dismissed" | "actioned") {
+  async function act(status: "reviewed" | "dismissed" | "actioned", nextNotes?: string) {
     setLoading(status);
     try {
-      await updateAlert(alert.id, status, notes || null, session);
+      const value = nextNotes ?? notes;
+      await updateAlert(alert.id, status, value || null, session);
       onUpdated(alert.id, status);
+      setShowMenu(false);
     } catch {
       // silently ignore — parent can add toast if needed
     } finally {
@@ -56,22 +66,13 @@ export function AlertActions({ alert, session, onUpdated }: AlertActionsProps) {
         </Button>
         <Button
           size="xs"
-          variant="secondary"
-          icon={<XCircle className="w-3.5 h-3.5" />}
-          loading={loading === "dismissed"}
-          onClick={() => act("dismissed")}
-        >
-          Avfärda
-        </Button>
-        <Button
-          size="xs"
           variant="primary"
           icon={<Zap className="w-3.5 h-3.5" />}
           loading={loading === "actioned"}
-          onClick={() => (showNotes ? act("actioned") : setShowNotes(true))}
+          onClick={() => setShowMenu((prev) => !prev)}
         >
-          Åtgärdad
-          {!showNotes ? (
+          Åtgärda
+          {!showMenu ? (
             <ChevronDown className="w-3 h-3" />
           ) : (
             <ChevronUp className="w-3 h-3" />
@@ -79,19 +80,67 @@ export function AlertActions({ alert, session, onUpdated }: AlertActionsProps) {
         </Button>
       </div>
 
-      {showNotes && (
-        <textarea
-          className="w-full rounded-lg border px-3 py-2 text-xs resize-none"
+      {showMenu && (
+        <div
+          className="space-y-2 rounded-lg border p-3"
           style={{
-            background: "var(--color-bg)",
+            background: "var(--color-bg-elevated)",
             borderColor: "var(--color-border)",
-            color: "var(--color-text-primary)",
           }}
-          rows={2}
-          placeholder="Anteckningar (valfritt)…"
-          value={notes}
-          onChange={(e) => setNotes(e.target.value)}
-        />
+        >
+          <button
+            type="button"
+            className="flex w-full items-center gap-2 rounded-md px-2 py-2 text-left text-xs transition-colors hover:bg-black/5"
+            style={{ color: "var(--color-text-primary)" }}
+            onClick={() => {
+              const next = "Kontakta leverantör";
+              setNotes(next);
+              act("actioned", next);
+            }}
+          >
+            <Phone className="h-3.5 w-3.5" />
+            Kontakta leverantör
+          </button>
+          <button
+            type="button"
+            className="flex w-full items-center gap-2 rounded-md px-2 py-2 text-left text-xs transition-colors hover:bg-black/5"
+            style={{ color: "var(--color-text-primary)" }}
+            onClick={() => {
+              const next = "Godkänn nytt pris";
+              setNotes(next);
+              act("dismissed", next);
+            }}
+          >
+            <CheckCircle className="h-3.5 w-3.5" />
+            Godkänn nytt pris
+          </button>
+          <button
+            type="button"
+            className="flex w-full items-center gap-2 rounded-md px-2 py-2 text-left text-xs transition-colors hover:bg-black/5"
+            style={{ color: "var(--color-text-primary)" }}
+            onClick={() => {
+              const next = "Byt leverantör";
+              setNotes(next);
+              act("actioned", next);
+              router.push(comparisonHref);
+            }}
+          >
+            <Repeat className="h-3.5 w-3.5" />
+            Byt leverantör
+          </button>
+          <textarea
+            className="w-full resize-none rounded-lg border px-3 py-2 text-xs"
+            style={{
+              background: "var(--color-bg)",
+              borderColor: "var(--color-border)",
+              color: "var(--color-text-primary)",
+            }}
+            rows={2}
+            placeholder="Anteckningar (valfritt)…"
+            value={notes}
+            onChange={(e) => setNotes(e.target.value)}
+          />
+        </div>
       )}
     </div>
   );

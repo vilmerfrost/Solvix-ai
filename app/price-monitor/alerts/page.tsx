@@ -1,7 +1,8 @@
 "use client";
 
-import { useEffect, useState, useMemo } from "react";
+import { useCallback, useEffect, useState, useMemo } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { AlertTriangle, TrendingUp, TrendingDown, CheckSquare } from "lucide-react";
 import { Button, Skeleton } from "@/components/ui/index";
 import { AlertActions } from "@/components/price-monitor/alert-actions";
@@ -35,7 +36,7 @@ export default function AlertsPage() {
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [bulkLoading, setBulkLoading] = useState(false);
 
-  async function load() {
+  const load = useCallback(async () => {
     const supabase = getSupabaseBrowserClient();
     if (!supabase) return;
     const { data: { session: s } } = await supabase.auth.getSession();
@@ -50,9 +51,9 @@ export default function AlertsPage() {
     } finally {
       setLoading(false);
     }
-  }
+  }, [router]);
 
-  useEffect(() => { load(); }, []);
+  useEffect(() => { load(); }, [load]);
 
   const filtered = useMemo(() => {
     if (activeTab === "all") return allAlerts;
@@ -64,7 +65,11 @@ export default function AlertsPage() {
   function toggleSelect(id: string) {
     setSelected((prev) => {
       const next = new Set(prev);
-      next.has(id) ? next.delete(id) : next.add(id);
+      if (next.has(id)) {
+        next.delete(id);
+      } else {
+        next.add(id);
+      }
       return next;
     });
   }
@@ -299,6 +304,10 @@ function AlertCard({
           <p className="text-xs mt-0.5" style={{ color: "var(--color-text-muted)" }}>
             {alert.supplier_name} · {formatDate(alert.new_invoice_date)}
           </p>
+          <p className="mt-1 text-xs" style={{ color: "var(--color-text-muted)" }}>
+            Priset ändrades mellan {formatDate(alert.previous_invoice_date)} och{" "}
+            {formatDate(alert.new_invoice_date)}
+          </p>
           <div className="flex items-center flex-wrap gap-3 mt-2">
             <span className="text-sm" style={{ color: "var(--color-text-secondary)" }}>
               {formatSEK(alert.previous_price)} → {formatSEK(alert.new_price)}
@@ -315,6 +324,24 @@ function AlertCard({
               {formatPercent(alert.change_percent)}
             </span>
           </div>
+          <div className="mt-2 flex flex-wrap gap-3 text-xs">
+            {alert.previous_document_id ? (
+              <Link
+                href={`/price-monitor/review/${alert.previous_document_id}`}
+                style={{ color: "var(--color-accent)" }}
+              >
+                Se föregående faktura
+              </Link>
+            ) : null}
+            {alert.new_document_id ? (
+              <Link
+                href={`/price-monitor/review/${alert.new_document_id}`}
+                style={{ color: "var(--color-accent)" }}
+              >
+                Se ny faktura
+              </Link>
+            ) : null}
+          </div>
           {alert.notes && (
             <p
               className="mt-2 text-xs px-2.5 py-1.5 rounded-md"
@@ -330,7 +357,12 @@ function AlertCard({
 
         {/* Actions */}
         <div className="flex-shrink-0">
-          <AlertActions alert={alert} session={session} onUpdated={onUpdated} />
+          <AlertActions
+            alert={alert}
+            session={session}
+            onUpdated={onUpdated}
+            comparisonHref="/price-monitor/spend/compare"
+          />
         </div>
       </div>
     </div>

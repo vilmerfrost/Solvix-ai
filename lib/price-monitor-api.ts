@@ -29,6 +29,7 @@ export interface Alert {
   status: "new" | "reviewed" | "dismissed" | "actioned";
   notes: string | null;
   created_at: string;
+  previous_document_id?: string | null;
   /** Optional — present when the backend includes the source document id */
   new_document_id?: string | null;
 }
@@ -105,6 +106,69 @@ export interface ProcessInvoiceResult {
     new_price: number;
     change_percent: number;
   }>;
+}
+
+export interface ExtractedInvoiceLineItem {
+  description: string;
+  quantity?: number | null;
+  unit?: string | null;
+  unit_price?: number | null;
+  amount?: number | null;
+  vat_rate?: number | null;
+  matched_product?: string | null;
+  match_confidence?: number;
+  is_new_product?: boolean;
+  product_id?: string | null;
+  unit_price_original?: number | null;
+  amount_original?: number | null;
+  unit_price_sek?: number | null;
+  amount_sek?: number | null;
+}
+
+export interface ExtractedInvoiceData {
+  supplier?: { name?: string; org_number?: string | null };
+  invoice_number?: string | null;
+  invoice_date?: string | null;
+  due_date?: string | null;
+  total_amount?: number | null;
+  vat_amount?: number | null;
+  currency?: string;
+  total_amount_original?: number | null;
+  total_amount_sek?: number | null;
+  vat_amount_original?: number | null;
+  vat_amount_sek?: number | null;
+  exchange_rate_to_sek?: number | null;
+  exchange_rate_source?: string | null;
+  exchange_rate_updated_at?: string | null;
+  exchange_rate_manual_override?: boolean;
+  invoice_classification?: string | null;
+  line_items?: ExtractedInvoiceLineItem[];
+}
+
+export interface InvoiceDocumentRecord {
+  id: string;
+  user_id: string;
+  storage_path: string | null;
+  filename: string | null;
+  status: string;
+  sender_name: string | null;
+  document_date?: string | null;
+  total_cost?: number | null;
+  extracted_data: ExtractedInvoiceData | null;
+}
+
+export interface AiGroupSuggestion {
+  group_name: string;
+  products: string[];
+  confidence: number;
+}
+
+export interface AiInsight {
+  title: string;
+  insight: string;
+  impact: "high" | "medium" | "low";
+  action: string;
+  estimated_savings_sek: number | null;
 }
 
 export interface SpendBySupplier {
@@ -197,6 +261,17 @@ export function formatSEK(value: number): string {
   return new Intl.NumberFormat("sv-SE", {
     style: "currency",
     currency: "SEK",
+    minimumFractionDigits: 2,
+  }).format(value);
+}
+
+export function formatCurrencyValue(
+  value: number,
+  currency: string
+): string {
+  return new Intl.NumberFormat("sv-SE", {
+    style: "currency",
+    currency,
     minimumFractionDigits: 2,
   }).format(value);
 }
@@ -362,6 +437,59 @@ export async function processInvoice(
   );
   if (!res.ok) throw new Error(await getApiError(res));
   return res.json();
+}
+
+export async function getExchangeRate(
+  from: string
+): Promise<{ rate: number; fetched_at: string }> {
+  if (from.toUpperCase() === "SEK") {
+    return { rate: 1, fetched_at: new Date().toISOString() };
+  }
+
+  const res = await fetch(`https://api.exchangerate-api.com/v4/latest/${from}`);
+  if (!res.ok) throw new Error("Kunde inte hämta växelkurs.");
+  const data = await res.json();
+
+  return {
+    rate: data.rates?.SEK || 1,
+    fetched_at: new Date().toISOString(),
+  };
+}
+
+export async function getPdfPreviewUrl(
+  storagePath: string,
+  supabase: {
+    storage: {
+      from: (bucket: string) => {
+        createSignedUrl: (
+          path: string,
+          expiresIn: number
+        ) => Promise<{
+          data: { signedUrl: string } | null;
+          error: { message: string } | null;
+        }>;
+      };
+    };
+  }
+): Promise<string | null> {
+  const { data, error } = await supabase.storage
+    .from("raw_documents")
+    .createSignedUrl(storagePath, 3600);
+
+  if (error) return null;
+  return data?.signedUrl ?? null;
+}
+
+export async function fetchGroupSuggestions(
+  session: Session
+): Promise<AiGroupSuggestion[]> {
+  return fetchDashboard("suggest_groups", {}, session);
+}
+
+export async function fetchAiInsights(
+  session: Session
+): Promise<AiInsight[]> {
+  return fetchDashboard("ai_insights", {}, session);
 }
 
 export async function fetchSpendOverview(

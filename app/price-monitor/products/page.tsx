@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useMemo, Suspense } from "react";
+import { useCallback, useEffect, useState, useMemo, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import {
   TrendingUp,
@@ -12,10 +12,14 @@ import {
   ChevronDown,
 } from "lucide-react";
 import { Button, Skeleton } from "@/components/ui/index";
+import { AiSuggestions } from "@/components/price-monitor/ai-suggestions";
 import { InvoiceUploadModal } from "@/components/price-monitor/invoice-upload-modal";
 import { getSupabaseBrowserClient } from "@/lib/supabase-browser";
 import {
+  AiGroupSuggestion,
+  createProductGroup,
   fetchDashboard,
+  fetchGroupSuggestions,
   ProductOverview,
   Supplier,
   formatSEK,
@@ -43,8 +47,10 @@ function ProductsPageContent() {
     key: "product_name",
     dir: "asc",
   });
+  const [hideZeroItems, setHideZeroItems] = useState(true);
+  const [suggestions, setSuggestions] = useState<AiGroupSuggestion[]>([]);
 
-  async function load() {
+  const load = useCallback(async () => {
     const supabase = getSupabaseBrowserClient();
     if (!supabase) return;
     const { data: { session: s } } = await supabase.auth.getSession();
@@ -61,14 +67,21 @@ function ProductsPageContent() {
       ]);
       setProducts(prods);
       setSuppliers(sups);
+
+      if (sups.length >= 2) {
+        const nextSuggestions = await fetchGroupSuggestions(s).catch(() => []);
+        setSuggestions(nextSuggestions);
+      } else {
+        setSuggestions([]);
+      }
     } catch (e) {
       setError(e instanceof Error ? e.message : "Kunde inte hämta produkter.");
     } finally {
       setLoading(false);
     }
-  }
+  }, [router, supplierFilter]);
 
-  useEffect(() => { load(); }, [supplierFilter]);
+  useEffect(() => { load(); }, [load]);
 
   function toggleSort(key: SortKey) {
     setSort((prev) =>
@@ -84,6 +97,11 @@ function ProductsPageContent() {
       const q = search.toLowerCase();
       list = list.filter((p) => p.product_name.toLowerCase().includes(q));
     }
+    if (hideZeroItems) {
+      list = list.filter(
+        (p) => p.latest_price !== null && p.latest_price > 0
+      );
+    }
     list.sort((a, b) => {
       const av = a[sort.key] ?? "";
       const bv = b[sort.key] ?? "";
@@ -92,7 +110,42 @@ function ProductsPageContent() {
       return 0;
     });
     return list;
-  }, [products, search, sort]);
+  }, [hideZeroItems, products, search, sort]);
+
+  async function handleAcceptSuggestion(suggestion: AiGroupSuggestion) {
+    if (!session) return;
+
+    const matchedProductIds = products
+      .filter((product) => suggestion.products.includes(product.product_name))
+      .map((product) => product.product_id);
+
+    if (matchedProductIds.length < 2) return;
+
+    try {
+      await createProductGroup(
+        suggestion.group_name,
+        null,
+        matchedProductIds,
+        session
+      );
+      setSuggestions((prev) =>
+        prev.filter((item) => item.group_name !== suggestion.group_name)
+      );
+      await load();
+    } catch (e) {
+      setError(
+        e instanceof Error
+          ? e.message
+          : "Kunde inte skapa produktgruppen."
+      );
+    }
+  }
+
+  function handleIgnoreSuggestion(suggestion: AiGroupSuggestion) {
+    setSuggestions((prev) =>
+      prev.filter((item) => item.group_name !== suggestion.group_name)
+    );
+  }
 
   function SortIcon({ k }: { k: SortKey }) {
     if (sort.key !== k)
@@ -187,7 +240,19 @@ function ProductsPageContent() {
             </option>
           ))}
         </select>
+        <Button
+          variant="secondary"
+          onClick={() => setHideZeroItems((prev) => !prev)}
+        >
+          {hideZeroItems ? "Visa alla" : "Dölj nollposter"}
+        </Button>
       </div>
+
+      <AiSuggestions
+        suggestions={suggestions}
+        onAccept={handleAcceptSuggestion}
+        onIgnore={handleIgnoreSuggestion}
+      />
 
       {error && (
         <p
@@ -298,6 +363,7 @@ function ProductRow({
   const change = p.change_percent;
   const increase = change !== null && change > 0;
   const decrease = change !== null && change < 0;
+  const isZeroItem = p.latest_price === null || p.latest_price === 0;
 
   return (
     <tr
@@ -305,6 +371,7 @@ function ProductRow({
       className="cursor-pointer transition-colors hover:bg-opacity-50"
       style={{
         borderBottom: last ? "none" : "1px solid var(--color-border)",
+        opacity: isZeroItem ? 0.65 : 1,
       }}
     >
       <td
@@ -312,6 +379,11 @@ function ProductRow({
         style={{ color: "var(--color-text-primary)" }}
       >
         {p.product_name}
+        {isZeroItem && (
+          <div className="text-xs font-normal" style={{ color: "var(--color-text-muted)" }}>
+            Inkluderad nollpost
+          </div>
+        )}
       </td>
       <td className="px-4 py-3" style={{ color: "var(--color-text-secondary)" }}>
         {p.supplier_name}
@@ -323,7 +395,7 @@ function ProductRow({
         className="px-4 py-3 text-right font-medium"
         style={{ color: "var(--color-text-primary)" }}
       >
-        {formatSEK(p.latest_price)}
+        {p.latest_price !== null ? formatSEK(p.latest_price) : "–"}
         <div className="text-xs font-normal" style={{ color: "var(--color-text-muted)" }}>
           {formatDate(p.latest_date)}
         </div>

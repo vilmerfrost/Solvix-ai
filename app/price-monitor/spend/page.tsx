@@ -11,18 +11,22 @@ import {
   PageHeader,
   Skeleton,
 } from "@/components/ui/index";
+import { AiInsights } from "@/components/price-monitor/ai-insights";
 import { SpendBarChart } from "@/components/price-monitor/spend-bar-chart";
 import { SpendDonutChart } from "@/components/price-monitor/spend-donut-chart";
 import { SpendTrendChart } from "@/components/price-monitor/spend-trend-chart";
 import { getSupabaseBrowserClient } from "@/lib/supabase-browser";
 import {
+  fetchAiInsights,
   fetchSpendOverview,
   formatSEK,
+  type AiInsight,
   type SpendOverview,
 } from "@/lib/price-monitor-api";
 
 export default function SpendOverviewPage() {
   const [overview, setOverview] = useState<SpendOverview | null>(null);
+  const [insights, setInsights] = useState<AiInsight[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
@@ -41,7 +45,12 @@ export default function SpendOverviewPage() {
       }
 
       try {
-        setOverview(await fetchSpendOverview(session));
+        const [overviewData, insightData] = await Promise.all([
+          fetchSpendOverview(session),
+          fetchAiInsights(session).catch(() => []),
+        ]);
+        setOverview(overviewData);
+        setInsights(insightData);
       } catch (err) {
         setError(err instanceof Error ? err.message : "Kunde inte hämta inköpsanalys.");
       } finally {
@@ -145,6 +154,8 @@ export default function SpendOverviewPage() {
         </Card>
       ) : (
         <>
+          <AiInsights insights={insights} />
+
           <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
             <Card>
               <CardHeader>

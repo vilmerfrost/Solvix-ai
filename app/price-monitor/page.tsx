@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import {
   Package,
@@ -12,6 +12,7 @@ import {
   ArrowRight,
 } from "lucide-react";
 import { Button, Skeleton } from "@/components/ui/index";
+import { AlertBanner } from "@/components/price-monitor/alert-banner";
 import { InvoiceUploadModal } from "@/components/price-monitor/invoice-upload-modal";
 import { getSupabaseBrowserClient } from "@/lib/supabase-browser";
 import {
@@ -31,7 +32,7 @@ export default function PriceMonitorDashboard() {
   const [showUpload, setShowUpload] = useState(false);
   const [session, setSession] = useState<{ access_token: string; user: { id: string } } | null>(null);
 
-  async function load() {
+  const load = useCallback(async () => {
     const supabase = getSupabaseBrowserClient();
     if (!supabase) return;
 
@@ -47,9 +48,9 @@ export default function PriceMonitorDashboard() {
     } finally {
       setLoading(false);
     }
-  }
+  }, [router]);
 
-  useEffect(() => { load(); }, []);
+  useEffect(() => { load(); }, [load]);
 
   const stats = [
     {
@@ -141,6 +142,10 @@ export default function PriceMonitorDashboard() {
           {error}
         </p>
       )}
+
+      {overview?.recent_alerts?.length ? (
+        <AlertBanner alerts={overview.recent_alerts} />
+      ) : null}
 
       {/* Recent alerts */}
       <section>

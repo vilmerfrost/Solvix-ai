@@ -1,10 +1,10 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useRouter, useParams } from "next/navigation";
 import Link from "next/link";
-import { ArrowLeft, TrendingUp, TrendingDown, AlertTriangle } from "lucide-react";
-import { Button, Skeleton } from "@/components/ui/index";
+import { ArrowLeft, TrendingUp, TrendingDown } from "lucide-react";
+import { Skeleton } from "@/components/ui/index";
 import { PriceChart } from "@/components/price-monitor/price-chart";
 import { AlertActions } from "@/components/price-monitor/alert-actions";
 import { getSupabaseBrowserClient } from "@/lib/supabase-browser";
@@ -12,10 +12,23 @@ import {
   fetchDashboard,
   PriceHistory,
   Alert,
+  formatCurrencyValue,
   formatSEK,
   formatPercent,
   formatDate,
 } from "@/lib/price-monitor-api";
+
+interface DocumentHeader {
+  id: string;
+  sender_name: string | null;
+  document_date: string | null;
+  total_cost: number | null;
+  extracted_data: {
+    currency?: string | null;
+    total_amount_original?: number | null;
+    exchange_rate_to_sek?: number | null;
+  } | null;
+}
 
 export default function ProductDetailPage() {
   const router = useRouter();
@@ -25,10 +38,11 @@ export default function ProductDetailPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [session, setSession] = useState<{ access_token: string } | null>(null);
+  const [documentHeaders, setDocumentHeaders] = useState<Record<string, DocumentHeader>>({});
 
   const product = history[0];
 
-  async function load() {
+  const load = useCallback(async () => {
     const supabase = getSupabaseBrowserClient();
     if (!supabase) return;
     const { data: { session: s } } = await supabase.auth.getSession();
@@ -42,18 +56,38 @@ export default function ProductDetailPage() {
       ]);
       setHistory(hist);
       setAlerts(allAlerts.filter((a) => a.product_id === id));
+
+      const documentIds = [...new Set(hist.map((row) => row.document_id))];
+      if (documentIds.length > 0) {
+        const { data: docs, error: docsError } = await supabase
+          .from("documents")
+          .select("id, sender_name, document_date, total_cost, extracted_data")
+          .in("id", documentIds);
+
+        if (docsError) throw docsError;
+
+        const docMap = (docs ?? []).reduce<Record<string, DocumentHeader>>((acc, doc) => {
+          acc[doc.id] = doc as DocumentHeader;
+          return acc;
+        }, {});
+        setDocumentHeaders(docMap);
+      }
     } catch (e) {
       setError(e instanceof Error ? e.message : "Kunde inte hämta prishistorik.");
     } finally {
       setLoading(false);
     }
-  }
+  }, [id, router]);
 
-  useEffect(() => { load(); }, [id]);
+  useEffect(() => { load(); }, [load]);
 
   const sorted = [...history].sort(
     (a, b) => new Date(b.invoice_date).getTime() - new Date(a.invoice_date).getTime()
   );
+  const groupedHistory = sorted.reduce<Record<string, PriceHistory[]>>((acc, row) => {
+    acc[row.document_id] = [...(acc[row.document_id] ?? []), row];
+    return acc;
+  }, {});
 
   return (
     <div className="space-y-8 max-w-5xl mx-auto">
@@ -133,77 +167,121 @@ export default function ProductDetailPage() {
             Inga fakturarader hittades
           </p>
         ) : (
-          <div
-            className="rounded-xl border overflow-x-auto"
-            style={{ borderColor: "var(--color-border)" }}
-          >
-            <table className="w-full text-sm" style={{ background: "var(--color-bg-elevated)" }}>
-              <thead
-                style={{
-                  background: "var(--color-bg-secondary)",
-                  borderBottom: "1px solid var(--color-border)",
-                }}
-              >
-                <tr>
-                  {["Fakturadatum", "Faktura #", "Enhetspris", "Antal", "Totalbelopp", "Matchning"].map(
-                    (h) => (
-                      <th
-                        key={h}
-                        className="px-4 py-3 text-xs font-medium text-left whitespace-nowrap"
-                        style={{ color: "var(--color-text-muted)" }}
-                      >
-                        {h}
-                      </th>
-                    )
-                  )}
-                </tr>
-              </thead>
-              <tbody>
-                {sorted.map((row, idx) => (
-                  <tr
-                    key={`${row.document_id}-${row.invoice_date}`}
+          <div className="space-y-4">
+            {Object.entries(groupedHistory).map(([documentId, rows]) => {
+              const header = documentHeaders[documentId];
+              const originalTotal =
+                header?.extracted_data?.total_amount_original ?? null;
+              const originalCurrency =
+                header?.extracted_data?.currency ?? "SEK";
+
+              return (
+                <div
+                  key={documentId}
+                  className="rounded-xl border overflow-hidden"
+                  style={{ borderColor: "var(--color-border)" }}
+                >
+                  <div
+                    className="flex flex-wrap items-center justify-between gap-3 border-b px-4 py-3"
                     style={{
-                      borderBottom:
-                        idx === sorted.length - 1
-                          ? "none"
-                          : "1px solid var(--color-border)",
+                      background: "var(--color-bg-secondary)",
+                      borderColor: "var(--color-border)",
                     }}
                   >
-                    <td className="px-4 py-3" style={{ color: "var(--color-text-primary)" }}>
-                      {formatDate(row.invoice_date)}
-                    </td>
-                    <td className="px-4 py-3">
-                      {row.invoice_number ? (
-                        <Link
-                          href={`/price-monitor/review/${row.document_id}`}
-                          className="hover:underline font-medium"
-                          style={{ color: "var(--color-accent)" }}
-                        >
-                          {row.invoice_number}
-                        </Link>
-                      ) : (
-                        <span style={{ color: "var(--color-text-muted)" }}>–</span>
-                      )}
-                    </td>
-                    <td
-                      className="px-4 py-3 font-medium"
-                      style={{ color: "var(--color-text-primary)" }}
+                    <div>
+                      <p className="text-sm font-semibold" style={{ color: "var(--color-text-primary)" }}>
+                        {header?.sender_name ?? product?.supplier_name ?? "Okänd leverantör"}
+                      </p>
+                      <p className="text-xs" style={{ color: "var(--color-text-muted)" }}>
+                        {formatDate(header?.document_date ?? rows[0].invoice_date)}
+                      </p>
+                    </div>
+                    <div className="text-right">
+                      <p className="text-sm font-medium" style={{ color: "var(--color-text-primary)" }}>
+                        {originalTotal != null
+                          ? formatCurrencyValue(originalTotal, originalCurrency)
+                          : header?.total_cost != null
+                            ? formatSEK(header.total_cost)
+                            : "Total saknas"}
+                      </p>
+                      {header?.total_cost != null && originalCurrency !== "SEK" ? (
+                        <p className="text-xs" style={{ color: "var(--color-text-muted)" }}>
+                          {formatSEK(header.total_cost)}
+                        </p>
+                      ) : null}
+                    </div>
+                  </div>
+
+                  <table className="w-full text-sm" style={{ background: "var(--color-bg-elevated)" }}>
+                    <thead
+                      style={{
+                        background: "var(--color-bg-secondary)",
+                        borderBottom: "1px solid var(--color-border)",
+                      }}
                     >
-                      {formatSEK(row.unit_price)}
-                    </td>
-                    <td className="px-4 py-3" style={{ color: "var(--color-text-secondary)" }}>
-                      {row.quantity}
-                    </td>
-                    <td className="px-4 py-3" style={{ color: "var(--color-text-secondary)" }}>
-                      {formatSEK(row.amount)}
-                    </td>
-                    <td className="px-4 py-3">
-                      <ConfidenceBadge value={row.match_confidence} />
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+                      <tr>
+                        {["Fakturadatum", "Faktura #", "Enhetspris", "Antal", "Totalbelopp", "Matchning"].map(
+                          (h) => (
+                            <th
+                              key={h}
+                              className="px-4 py-3 text-left text-xs font-medium whitespace-nowrap"
+                              style={{ color: "var(--color-text-muted)" }}
+                            >
+                              {h}
+                            </th>
+                          )
+                        )}
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {rows.map((row, idx) => (
+                        <tr
+                          key={`${row.document_id}-${row.invoice_date}-${idx}`}
+                          style={{
+                            borderBottom:
+                              idx === rows.length - 1
+                                ? "none"
+                                : "1px solid var(--color-border)",
+                          }}
+                        >
+                          <td className="px-4 py-3" style={{ color: "var(--color-text-primary)" }}>
+                            {formatDate(row.invoice_date)}
+                          </td>
+                          <td className="px-4 py-3">
+                            {row.invoice_number ? (
+                              <Link
+                                href={`/price-monitor/review/${row.document_id}`}
+                                className="font-medium hover:underline"
+                                style={{ color: "var(--color-accent)" }}
+                              >
+                                {row.invoice_number}
+                              </Link>
+                            ) : (
+                              <span style={{ color: "var(--color-text-muted)" }}>–</span>
+                            )}
+                          </td>
+                          <td
+                            className="px-4 py-3 font-medium"
+                            style={{ color: "var(--color-text-primary)" }}
+                          >
+                            {formatSEK(row.unit_price)}
+                          </td>
+                          <td className="px-4 py-3" style={{ color: "var(--color-text-secondary)" }}>
+                            {row.quantity}
+                          </td>
+                          <td className="px-4 py-3" style={{ color: "var(--color-text-secondary)" }}>
+                            {formatSEK(row.amount)}
+                          </td>
+                          <td className="px-4 py-3">
+                            <ConfidenceBadge value={row.match_confidence} />
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              );
+            })}
           </div>
         )}
       </section>
@@ -247,13 +325,33 @@ export default function ProductDetailPage() {
                         </span>
                       </p>
                       <p className="text-xs" style={{ color: "var(--color-text-muted)" }}>
-                        {formatDate(alert.previous_invoice_date)} → {formatDate(alert.new_invoice_date)}
+                        Priset ändrades mellan {formatDate(alert.previous_invoice_date)} och{" "}
+                        {formatDate(alert.new_invoice_date)}
                       </p>
+                      <div className="mt-2 flex flex-wrap gap-3 text-xs">
+                        {alert.previous_document_id ? (
+                          <Link
+                            href={`/price-monitor/review/${alert.previous_document_id}`}
+                            style={{ color: "var(--color-accent)" }}
+                          >
+                            Se föregående faktura
+                          </Link>
+                        ) : null}
+                        {alert.new_document_id ? (
+                          <Link
+                            href={`/price-monitor/review/${alert.new_document_id}`}
+                            style={{ color: "var(--color-accent)" }}
+                          >
+                            Se ny faktura
+                          </Link>
+                        ) : null}
+                      </div>
                     </div>
                   </div>
                   <AlertActions
                     alert={alert}
                     session={session}
+                    comparisonHref="/price-monitor/spend/compare"
                     onUpdated={(alertId, newStatus) => {
                       setAlerts((prev) =>
                         prev.map((a) => (a.id === alertId ? { ...a, status: newStatus } : a))
