@@ -130,6 +130,24 @@ function getHeaders(session: Session): Record<string, string> {
   };
 }
 
+async function getApiError(res: Response): Promise<string> {
+  let message = `API-fel: ${res.status}`;
+
+  try {
+    const body = await res.json();
+    if (typeof body?.error === "string" && body.error) {
+      message = body.error;
+    }
+    if (typeof body?.details === "string" && body.details) {
+      message = `${message}: ${body.details}`;
+    }
+  } catch {
+    // Fall back to the HTTP status when the response is not JSON.
+  }
+
+  return message;
+}
+
 function dashboardUrl(action: string, params?: Record<string, string>): string {
   const url = new URL(
     `${process.env.NEXT_PUBLIC_SUPABASE_URL}/functions/v1/invoice-dashboard`
@@ -149,7 +167,7 @@ export async function fetchDashboard<T = unknown>(
   const res = await fetch(dashboardUrl(action, params), {
     headers: getHeaders(session!),
   });
-  if (!res.ok) throw new Error(`API-fel: ${res.status}`);
+  if (!res.ok) throw new Error(await getApiError(res));
   return res.json();
 }
 
@@ -164,7 +182,7 @@ export async function updateAlert(
     headers: getHeaders(session),
     body: JSON.stringify({ alert_id: alertId, status, notes }),
   });
-  if (!res.ok) throw new Error(`API-fel: ${res.status}`);
+  if (!res.ok) throw new Error(await getApiError(res));
   return res.json();
 }
 
@@ -177,7 +195,7 @@ export async function saveSettings(
     headers: getHeaders(session),
     body: JSON.stringify(settings),
   });
-  if (!res.ok) throw new Error(`API-fel: ${res.status}`);
+  if (!res.ok) throw new Error(await getApiError(res));
   return res.json();
 }
 
@@ -193,6 +211,6 @@ export async function processInvoice(
       body: JSON.stringify({ document_id: documentId }),
     }
   );
-  if (!res.ok) throw new Error(`API-fel: ${res.status}`);
+  if (!res.ok) throw new Error(await getApiError(res));
   return res.json();
 }
