@@ -2,7 +2,7 @@ import { createServiceRoleClient } from "@/lib/supabase";
 import { requireAuth } from "@/lib/auth";
 import { redirect } from "next/navigation";
 import Link from "next/link";
-import { FileText, CheckCircle2, AlertCircle, Activity, RefreshCw, ArrowLeft, Download, Settings, Home, Upload, FileSpreadsheet, Shield, Brain, Bot, LogOut } from "lucide-react";
+import { FileText, CheckCircle2, AlertCircle, Activity, RefreshCw, ArrowLeft, Download, Settings, Home, Upload, FileSpreadsheet, Shield, Brain, Bot, LogOut, TrendingUp } from "lucide-react";
 import { StatusBadge } from "@/components/ui";
 import { AutoFetchButton } from "@/components/auto-fetch-button";
 import { ResetDocumentsButton } from "@/components/reset-documents-button";
@@ -255,6 +255,10 @@ export default async function Dashboard({
                 <a href="/dashboard" className="nav-link nav-link-active pt-0.5">Dokument</a>
                 <a href="/dashboard/office" className="nav-link pt-0.5">Office/IT Queue</a>
                 <a href="/health" className="nav-link pt-0.5">Rapporter</a>
+                <a href="/price-monitor" className="nav-link pt-0.5 flex items-center gap-1.5">
+                  <TrendingUp className="w-3.5 h-3.5" />
+                  Prisövervakning
+                </a>
                 <a href="/settings" className="nav-link pt-0.5">Inställningar</a>
               </div>
             </div>
@@ -264,6 +268,9 @@ export default async function Dashboard({
               {showAzure && activeTab === "active" && approvedDocs.length > 0 && (
                 <ExportToAzureButton selectedDocuments={approvedDocs.map(d => d.id)} />
               )}
+              <Link href="/price-monitor" className="text-slate-400 hover:text-indigo-600 transition-colors" title="Prisövervakning">
+                <TrendingUp className="w-5 h-5" />
+              </Link>
               <Link href="/settings" className="text-slate-400 hover:text-indigo-600 transition-colors">
                 <Settings className="w-5 h-5" />
               </Link>

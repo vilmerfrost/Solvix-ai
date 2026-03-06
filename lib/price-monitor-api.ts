@@ -21,6 +21,8 @@ export interface Alert {
   status: "new" | "reviewed" | "dismissed" | "actioned";
   notes: string | null;
   created_at: string;
+  /** Optional — present when the backend includes the source document id */
+  new_document_id?: string | null;
 }
 
 export interface ProductOverview {

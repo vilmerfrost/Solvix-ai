@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter, useParams } from "next/navigation";
+import Link from "next/link";
 import { ArrowLeft, TrendingUp, TrendingDown, AlertTriangle } from "lucide-react";
 import { Button, Skeleton } from "@/components/ui/index";
 import { PriceChart } from "@/components/price-monitor/price-chart";
@@ -171,8 +172,18 @@ export default function ProductDetailPage() {
                     <td className="px-4 py-3" style={{ color: "var(--color-text-primary)" }}>
                       {formatDate(row.invoice_date)}
                     </td>
-                    <td className="px-4 py-3" style={{ color: "var(--color-text-muted)" }}>
-                      {row.invoice_number ?? "–"}
+                    <td className="px-4 py-3">
+                      {row.invoice_number ? (
+                        <Link
+                          href={`/price-monitor/review/${row.document_id}`}
+                          className="hover:underline font-medium"
+                          style={{ color: "var(--color-accent)" }}
+                        >
+                          {row.invoice_number}
+                        </Link>
+                      ) : (
+                        <span style={{ color: "var(--color-text-muted)" }}>–</span>
+                      )}
                     </td>
                     <td
                       className="px-4 py-3 font-medium"

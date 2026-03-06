@@ -1,7 +1,8 @@
 "use client";
 
 import { useState, useRef } from "react";
-import { X, Upload, FileText, CheckCircle, AlertCircle, Loader2 } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { X, Upload, FileText, CheckCircle, AlertCircle, Loader2, FileSearch } from "lucide-react";
 import { Button, useToast } from "@/components/ui/index";
 import { getSupabaseBrowserClient } from "@/lib/supabase-browser";
 import { processInvoice, formatSEK } from "@/lib/price-monitor-api";
@@ -31,12 +32,14 @@ export function InvoiceUploadModal({
   onProcessed,
   session,
 }: InvoiceUploadModalProps) {
+  const router = useRouter();
   const { addToast } = useToast();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [file, setFile] = useState<File | null>(null);
   const [step, setStep] = useState<Step>("idle");
   const [errorMsg, setErrorMsg] = useState("");
   const [result, setResult] = useState<ProcessResult | null>(null);
+  const [documentId, setDocumentId] = useState<string | null>(null);
   const [dragging, setDragging] = useState(false);
 
   function handleFile(f: File) {
@@ -89,6 +92,8 @@ export function InvoiceUploadModal({
         .single();
 
       if (dbError || !doc) throw new Error(`Databasfel: ${dbError?.message}`);
+
+      setDocumentId(doc.id);
 
       // 3. Process invoice
       setStep("processing");
@@ -290,9 +295,23 @@ export function InvoiceUploadModal({
           style={{ borderColor: "var(--color-border)" }}
         >
           {step === "done" ? (
-            <Button variant="primary" onClick={onClose}>
-              Stäng
-            </Button>
+            <>
+              {documentId && (
+                <Button
+                  variant="secondary"
+                  icon={<FileSearch className="w-4 h-4" />}
+                  onClick={() => {
+                    onClose();
+                    router.push(`/price-monitor/review/${documentId}`);
+                  }}
+                >
+                  Granska
+                </Button>
+              )}
+              <Button variant="primary" onClick={onClose}>
+                Stäng
+              </Button>
+            </>
           ) : step === "uploading" || step === "processing" ? null : (
             <>
               <Button variant="secondary" onClick={onClose}>

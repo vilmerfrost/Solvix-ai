@@ -184,7 +184,13 @@ export default function PriceMonitorDashboard() {
                 key={alert.id}
                 alert={alert}
                 last={idx === Math.min(overview.recent_alerts.length, 10) - 1}
-                onClick={() => router.push(`/price-monitor/products/${alert.product_id}`)}
+                onClick={() =>
+                  router.push(
+                    alert.new_document_id
+                      ? `/price-monitor/review/${alert.new_document_id}`
+                      : `/price-monitor/products/${alert.product_id}`
+                  )
+                }
               />
             ))}
           </div>
