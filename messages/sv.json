@@ -66,6 +66,12 @@
   "products": {
     "title": "Produkter",
     "count": "{count} produkter",
+    "backToProducts": "Tillbaka till produkter",
+    "detailNotFound": "Produkt hittades inte",
+    "deleteProduct": "Ta bort produkt",
+    "deleteConfirm": "Ta bort den här produkten? Detta tar bort kopplade prisvarningar och avvikelser.",
+    "deleteSuccess": "Produkten togs bort",
+    "deleteError": "Kunde inte ta bort produkten.",
     "uploadInvoice": "Ladda upp faktura",
     "searchPlaceholder": "Sök produkt...",
     "allSuppliers": "Alla leverantörer",

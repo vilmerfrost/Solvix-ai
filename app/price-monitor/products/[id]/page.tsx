@@ -2,9 +2,10 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { useRouter, useParams } from "next/navigation";
+import { useTranslations } from "next-intl";
 import Link from "next/link";
-import { ArrowLeft, TrendingUp, TrendingDown } from "lucide-react";
-import { Skeleton } from "@/components/ui/index";
+import { ArrowLeft, TrendingUp, TrendingDown, Trash2 } from "lucide-react";
+import { Button, Skeleton, useToast } from "@/components/ui/index";
 import { PriceChart } from "@/components/price-monitor/price-chart";
 import { AlertActions } from "@/components/price-monitor/alert-actions";
 import { getSupabaseBrowserClient } from "@/lib/supabase-browser";
@@ -33,12 +34,15 @@ interface DocumentHeader {
 export default function ProductDetailPage() {
   const router = useRouter();
   const { id } = useParams<{ id: string }>();
+  const t = useTranslations("products");
+  const { addToast } = useToast();
   const [history, setHistory] = useState<PriceHistory[]>([]);
   const [alerts, setAlerts] = useState<Alert[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [session, setSession] = useState<{ access_token: string } | null>(null);
   const [documentHeaders, setDocumentHeaders] = useState<Record<string, DocumentHeader>>({});
+  const [deleting, setDeleting] = useState(false);
 
   const product = history[0];
 
@@ -73,11 +77,40 @@ export default function ProductDetailPage() {
         setDocumentHeaders(docMap);
       }
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Kunde inte hämta prishistorik.");
+      setError(e instanceof Error ? e.message : "Could not fetch price history.");
     } finally {
       setLoading(false);
     }
   }, [id, router]);
+
+  async function handleDeleteProduct() {
+    const confirmed = window.confirm(t("deleteConfirm"));
+    if (!confirmed) return;
+
+    setDeleting(true);
+
+    try {
+      const response = await fetch(`/api/price-monitor/products/${id}`, {
+        method: "DELETE",
+      });
+      const body = await response.json();
+
+      if (!response.ok) {
+        throw new Error(body?.error || t("deleteError"));
+      }
+
+      addToast({ type: "success", title: t("deleteSuccess") });
+      router.push("/price-monitor/products");
+    } catch (deleteError) {
+      addToast({
+        type: "error",
+        title: t("deleteError"),
+        description: deleteError instanceof Error ? deleteError.message : undefined,
+      });
+    } finally {
+      setDeleting(false);
+    }
+  }
 
   useEffect(() => { load(); }, [load]);
 
@@ -98,24 +131,35 @@ export default function ProductDetailPage() {
         style={{ color: "var(--color-text-muted)" }}
       >
         <ArrowLeft className="w-4 h-4" />
-        Tillbaka till produkter
+        {t("backToProducts")}
       </button>
 
       {/* Header */}
       {loading ? (
         <Skeleton className="h-16 rounded-xl" />
       ) : product ? (
-        <div>
-          <h1 className="text-2xl font-bold" style={{ color: "var(--color-text-primary)" }}>
-            {product.product_name}
-          </h1>
-          <p className="text-sm mt-1" style={{ color: "var(--color-text-muted)" }}>
-            {product.supplier_name}
-            {product.product_unit && ` · ${product.product_unit}`}
-          </p>
+        <div className="flex flex-wrap items-start justify-between gap-4">
+          <div>
+            <h1 className="text-2xl font-bold" style={{ color: "var(--color-text-primary)" }}>
+              {product.product_name}
+            </h1>
+            <p className="text-sm mt-1" style={{ color: "var(--color-text-muted)" }}>
+              {product.supplier_name}
+              {product.product_unit && ` · ${product.product_unit}`}
+            </p>
+          </div>
+          <Button
+            variant="danger"
+            size="sm"
+            icon={<Trash2 className="w-4 h-4" />}
+            loading={deleting}
+            onClick={handleDeleteProduct}
+          >
+            {t("deleteProduct")}
+          </Button>
         </div>
       ) : (
-        <p style={{ color: "var(--color-text-muted)" }}>Produkt hittades inte</p>
+        <p style={{ color: "var(--color-text-muted)" }}>{t("detailNotFound")}</p>
       )}
 
       {error && (

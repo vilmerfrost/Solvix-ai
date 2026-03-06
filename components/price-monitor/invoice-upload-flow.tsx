@@ -293,15 +293,6 @@ export function InvoiceUploadFlow({
       setRateFetchedAt(extractedData?.exchange_rate_updated_at ?? new Date().toISOString());
 
       if (autoProcess) {
-        await saveEditedData({
-          document: docData as InvoiceDocumentRecord,
-          result,
-          items: nextLineItems,
-          invoiceData: nextFormData,
-          selectedCurrency: extractedCurrency,
-          selectedRate: extractedRate || 1,
-          dbItems: (dbItems as ExistingDbLineItem[]) ?? [],
-        });
         setStep(4);
         onProcessed();
         return;
@@ -408,15 +399,16 @@ export function InvoiceUploadFlow({
       if (deleteError) throw deleteError;
 
       if (targetItems.length > 0) {
-        const rows = targetItems.map((item) => {
+        const rows = targetItems.map((item, index) => {
+          const sourceRow = targetDbItems[index];
           const unitPriceOriginal = parseSENum(item.unit_price);
           const amountOriginal = parseSENum(item.amount);
 
           return {
             user_id: session.user.id,
             document_id: targetDoc.id,
-            supplier_id: supplierId,
-            product_id: item.product_id,
+            supplier_id: sourceRow?.supplier_id ?? supplierId,
+            product_id: item.product_id ?? sourceRow?.product_id ?? null,
             raw_description: item.description,
             quantity: parseSENum(item.quantity),
             unit: item.unit || null,

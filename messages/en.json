@@ -66,6 +66,12 @@
   "products": {
     "title": "Products",
     "count": "{count} products",
+    "backToProducts": "Back to products",
+    "detailNotFound": "Product not found",
+    "deleteProduct": "Delete product",
+    "deleteConfirm": "Delete this product? This removes linked price alerts and deviations.",
+    "deleteSuccess": "Product deleted",
+    "deleteError": "Could not delete the product.",
     "uploadInvoice": "Upload Invoice",
     "searchPlaceholder": "Search product...",
     "allSuppliers": "All suppliers",

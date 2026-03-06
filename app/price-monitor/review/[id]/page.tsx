@@ -361,15 +361,16 @@ export default function ReviewPage() {
       if (delErr) throw delErr;
 
       if (lineItems.length > 0) {
-        const insertRows = lineItems.map((item) => {
+        const insertRows = lineItems.map((item, index) => {
+          const sourceRow = dbItems[index];
           const unitPriceOriginal = parseSENum(item.unit_price);
           const amountOriginal = parseSENum(item.amount);
 
           return {
             user_id: userId,
             document_id: id,
-            supplier_id: supplierId,
-            product_id: item.product_id,
+            supplier_id: sourceRow?.supplier_id ?? supplierId,
+            product_id: item.product_id ?? sourceRow?.product_id ?? null,
             raw_description: item.description,
             quantity: parseSENum(item.quantity),
             unit: item.unit || null,

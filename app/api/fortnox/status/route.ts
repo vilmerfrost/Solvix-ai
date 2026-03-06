@@ -2,6 +2,32 @@ import { NextResponse } from "next/server";
 import { getApiUser } from "@/lib/api-auth";
 import { createServiceRoleClient } from "@/lib/supabase";
 
+async function loadConnectionWithFallback(
+  supabase: ReturnType<typeof createServiceRoleClient>,
+  userId: string
+) {
+  const fullSelect =
+    "id, fortnox_company_name, fortnox_org_number, is_active, auto_sync, sync_from_date, last_sync_at";
+  const fallbackSelect =
+    "id, fortnox_company_name, fortnox_org_number, is_active, auto_sync, sync_from_date";
+
+  const result = await supabase
+    .from("fortnox_connections")
+    .select(fullSelect)
+    .eq("user_id", userId)
+    .maybeSingle();
+
+  if (!result.error || !result.error.message.includes("last_sync_at")) {
+    return result;
+  }
+
+  return supabase
+    .from("fortnox_connections")
+    .select(fallbackSelect)
+    .eq("user_id", userId)
+    .maybeSingle();
+}
+
 export async function GET() {
   const { user, error: authError } = await getApiUser();
   if (authError || !user) return authError!;
@@ -9,13 +35,7 @@ export async function GET() {
   const supabase = createServiceRoleClient();
   const [{ data: connection, error: connectionError }, { data: latestLog, error: logError }] =
     await Promise.all([
-      supabase
-        .from("fortnox_connections")
-        .select(
-          "id, fortnox_company_name, fortnox_org_number, is_active, auto_sync, sync_from_date, last_sync_at"
-        )
-        .eq("user_id", user.id)
-        .maybeSingle(),
+      loadConnectionWithFallback(supabase, user.id),
       supabase
         .from("fortnox_sync_logs")
         .select("id, status, imported_count, skipped_count, failed_count, sync_started_at, sync_finished_at, message")
@@ -56,7 +76,7 @@ export async function PATCH(request: Request) {
     })
     .eq("user_id", user.id)
     .select(
-      "id, fortnox_company_name, fortnox_org_number, is_active, auto_sync, sync_from_date, last_sync_at"
+      "id, fortnox_company_name, fortnox_org_number, is_active, auto_sync, sync_from_date"
     )
     .maybeSingle();
 

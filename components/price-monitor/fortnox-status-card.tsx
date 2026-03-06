@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { RefreshCw, Unplug } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { Button, useToast } from "@/components/ui/index";
@@ -24,6 +25,8 @@ interface FortnoxStatusResponse {
 export function FortnoxStatusCard() {
   const t = useTranslations("settings");
   const { addToast } = useToast();
+  const router = useRouter();
+  const searchParams = useSearchParams();
   const [data, setData] = useState<FortnoxStatusResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -51,6 +54,30 @@ export function FortnoxStatusCard() {
   useEffect(() => {
     load();
   }, []);
+
+  useEffect(() => {
+    const fortnoxState = searchParams.get("fortnox");
+    const rawMessage = searchParams.get("message");
+
+    if (!fortnoxState) return;
+
+    const message =
+      fortnoxState === "success"
+        ? "Fortnox connected successfully."
+        : rawMessage === "invalid_scope"
+        ? "Fortnox rejected the requested permissions. The integration has now been updated, so please try connecting again."
+        : rawMessage === "invalid_state"
+        ? "Fortnox login could not be verified. Please try connecting again."
+        : rawMessage || "Fortnox connection failed.";
+
+    addToast({
+      type: fortnoxState === "success" ? "success" : "error",
+      title: t("fortnoxTitle"),
+      description: message,
+    });
+
+    router.replace("/price-monitor/settings");
+  }, [addToast, router, searchParams, t]);
 
   async function syncNow() {
     setSaving(true);
