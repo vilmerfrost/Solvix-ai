@@ -26,7 +26,19 @@ import {
   emptyLineItem,
 } from "@/components/price-monitor/line-items-editor";
 import { getSupabaseBrowserClient } from "@/lib/supabase-browser";
-import { formatSEK, formatPercent, formatDate } from "@/lib/price-monitor-api";
+import {
+  fetchDashboard,
+  formatSEK,
+  formatPercent,
+  formatDate,
+  getDefaultPriceMonitorSettings,
+  type PriceMonitorSettings,
+} from "@/lib/price-monitor-api";
+import {
+  convertAmountToSek,
+  getFxSnapshot,
+  normalizeCurrency,
+} from "@/lib/price-monitor-currency";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -48,6 +60,14 @@ interface ExtractedData {
   total_amount?: number | null;
   vat_amount?: number | null;
   currency?: string;
+  total_amount_original?: number | null;
+  total_amount_sek?: number | null;
+  vat_amount_original?: number | null;
+  vat_amount_sek?: number | null;
+  exchange_rate_to_sek?: number | null;
+  exchange_rate_source?: string | null;
+  exchange_rate_updated_at?: string | null;
+  exchange_rate_manual_override?: boolean;
   line_items?: RawLineItem[];
 }
 
@@ -62,6 +82,10 @@ interface RawLineItem {
   match_confidence?: number;
   is_new_product?: boolean;
   product_id?: string | null;
+  unit_price_original?: number | null;
+  amount_original?: number | null;
+  unit_price_sek?: number | null;
+  amount_sek?: number | null;
 }
 
 interface DbLineItem {
@@ -102,8 +126,8 @@ function extractedToForm(ed: ExtractedData | null): InvoiceFormData {
     invoice_number: ed.invoice_number ?? "",
     invoice_date: ed.invoice_date ?? "",
     due_date: ed.due_date ?? "",
-    total_amount: numToSE(ed.total_amount ?? null),
-    vat_amount: numToSE(ed.vat_amount ?? null),
+    total_amount: numToSE(ed.total_amount_original ?? ed.total_amount ?? null),
+    vat_amount: numToSE(ed.vat_amount_original ?? ed.vat_amount ?? null),
     currency: ed.currency ?? "SEK",
   };
 }
@@ -113,8 +137,8 @@ function rawToFormItem(item: RawLineItem): LineItemForm {
     description: item.description ?? "",
     quantity: item.quantity != null ? String(item.quantity).replace(".", ",") : "",
     unit: item.unit ?? "",
-    unit_price: numToSE(item.unit_price ?? null),
-    amount: numToSE(item.amount ?? null),
+    unit_price: numToSE(item.unit_price_original ?? item.unit_price ?? null),
+    amount: numToSE(item.amount_original ?? item.amount ?? null),
     vat_rate: item.vat_rate != null ? String(item.vat_rate).replace(".", ",") : "",
     matched_product: item.matched_product ?? null,
     match_confidence: item.match_confidence ?? 0,
@@ -150,6 +174,9 @@ export default function ReviewPage() {
   const [lineItems, setLineItems] = useState<LineItemForm[]>([]);
   const [pdfUrl, setPdfUrl] = useState<string | null>(null);
   const [alerts, setAlerts] = useState<PriceAlert[]>([]);
+  const [settings, setSettings] = useState<PriceMonitorSettings>(
+    getDefaultPriceMonitorSettings()
+  );
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [supplierId, setSupplierId] = useState<string | null>(null);
@@ -174,7 +201,7 @@ export default function ReviewPage() {
     setUserId(session.user.id);
 
     try {
-      const [{ data: docData }, { data: dbItems }, { data: alertsData }] =
+      const [{ data: docData }, { data: dbItems }, { data: alertsData }, priceMonitorSettings] =
         await Promise.all([
           supabase.from("documents").select("*").eq("id", id).single(),
           supabase.from("invoice_line_items").select("*").eq("document_id", id),
@@ -183,7 +210,12 @@ export default function ReviewPage() {
             .select("*, products(name, unit)")
             .eq("new_document_id", id)
             .order("created_at", { ascending: false }),
+          fetchDashboard<PriceMonitorSettings>("settings", undefined, session).catch(
+            () => getDefaultPriceMonitorSettings()
+          ),
         ]);
+
+      setSettings(priceMonitorSettings);
 
       if (docData) {
         setDoc(docData as InvoiceDocument);
@@ -201,7 +233,7 @@ export default function ReviewPage() {
         // PDF signed URL
         if (docData.storage_path) {
           const { data: urlData } = await supabase.storage
-            .from("documents")
+            .from("raw_documents")
             .createSignedUrl(docData.storage_path, 3600);
           setPdfUrl(urlData?.signedUrl ?? null);
         }
@@ -229,6 +261,18 @@ export default function ReviewPage() {
 
     setSaving(true);
     try {
+      const normalizedCurrency = normalizeCurrency(formData.currency);
+      const fxSnapshot = getFxSnapshot(normalizedCurrency, settings);
+
+      if (!fxSnapshot.rate_to_sek) {
+        throw new Error(
+          `Saknar valutakurs for ${formData.currency}. Uppdatera Price Monitor-installningarna och forsok igen.`
+        );
+      }
+
+      const totalAmountOriginal = parseSENum(formData.total_amount);
+      const vatAmountOriginal = parseSENum(formData.vat_amount);
+
       // Build updated extracted_data
       const updatedExtracted: ExtractedData = {
         supplier: {
@@ -238,21 +282,54 @@ export default function ReviewPage() {
         invoice_number: formData.invoice_number || null,
         invoice_date: formData.invoice_date || null,
         due_date: formData.due_date || null,
-        total_amount: parseSENum(formData.total_amount),
-        vat_amount: parseSENum(formData.vat_amount),
-        currency: formData.currency,
-        line_items: lineItems.map((item) => ({
-          description: item.description,
-          quantity: parseSENum(item.quantity),
-          unit: item.unit || null,
-          unit_price: parseSENum(item.unit_price),
-          amount: parseSENum(item.amount),
-          vat_rate: parseSENum(item.vat_rate),
-          matched_product: item.matched_product,
-          match_confidence: item.match_confidence,
-          is_new_product: item.is_new_product,
-          product_id: item.product_id,
-        })),
+        total_amount: totalAmountOriginal,
+        vat_amount: vatAmountOriginal,
+        total_amount_original: totalAmountOriginal,
+        total_amount_sek: convertAmountToSek(
+          totalAmountOriginal,
+          normalizedCurrency,
+          settings
+        ),
+        vat_amount_original: vatAmountOriginal,
+        vat_amount_sek: convertAmountToSek(
+          vatAmountOriginal,
+          normalizedCurrency,
+          settings
+        ),
+        currency: normalizedCurrency,
+        exchange_rate_to_sek: fxSnapshot.rate_to_sek,
+        exchange_rate_source: fxSnapshot.source,
+        exchange_rate_updated_at: fxSnapshot.updated_at,
+        exchange_rate_manual_override: fxSnapshot.manual_override,
+        line_items: lineItems.map((item) => {
+          const unitPriceOriginal = parseSENum(item.unit_price);
+          const amountOriginal = parseSENum(item.amount);
+
+          return {
+            description: item.description,
+            quantity: parseSENum(item.quantity),
+            unit: item.unit || null,
+            unit_price: unitPriceOriginal,
+            amount: amountOriginal,
+            unit_price_original: unitPriceOriginal,
+            amount_original: amountOriginal,
+            unit_price_sek: convertAmountToSek(
+              unitPriceOriginal,
+              normalizedCurrency,
+              settings
+            ),
+            amount_sek: convertAmountToSek(
+              amountOriginal,
+              normalizedCurrency,
+              settings
+            ),
+            vat_rate: parseSENum(item.vat_rate),
+            matched_product: item.matched_product,
+            match_confidence: item.match_confidence,
+            is_new_product: item.is_new_product,
+            product_id: item.product_id,
+          };
+        }),
       };
 
       // Determine new status
@@ -266,7 +343,7 @@ export default function ReviewPage() {
         extracted_data: updatedExtracted,
         sender_name: formData.supplier_name || null,
         document_date: formData.invoice_date || null,
-        total_cost: parseSENum(formData.total_amount),
+        total_cost: updatedExtracted.total_amount_sek,
       };
       if (newStatus) docUpdate.status = newStatus;
 
@@ -284,22 +361,35 @@ export default function ReviewPage() {
       if (delErr) throw delErr;
 
       if (lineItems.length > 0) {
-        const insertRows = lineItems.map((item) => ({
-          user_id: userId,
-          document_id: id,
-          supplier_id: supplierId,
-          product_id: item.product_id,
-          raw_description: item.description,
-          quantity: parseSENum(item.quantity),
-          unit: item.unit || null,
-          unit_price: parseSENum(item.unit_price),
-          amount: parseSENum(item.amount),
-          vat_rate: parseSENum(item.vat_rate),
-          invoice_number: formData.invoice_number || null,
-          invoice_date: formData.invoice_date || null,
-          match_confidence: item.match_confidence,
-          manually_verified: true,
-        }));
+        const insertRows = lineItems.map((item) => {
+          const unitPriceOriginal = parseSENum(item.unit_price);
+          const amountOriginal = parseSENum(item.amount);
+
+          return {
+            user_id: userId,
+            document_id: id,
+            supplier_id: supplierId,
+            product_id: item.product_id,
+            raw_description: item.description,
+            quantity: parseSENum(item.quantity),
+            unit: item.unit || null,
+            unit_price: convertAmountToSek(
+              unitPriceOriginal,
+              normalizedCurrency,
+              settings
+            ),
+            amount: convertAmountToSek(
+              amountOriginal,
+              normalizedCurrency,
+              settings
+            ),
+            vat_rate: parseSENum(item.vat_rate),
+            invoice_number: formData.invoice_number || null,
+            invoice_date: formData.invoice_date || null,
+            match_confidence: item.match_confidence,
+            manually_verified: true,
+          };
+        });
 
         const { error: insErr } = await supabase
           .from("invoice_line_items")
@@ -332,6 +422,13 @@ export default function ReviewPage() {
   const supplierName =
     formData.supplier_name || doc?.sender_name || "Okänd leverantör";
   const invoiceNumber = formData.invoice_number || "–";
+  const reviewCurrency = normalizeCurrency(formData.currency);
+  const reviewFxSnapshot = getFxSnapshot(reviewCurrency, settings);
+  const convertedTotalAmount = convertAmountToSek(
+    parseSENum(formData.total_amount),
+    reviewCurrency,
+    settings
+  );
 
   return (
     <div className="flex flex-col h-full -m-6">
@@ -475,6 +572,79 @@ export default function ReviewPage() {
                 </div>
               )}
 
+              {reviewCurrency !== "SEK" && (
+                <div
+                  className="rounded-xl border p-4 space-y-2"
+                  style={{
+                    background: "var(--color-bg-elevated)",
+                    borderColor: "var(--color-border)",
+                  }}
+                >
+                  <div className="flex items-center justify-between gap-3 flex-wrap">
+                    <p
+                      className="text-sm font-semibold"
+                      style={{ color: "var(--color-text-primary)" }}
+                    >
+                      Valutakonvertering
+                    </p>
+                    <p className="text-xs" style={{ color: "var(--color-text-muted)" }}>
+                      {reviewFxSnapshot.source ?? "Okänd källa"}
+                    </p>
+                  </div>
+
+                  <p className="text-sm" style={{ color: "var(--color-text-secondary)" }}>
+                    Originalfakturan är i {reviewCurrency}. Prisjämförelser och varningar
+                    använder SEK-normaliserade värden.
+                  </p>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
+                    <div
+                      className="rounded-lg border px-3 py-2"
+                      style={{
+                        background: "var(--color-bg)",
+                        borderColor: "var(--color-border)",
+                      }}
+                    >
+                      <p style={{ color: "var(--color-text-muted)" }}>Använd kurs</p>
+                      <p
+                        className="font-medium mt-1"
+                        style={{ color: "var(--color-text-primary)" }}
+                      >
+                        {reviewFxSnapshot.rate_to_sek
+                          ? `1 ${reviewCurrency} = ${formatSEK(reviewFxSnapshot.rate_to_sek)}`
+                          : "Saknas"}
+                      </p>
+                    </div>
+
+                    <div
+                      className="rounded-lg border px-3 py-2"
+                      style={{
+                        background: "var(--color-bg)",
+                        borderColor: "var(--color-border)",
+                      }}
+                    >
+                      <p style={{ color: "var(--color-text-muted)" }}>
+                        Totalt för jämförelse
+                      </p>
+                      <p
+                        className="font-medium mt-1"
+                        style={{ color: "var(--color-text-primary)" }}
+                      >
+                        {convertedTotalAmount != null
+                          ? formatSEK(convertedTotalAmount)
+                          : "Saknas"}
+                      </p>
+                    </div>
+                  </div>
+
+                  {reviewFxSnapshot.updated_at && (
+                    <p className="text-xs" style={{ color: "var(--color-text-muted)" }}>
+                      Uppdaterad {formatDate(reviewFxSnapshot.updated_at)}
+                    </p>
+                  )}
+                </div>
+              )}
+
               {/* Header form */}
               <section>
                 <h2
@@ -500,6 +670,12 @@ export default function ReviewPage() {
                     {lineItems.length} rad{lineItems.length !== 1 ? "er" : ""}
                   </span>
                 </h2>
+                {reviewCurrency !== "SEK" && (
+                  <p className="text-xs mb-4" style={{ color: "var(--color-text-muted)" }}>
+                    Värdena i formuläret är i {reviewCurrency}. När du sparar lagras
+                    jämförelsepriserna i SEK.
+                  </p>
+                )}
                 <LineItemsEditor items={lineItems} onChange={setLineItems} />
               </section>
 

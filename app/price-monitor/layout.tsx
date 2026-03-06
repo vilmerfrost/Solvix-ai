@@ -3,13 +3,27 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { ToastProvider } from "@/components/ui/index";
-import { LayoutDashboard, Package, AlertTriangle, Truck, Settings } from "lucide-react";
+import {
+  LayoutDashboard,
+  Package,
+  AlertTriangle,
+  Truck,
+  Settings,
+  BarChart3,
+  Scale,
+  Layers3,
+  Tags,
+} from "lucide-react";
 
 const navItems = [
   { href: "/price-monitor", label: "Översikt", icon: LayoutDashboard, exact: true },
   { href: "/price-monitor/products", label: "Produkter", icon: Package, exact: false },
   { href: "/price-monitor/alerts", label: "Varningar", icon: AlertTriangle, exact: false },
   { href: "/price-monitor/suppliers", label: "Leverantörer", icon: Truck, exact: false },
+  { href: "/price-monitor/spend", label: "Utgiftsöversikt", icon: BarChart3, exact: true },
+  { href: "/price-monitor/spend/compare", label: "Leverantörsjämförelse", icon: Scale, exact: false },
+  { href: "/price-monitor/spend/groups", label: "Produktgrupper", icon: Layers3, exact: false },
+  { href: "/price-monitor/spend/categories", label: "Kategorier", icon: Tags, exact: false },
   { href: "/price-monitor/settings", label: "Inställningar", icon: Settings, exact: false },
 ];
 

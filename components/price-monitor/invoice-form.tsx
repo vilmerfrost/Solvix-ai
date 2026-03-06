@@ -1,6 +1,6 @@
 "use client";
 
-const CURRENCIES = ["SEK", "EUR", "USD", "NOK", "DKK"];
+import { SUPPORTED_PRICE_MONITOR_CURRENCIES } from "@/lib/price-monitor-currency";
 
 export interface InvoiceFormData {
   supplier_name: string;
@@ -123,7 +123,7 @@ export function InvoiceForm({ data, onChange }: InvoiceFormProps) {
           value={data.currency}
           onChange={(e) => set("currency", e.target.value)}
         >
-          {CURRENCIES.map((c) => (
+          {SUPPORTED_PRICE_MONITOR_CURRENCIES.map((c) => (
             <option key={c} value={c}>{c}</option>
           ))}
         </select>

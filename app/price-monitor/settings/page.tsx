@@ -2,26 +2,33 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Save, Bell, Mail, Percent } from "lucide-react";
+import { Save, Bell, Mail, Percent, RefreshCw } from "lucide-react";
 import { Button, Skeleton, useToast } from "@/components/ui/index";
 import { getSupabaseBrowserClient } from "@/lib/supabase-browser";
 import {
   fetchDashboard,
   saveSettings,
   PriceMonitorSettings,
+  getDefaultPriceMonitorSettings,
 } from "@/lib/price-monitor-api";
+import {
+  SUPPORTED_PRICE_MONITOR_CURRENCIES,
+  PRICE_MONITOR_BASE_CURRENCY,
+  normalizeExchangeRates,
+  normalizeManualExchangeRates,
+  type SupportedPriceMonitorCurrency,
+} from "@/lib/price-monitor-currency";
 
 export default function PriceMonitorSettingsPage() {
   const router = useRouter();
   const { addToast } = useToast();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [refreshingRates, setRefreshingRates] = useState(false);
   const [session, setSession] = useState<{ access_token: string } | null>(null);
-  const [settings, setSettings] = useState<PriceMonitorSettings>({
-    alert_threshold_percent: 5.0,
-    auto_alert: true,
-    notify_email: null,
-  });
+  const [settings, setSettings] = useState<PriceMonitorSettings>(
+    getDefaultPriceMonitorSettings()
+  );
 
   useEffect(() => {
     async function load() {
@@ -43,12 +50,26 @@ export default function PriceMonitorSettingsPage() {
     load();
   }, []);
 
-  async function handleSave() {
+  async function persistSettings(options?: {
+    successTitle?: string;
+    successMessage?: string;
+    refreshOnly?: boolean;
+  }) {
     if (!session) return;
-    setSaving(true);
+    if (options?.refreshOnly) {
+      setRefreshingRates(true);
+    } else {
+      setSaving(true);
+    }
+
     try {
-      await saveSettings(settings, session);
-      addToast({ type: "success", title: "Inställningar sparade" });
+      const saved = await saveSettings(settings, session);
+      setSettings(saved);
+      addToast({
+        type: "success",
+        title: options?.successTitle ?? "Inställningar sparade",
+        message: options?.successMessage,
+      });
     } catch (e) {
       addToast({
         type: "error",
@@ -57,8 +78,52 @@ export default function PriceMonitorSettingsPage() {
       });
     } finally {
       setSaving(false);
+      setRefreshingRates(false);
     }
   }
+
+  async function handleSave() {
+    await persistSettings();
+  }
+
+  async function handleRefreshRates() {
+    await persistSettings({
+      refreshOnly: true,
+      successTitle: "Valutakurser uppdaterade",
+      successMessage: "De senaste automatiska SEK-kurserna har hämtats.",
+    });
+  }
+
+  function setManualRate(
+    currency: Exclude<SupportedPriceMonitorCurrency, typeof PRICE_MONITOR_BASE_CURRENCY>,
+    value: string
+  ) {
+    setSettings((prev) => {
+      const manualRates = normalizeManualExchangeRates(prev.manual_exchange_rates);
+      const trimmed = value.trim();
+      if (!trimmed) {
+        delete manualRates[currency];
+      } else {
+        const parsed = Number(trimmed.replace(",", "."));
+        if (Number.isFinite(parsed) && parsed > 0) {
+          manualRates[currency] = parsed;
+        }
+      }
+
+      return {
+        ...prev,
+        manual_exchange_rates: manualRates,
+        exchange_rates: normalizeExchangeRates(prev.exchange_rates),
+      };
+    });
+  }
+
+  const updatedAtLabel = settings.exchange_rates_updated_at
+    ? new Intl.DateTimeFormat("sv-SE", {
+        dateStyle: "medium",
+        timeStyle: "short",
+      }).format(new Date(settings.exchange_rates_updated_at))
+    : "Inte uppdaterad ännu";
 
   return (
     <div className="space-y-8 max-w-xl mx-auto">
@@ -219,6 +284,117 @@ export default function PriceMonitorSettingsPage() {
                 }))
               }
             />
+          </div>
+
+          {/* Currency conversion */}
+          <div
+            className="rounded-xl border p-5"
+            style={{
+              background: "var(--color-bg-elevated)",
+              borderColor: "var(--color-border)",
+            }}
+          >
+            <div className="flex items-start justify-between gap-4 mb-4 flex-wrap">
+              <div>
+                <p
+                  className="text-sm font-semibold"
+                  style={{ color: "var(--color-text-primary)" }}
+                >
+                  Valutakonvertering till SEK
+                </p>
+                <p className="text-xs mt-1" style={{ color: "var(--color-text-muted)" }}>
+                  Utländska fakturor konverteras till SEK innan priser sparas,
+                  jamfors och skapar varningar.
+                </p>
+                <p className="text-xs mt-2" style={{ color: "var(--color-text-muted)" }}>
+                  Kalla: {settings.exchange_rates_source ?? "Frankfurter"} · Senast uppdaterad:{" "}
+                  {updatedAtLabel}
+                </p>
+              </div>
+
+              <Button
+                variant="secondary"
+                size="sm"
+                loading={refreshingRates}
+                icon={<RefreshCw className="w-4 h-4" />}
+                onClick={handleRefreshRates}
+              >
+                Hamta senaste kurser
+              </Button>
+            </div>
+
+            <div className="space-y-3">
+              {SUPPORTED_PRICE_MONITOR_CURRENCIES.filter(
+                (currency) => currency !== PRICE_MONITOR_BASE_CURRENCY
+              ).map((currency) => {
+                const autoRate = settings.exchange_rates[currency];
+                const manualRate = settings.manual_exchange_rates[currency];
+
+                return (
+                  <div
+                    key={currency}
+                    className="grid grid-cols-1 sm:grid-cols-[80px_1fr_1fr] gap-3 items-center rounded-lg border p-3"
+                    style={{
+                      background: "var(--color-bg)",
+                      borderColor: "var(--color-border)",
+                    }}
+                  >
+                    <div>
+                      <p className="text-sm font-semibold" style={{ color: "var(--color-text-primary)" }}>
+                        {currency}
+                      </p>
+                      <p className="text-xs" style={{ color: "var(--color-text-muted)" }}>
+                        1 {currency}
+                      </p>
+                    </div>
+
+                    <div>
+                      <label
+                        className="block text-xs mb-1"
+                        style={{ color: "var(--color-text-muted)" }}
+                      >
+                        Automatisk kurs till SEK
+                      </label>
+                      <div
+                        className="rounded-lg border px-3 py-2 text-sm"
+                        style={{
+                          background: "var(--color-bg-secondary)",
+                          borderColor: "var(--color-border)",
+                          color: "var(--color-text-primary)",
+                        }}
+                      >
+                        {autoRate > 0 ? autoRate.toLocaleString("sv-SE", {
+                          minimumFractionDigits: 2,
+                          maximumFractionDigits: 4,
+                        }) : "Saknas"}
+                      </div>
+                    </div>
+
+                    <div>
+                      <label
+                        className="block text-xs mb-1"
+                        style={{ color: "var(--color-text-muted)" }}
+                      >
+                        Manuell override till SEK
+                      </label>
+                      <input
+                        type="text"
+                        inputMode="decimal"
+                        className="w-full rounded-lg border px-3 py-2 text-sm"
+                        style={{
+                          background: "var(--color-bg)",
+                          borderColor: "var(--color-border)",
+                          color: "var(--color-text-primary)",
+                        }}
+                        placeholder="Tomt = anvand automatisk kurs"
+                        value={manualRate ? String(manualRate).replace(".", ",") : ""}
+                        onChange={(e) => setManualRate(currency, e.target.value)}
+                      />
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
           </div>
 
           {/* Save button */}

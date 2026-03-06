@@ -3,6 +3,14 @@
  * Wraps the invoice-dashboard and process-invoice Supabase Edge Functions.
  */
 
+import {
+  getDefaultExchangeRates,
+  normalizeExchangeRates,
+  normalizeManualExchangeRates,
+  type PriceMonitorExchangeRates,
+  type PriceMonitorManualExchangeRates,
+} from "@/lib/price-monitor-currency";
+
 // ─── Types ────────────────────────────────────────────────────────────────────
 
 export interface Alert {
@@ -79,6 +87,10 @@ export interface PriceMonitorSettings {
   alert_threshold_percent: number;
   auto_alert: boolean;
   notify_email: string | null;
+  exchange_rates: PriceMonitorExchangeRates;
+  manual_exchange_rates: PriceMonitorManualExchangeRates;
+  exchange_rates_source: string | null;
+  exchange_rates_updated_at: string | null;
 }
 
 export interface ProcessInvoiceResult {
@@ -93,6 +105,90 @@ export interface ProcessInvoiceResult {
     new_price: number;
     change_percent: number;
   }>;
+}
+
+export interface SpendBySupplier {
+  user_id: string;
+  supplier_id: string;
+  supplier_name: string;
+  invoice_count: number;
+  product_count: number;
+  total_spend: number;
+  first_invoice: string;
+  last_invoice: string;
+  spend_last_30d: number;
+  spend_last_90d: number;
+  spend_last_12m: number;
+}
+
+export interface SpendByCategory {
+  user_id: string;
+  category_id: string | null;
+  category_name: string;
+  color: string | null;
+  product_count: number;
+  supplier_count: number;
+  total_spend: number;
+  spend_last_12m: number;
+  spend_last_30d: number;
+}
+
+export interface SpendMonthly {
+  user_id: string;
+  month: string;
+  supplier_id: string;
+  supplier_name: string;
+  total_spend: number;
+  invoice_count: number;
+  product_count: number;
+}
+
+export interface SpendOverview {
+  total_spend: number;
+  spend_last_30d: number;
+  spend_last_12m: number;
+  by_supplier: SpendBySupplier[];
+  by_category: SpendByCategory[];
+  monthly: SpendMonthly[];
+}
+
+export interface SupplierComparisonRow {
+  user_id: string;
+  product_id: string;
+  product_name: string;
+  unit: string | null;
+  group_id: string;
+  group_name: string;
+  supplier_id: string;
+  supplier_name: string;
+  unit_price: number;
+  invoice_date: string;
+  cheapest_price: number;
+  most_expensive_price: number;
+  suppliers_count: number;
+  premium_percent: number;
+}
+
+export interface ProductGroup {
+  id: string;
+  user_id: string;
+  name: string;
+  category_id: string | null;
+  spend_categories: { name: string; color: string | null } | null;
+  products: Array<{
+    id: string;
+    name: string;
+    unit: string | null;
+    supplier_id: string;
+    suppliers: { name: string };
+  }>;
+}
+
+export interface SpendCategory {
+  id: string;
+  user_id: string;
+  name: string;
+  color: string | null;
 }
 
 // ─── Formatting helpers ───────────────────────────────────────────────────────
@@ -123,6 +219,8 @@ export function formatDate(dateStr: string): string {
 
 type Session = { access_token: string };
 
+const DASHBOARD_URL = `${process.env.NEXT_PUBLIC_SUPABASE_URL}/functions/v1/invoice-dashboard`;
+
 function getHeaders(session: Session): Record<string, string> {
   return {
     Authorization: `Bearer ${session.access_token}`,
@@ -148,15 +246,47 @@ async function getApiError(res: Response): Promise<string> {
   return message;
 }
 
+function normalizeSettings(
+  settings?: Partial<PriceMonitorSettings> | null
+): PriceMonitorSettings {
+  return {
+    alert_threshold_percent: settings?.alert_threshold_percent ?? 5,
+    auto_alert: settings?.auto_alert ?? true,
+    notify_email: settings?.notify_email ?? null,
+    exchange_rates: normalizeExchangeRates(settings?.exchange_rates),
+    manual_exchange_rates: normalizeManualExchangeRates(
+      settings?.manual_exchange_rates
+    ),
+    exchange_rates_source: settings?.exchange_rates_source ?? null,
+    exchange_rates_updated_at: settings?.exchange_rates_updated_at ?? null,
+  };
+}
+
 function dashboardUrl(action: string, params?: Record<string, string>): string {
-  const url = new URL(
-    `${process.env.NEXT_PUBLIC_SUPABASE_URL}/functions/v1/invoice-dashboard`
-  );
+  const url = new URL(DASHBOARD_URL);
   url.searchParams.set("action", action);
   if (params) {
     Object.entries(params).forEach(([k, v]) => url.searchParams.set(k, v));
   }
   return url.toString();
+}
+
+async function postDashboard<T>(
+  action: string,
+  body: unknown,
+  session: Session
+): Promise<T> {
+  const url = new URL(DASHBOARD_URL);
+  url.searchParams.set("action", action);
+
+  const res = await fetch(url.toString(), {
+    method: "POST",
+    headers: getHeaders(session),
+    body: JSON.stringify(body),
+  });
+
+  if (!res.ok) throw new Error(await getApiError(res));
+  return res.json();
 }
 
 export async function fetchDashboard<T = unknown>(
@@ -168,7 +298,13 @@ export async function fetchDashboard<T = unknown>(
     headers: getHeaders(session!),
   });
   if (!res.ok) throw new Error(await getApiError(res));
-  return res.json();
+  const data = await res.json();
+
+  if (action === "settings") {
+    return normalizeSettings(data) as T;
+  }
+
+  return data;
 }
 
 export async function updateAlert(
@@ -189,14 +325,27 @@ export async function updateAlert(
 export async function saveSettings(
   settings: PriceMonitorSettings,
   session: Session
-): Promise<unknown> {
+): Promise<PriceMonitorSettings> {
   const res = await fetch(dashboardUrl("settings"), {
     method: "POST",
     headers: getHeaders(session),
     body: JSON.stringify(settings),
   });
   if (!res.ok) throw new Error(await getApiError(res));
-  return res.json();
+  const data = await res.json();
+  return normalizeSettings(data);
+}
+
+export function getDefaultPriceMonitorSettings(): PriceMonitorSettings {
+  return {
+    alert_threshold_percent: 5,
+    auto_alert: true,
+    notify_email: null,
+    exchange_rates: getDefaultExchangeRates(),
+    manual_exchange_rates: {},
+    exchange_rates_source: null,
+    exchange_rates_updated_at: null,
+  };
 }
 
 export async function processInvoice(
@@ -213,4 +362,67 @@ export async function processInvoice(
   );
   if (!res.ok) throw new Error(await getApiError(res));
   return res.json();
+}
+
+export async function fetchSpendOverview(
+  session: Session
+): Promise<SpendOverview> {
+  return fetchDashboard("spend_overview", {}, session);
+}
+
+export async function fetchSpendBySupplier(
+  session: Session
+): Promise<SpendBySupplier[]> {
+  return fetchDashboard("spend_by_supplier", {}, session);
+}
+
+export async function fetchSpendMonthly(
+  supplierId: string | null,
+  session: Session
+): Promise<SpendMonthly[]> {
+  const params: Record<string, string> = {};
+  if (supplierId) params.supplier_id = supplierId;
+  return fetchDashboard("spend_monthly", params, session);
+}
+
+export async function fetchComparison(
+  groupId: string | null,
+  session: Session
+): Promise<SupplierComparisonRow[]> {
+  const params: Record<string, string> = {};
+  if (groupId) params.group_id = groupId;
+  return fetchDashboard("compare_suppliers", params, session);
+}
+
+export async function fetchProductGroups(
+  session: Session
+): Promise<ProductGroup[]> {
+  return fetchDashboard("product_groups", {}, session);
+}
+
+export async function createProductGroup(
+  name: string,
+  categoryId: string | null,
+  productIds: string[],
+  session: Session
+): Promise<{ id: string; name: string; product_ids: string[] }> {
+  return postDashboard(
+    "product_groups",
+    { name, category_id: categoryId, product_ids: productIds },
+    session
+  );
+}
+
+export async function fetchCategories(
+  session: Session
+): Promise<SpendCategory[]> {
+  return fetchDashboard("categories", {}, session);
+}
+
+export async function createCategory(
+  name: string,
+  color: string | null,
+  session: Session
+): Promise<SpendCategory> {
+  return postDashboard("categories", { name, color }, session);
 }
