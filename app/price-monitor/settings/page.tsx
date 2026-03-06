@@ -2,8 +2,10 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import { useLocale, useTranslations } from "next-intl";
 import { Save, Bell, Mail, Percent, RefreshCw } from "lucide-react";
 import { Button, Skeleton, useToast } from "@/components/ui/index";
+import { FortnoxStatusCard } from "@/components/price-monitor/fortnox-status-card";
 import { getSupabaseBrowserClient } from "@/lib/supabase-browser";
 import {
   fetchDashboard,
@@ -21,6 +23,8 @@ import {
 
 export default function PriceMonitorSettingsPage() {
   const router = useRouter();
+  const t = useTranslations("settings");
+  const locale = useLocale() === "en" ? "en-GB" : "sv-SE";
   const { addToast } = useToast();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -67,14 +71,14 @@ export default function PriceMonitorSettingsPage() {
       setSettings(saved);
       addToast({
         type: "success",
-        title: options?.successTitle ?? "Inställningar sparade",
-        message: options?.successMessage,
+        title: options?.successTitle ?? t("saveSuccess"),
+        description: options?.successMessage,
       });
     } catch (e) {
       addToast({
         type: "error",
-        title: "Kunde inte spara",
-        message: e instanceof Error ? e.message : undefined,
+        title: t("saveError"),
+        description: e instanceof Error ? e.message : undefined,
       });
     } finally {
       setSaving(false);
@@ -89,8 +93,8 @@ export default function PriceMonitorSettingsPage() {
   async function handleRefreshRates() {
     await persistSettings({
       refreshOnly: true,
-      successTitle: "Valutakurser uppdaterade",
-      successMessage: "De senaste automatiska SEK-kurserna har hämtats.",
+      successTitle: t("ratesUpdated"),
+      successMessage: t("ratesUpdatedDesc"),
     });
   }
 
@@ -119,21 +123,21 @@ export default function PriceMonitorSettingsPage() {
   }
 
   const updatedAtLabel = settings.exchange_rates_updated_at
-    ? new Intl.DateTimeFormat("sv-SE", {
+    ? new Intl.DateTimeFormat(locale, {
         dateStyle: "medium",
         timeStyle: "short",
       }).format(new Date(settings.exchange_rates_updated_at))
-    : "Inte uppdaterad ännu";
+    : t("notUpdatedYet");
 
   return (
     <div className="space-y-8 max-w-xl mx-auto">
       {/* Header */}
       <div>
         <h1 className="text-2xl font-bold" style={{ color: "var(--color-text-primary)" }}>
-          Inställningar
+          {t("title")}
         </h1>
         <p className="text-sm mt-0.5" style={{ color: "var(--color-text-muted)" }}>
-          Konfigurera prisövervakning och aviseringar
+          {t("description")}
         </p>
       </div>
 
@@ -160,10 +164,10 @@ export default function PriceMonitorSettingsPage() {
               </div>
               <div>
                 <p className="text-sm font-semibold" style={{ color: "var(--color-text-primary)" }}>
-                  Varningströskel
+                  {t("alertThreshold")}
                 </p>
                 <p className="text-xs" style={{ color: "var(--color-text-muted)" }}>
-                  Generera en varning när priset förändras med mer än X%
+                  {t("alertThresholdDesc")}
                 </p>
               </div>
             </div>
@@ -211,10 +215,10 @@ export default function PriceMonitorSettingsPage() {
                 </div>
                 <div>
                   <p className="text-sm font-semibold" style={{ color: "var(--color-text-primary)" }}>
-                    Automatiska varningar
+                    {t("autoAlerts")}
                   </p>
                   <p className="text-xs" style={{ color: "var(--color-text-muted)" }}>
-                    Skapa varningar automatiskt vid fakturaimport
+                    {t("autoAlertsDesc")}
                   </p>
                 </div>
               </div>
@@ -260,10 +264,10 @@ export default function PriceMonitorSettingsPage() {
               </div>
               <div>
                 <p className="text-sm font-semibold" style={{ color: "var(--color-text-primary)" }}>
-                  E-postavisering
+                  {t("emailNotifications")}
                 </p>
                 <p className="text-xs" style={{ color: "var(--color-text-muted)" }}>
-                  Skicka e-post vid nya prisvarningar (valfritt)
+                  {t("emailNotificationsDesc")}
                 </p>
               </div>
             </div>
@@ -275,7 +279,7 @@ export default function PriceMonitorSettingsPage() {
                 borderColor: "var(--color-border)",
                 color: "var(--color-text-primary)",
               }}
-              placeholder="din@epost.se"
+              placeholder={t("emailPlaceholder")}
               value={settings.notify_email ?? ""}
               onChange={(e) =>
                 setSettings((prev) => ({
@@ -300,15 +304,16 @@ export default function PriceMonitorSettingsPage() {
                   className="text-sm font-semibold"
                   style={{ color: "var(--color-text-primary)" }}
                 >
-                  Valutakonvertering till SEK
+                  {t("currencyTitle")}
                 </p>
                 <p className="text-xs mt-1" style={{ color: "var(--color-text-muted)" }}>
-                  Utländska fakturor konverteras till SEK innan priser sparas,
-                  jamfors och skapar varningar.
+                  {t("currencyDesc")}
                 </p>
                 <p className="text-xs mt-2" style={{ color: "var(--color-text-muted)" }}>
-                  Kalla: {settings.exchange_rates_source ?? "Frankfurter"} · Senast uppdaterad:{" "}
-                  {updatedAtLabel}
+                  {t("sourceAndUpdated", {
+                    source: settings.exchange_rates_source ?? "Frankfurter",
+                    updatedAt: updatedAtLabel,
+                  })}
                 </p>
               </div>
 
@@ -319,7 +324,7 @@ export default function PriceMonitorSettingsPage() {
                 icon={<RefreshCw className="w-4 h-4" />}
                 onClick={handleRefreshRates}
               >
-                Hamta senaste kurser
+                {t("updateRates")}
               </Button>
             </div>
 
@@ -353,7 +358,7 @@ export default function PriceMonitorSettingsPage() {
                         className="block text-xs mb-1"
                         style={{ color: "var(--color-text-muted)" }}
                       >
-                        Automatisk kurs till SEK
+                        {t("autoRate")}
                       </label>
                       <div
                         className="rounded-lg border px-3 py-2 text-sm"
@@ -363,10 +368,10 @@ export default function PriceMonitorSettingsPage() {
                           color: "var(--color-text-primary)",
                         }}
                       >
-                        {autoRate > 0 ? autoRate.toLocaleString("sv-SE", {
+                        {autoRate > 0 ? autoRate.toLocaleString(locale, {
                           minimumFractionDigits: 2,
                           maximumFractionDigits: 4,
-                        }) : "Saknas"}
+                        }) : t("missingRate")}
                       </div>
                     </div>
 
@@ -375,7 +380,7 @@ export default function PriceMonitorSettingsPage() {
                         className="block text-xs mb-1"
                         style={{ color: "var(--color-text-muted)" }}
                       >
-                        Manuell override till SEK
+                        {t("manualRate")}
                       </label>
                       <input
                         type="text"
@@ -386,7 +391,7 @@ export default function PriceMonitorSettingsPage() {
                           borderColor: "var(--color-border)",
                           color: "var(--color-text-primary)",
                         }}
-                        placeholder="Tomt = anvand automatisk kurs"
+                        placeholder={t("manualRatePlaceholder")}
                         value={manualRate ? String(manualRate).replace(".", ",") : ""}
                         onChange={(e) => setManualRate(currency, e.target.value)}
                       />
@@ -397,6 +402,8 @@ export default function PriceMonitorSettingsPage() {
             </div>
           </div>
 
+          <FortnoxStatusCard />
+
           {/* Save button */}
           <div className="flex justify-end">
             <Button
@@ -405,7 +412,7 @@ export default function PriceMonitorSettingsPage() {
               loading={saving}
               onClick={handleSave}
             >
-              Spara inställningar
+              {t("saveSettings")}
             </Button>
           </div>
         </div>

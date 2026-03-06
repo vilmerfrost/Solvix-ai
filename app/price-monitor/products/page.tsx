@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useState, useMemo, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
+import { useTranslations } from "next-intl";
 import {
   TrendingUp,
   TrendingDown,
@@ -18,6 +19,7 @@ import { getSupabaseBrowserClient } from "@/lib/supabase-browser";
 import {
   AiGroupSuggestion,
   createProductGroup,
+  ensureArray,
   fetchDashboard,
   fetchGroupSuggestions,
   ProductOverview,
@@ -33,6 +35,7 @@ type SortDir = "asc" | "desc";
 function ProductsPageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const t = useTranslations("products");
   const supplierParam = searchParams.get("supplier_id") ?? "";
 
   const [products, setProducts] = useState<ProductOverview[]>([]);
@@ -53,7 +56,7 @@ function ProductsPageContent() {
   const load = useCallback(async () => {
     const supabase = getSupabaseBrowserClient();
     if (!supabase) {
-      setError("Supabase är inte konfigurerat.");
+      setError("Supabase is not configured.");
       setLoading(false);
       return;
     }
@@ -65,25 +68,28 @@ function ProductsPageContent() {
       const params: Record<string, string> = {};
       if (supplierFilter) params.supplier_id = supplierFilter;
 
-      const [prods, sups] = await Promise.all([
-        fetchDashboard<ProductOverview[]>("products", params, s),
-        fetchDashboard<Supplier[]>("suppliers", undefined, s),
+      const [prodsRaw, supsRaw] = await Promise.all([
+        fetchDashboard<unknown>("products", params, s),
+        fetchDashboard<unknown>("suppliers", undefined, s),
       ]);
+      const prods = ensureArray<ProductOverview>(prodsRaw);
+      const sups = ensureArray<Supplier>(supsRaw);
       setProducts(prods);
       setSuppliers(sups);
 
       if (sups.length >= 2) {
-        const nextSuggestions = await fetchGroupSuggestions(s).catch(() => []);
-        setSuggestions(nextSuggestions);
+        const nextSuggestionsRaw = await fetchGroupSuggestions(s).catch(() => []);
+        const nextSuggestions = ensureArray<AiGroupSuggestion>(nextSuggestionsRaw);
+        setSuggestions(nextSuggestions as AiGroupSuggestion[]);
       } else {
         setSuggestions([]);
       }
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Kunde inte hämta produkter.");
+      setError(e instanceof Error ? e.message : t("error"));
     } finally {
       setLoading(false);
     }
-  }, [router, supplierFilter]);
+  }, [router, supplierFilter, t]);
 
   useEffect(() => { load(); }, [load]);
 
@@ -96,7 +102,8 @@ function ProductsPageContent() {
   }
 
   const filtered = useMemo(() => {
-    let list = [...products];
+    const safeProducts = Array.isArray(products) ? products : [];
+    let list = [...safeProducts];
     if (search.trim()) {
       const q = search.toLowerCase();
       list = list.filter((p) => p.product_name.toLowerCase().includes(q));
@@ -119,8 +126,9 @@ function ProductsPageContent() {
   async function handleAcceptSuggestion(suggestion: AiGroupSuggestion) {
     if (!session) return;
 
+    const prodNames = Array.isArray(suggestion?.products) ? suggestion.products : [];
     const matchedProductIds = products
-      .filter((product) => suggestion.products.includes(product.product_name))
+      .filter((product) => prodNames.includes(product.product_name))
       .map((product) => product.product_id);
 
     if (matchedProductIds.length < 2) return;
@@ -140,7 +148,7 @@ function ProductsPageContent() {
       setError(
         e instanceof Error
           ? e.message
-          : "Kunde inte skapa produktgruppen."
+          : t("groupCreateError")
       );
     }
   }
@@ -192,10 +200,10 @@ function ProductsPageContent() {
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <h1 className="text-2xl font-bold" style={{ color: "var(--color-text-primary)" }}>
-            Produkter
+            {t("title")}
           </h1>
           <p className="text-sm mt-0.5" style={{ color: "var(--color-text-muted)" }}>
-            {loading ? "…" : `${filtered.length} produkter`}
+            {loading ? "…" : t("count", { count: filtered.length })}
           </p>
         </div>
         {session && (
@@ -204,7 +212,7 @@ function ProductsPageContent() {
             icon={<Upload className="w-4 h-4" />}
             onClick={() => setShowUpload(true)}
           >
-            Ladda upp faktura
+            {t("uploadInvoice")}
           </Button>
         )}
       </div>
@@ -222,7 +230,7 @@ function ProductsPageContent() {
           <input
             className="flex-1 text-sm bg-transparent outline-none"
             style={{ color: "var(--color-text-primary)" }}
-            placeholder="Sök produkt…"
+            placeholder={t("searchPlaceholder")}
             value={search}
             onChange={(e) => setSearch(e.target.value)}
           />
@@ -237,8 +245,8 @@ function ProductsPageContent() {
           value={supplierFilter}
           onChange={(e) => setSupplierFilter(e.target.value)}
         >
-          <option value="">Alla leverantörer</option>
-          {suppliers.map((s) => (
+          <option value="">{t("allSuppliers")}</option>
+          {(Array.isArray(suppliers) ? suppliers : []).map((s) => (
             <option key={s.supplier_id} value={s.supplier_id}>
               {s.supplier_name}
             </option>
@@ -248,7 +256,7 @@ function ProductsPageContent() {
           variant="secondary"
           onClick={() => setHideZeroItems((prev) => !prev)}
         >
-          {hideZeroItems ? "Visa alla" : "Dölj nollposter"}
+          {hideZeroItems ? t("showAll") : t("hideZero")}
         </Button>
       </div>
 
@@ -284,10 +292,10 @@ function ProductsPageContent() {
         >
           <Upload className="w-10 h-10 mx-auto mb-3" style={{ color: "var(--color-text-muted)" }} />
           <p className="font-medium text-sm" style={{ color: "var(--color-text-primary)" }}>
-            Inga produkter hittades
+            {t("emptyTitle")}
           </p>
           <p className="text-xs mt-1" style={{ color: "var(--color-text-muted)" }}>
-            Ladda upp din första faktura för att börja spåra priser
+            {t("emptyDescription")}
           </p>
         </div>
       ) : (
@@ -303,13 +311,13 @@ function ProductsPageContent() {
               }}
             >
               <tr>
-                <Th label="Produkt" k="product_name" />
-                <Th label="Leverantör" k="supplier_name" />
-                <Th label="Enhet" k="unit" />
-                <Th label="Senaste pris" k="latest_price" right />
-                <Th label="Föreg. pris" k="previous_price" right />
-                <Th label="Förändring" k="change_percent" right />
-                <Th label="Antal fakturor" k="invoice_count" right />
+                <Th label={t("table.product")} k="product_name" />
+                <Th label={t("table.supplier")} k="supplier_name" />
+                <Th label={t("table.unit")} k="unit" />
+                <Th label={t("table.latestPrice")} k="latest_price" right />
+                <Th label={t("table.previousPrice")} k="previous_price" right />
+                <Th label={t("table.change")} k="change_percent" right />
+                <Th label={t("table.invoiceCount")} k="invoice_count" right />
               </tr>
             </thead>
             <tbody>
@@ -364,6 +372,7 @@ function ProductRow({
   last: boolean;
   onClick: () => void;
 }) {
+  const t = useTranslations("products");
   const change = p.change_percent;
   const increase = change !== null && change > 0;
   const decrease = change !== null && change < 0;
@@ -385,7 +394,7 @@ function ProductRow({
         {p.product_name}
         {isZeroItem && (
           <div className="text-xs font-normal" style={{ color: "var(--color-text-muted)" }}>
-            Inkluderad nollpost
+            {t("includedZeroItem")}
           </div>
         )}
       </td>

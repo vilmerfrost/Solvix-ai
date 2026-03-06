@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import { useTranslations } from "next-intl";
 import { AlertTriangle, TrendingUp, TrendingDown, CheckSquare } from "lucide-react";
 import { Button, Skeleton } from "@/components/ui/index";
 import { AlertActions } from "@/components/price-monitor/alert-actions";
@@ -18,16 +19,9 @@ import {
 
 type Tab = "all" | Alert["status"];
 
-const TABS: { id: Tab; label: string }[] = [
-  { id: "all", label: "Alla" },
-  { id: "new", label: "Ny" },
-  { id: "reviewed", label: "Granskad" },
-  { id: "dismissed", label: "Avfärdad" },
-  { id: "actioned", label: "Åtgärdad" },
-];
-
 export default function AlertsPage() {
   const router = useRouter();
+  const t = useTranslations("alerts");
   const [allAlerts, setAllAlerts] = useState<Alert[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -47,11 +41,19 @@ export default function AlertsPage() {
       const data = await fetchDashboard<Alert[]>("alerts", undefined, s);
       setAllAlerts(data);
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Kunde inte hämta varningar.");
+      setError(e instanceof Error ? e.message : t("error"));
     } finally {
       setLoading(false);
     }
-  }, [router]);
+  }, [router, t]);
+
+  const tabs: { id: Tab; label: string }[] = [
+    { id: "all", label: t("tabs.all") },
+    { id: "new", label: t("tabs.new") },
+    { id: "reviewed", label: t("tabs.reviewed") },
+    { id: "dismissed", label: t("tabs.dismissed") },
+    { id: "actioned", label: t("tabs.actioned") },
+  ];
 
   useEffect(() => { load(); }, [load]);
 
@@ -117,10 +119,10 @@ export default function AlertsPage() {
       {/* Header */}
       <div>
         <h1 className="text-2xl font-bold" style={{ color: "var(--color-text-primary)" }}>
-          Varningar
+          {t("title")}
         </h1>
         <p className="text-sm mt-0.5" style={{ color: "var(--color-text-muted)" }}>
-          Prisförändringar som kräver uppmärksamhet
+          {t("description")}
         </p>
       </div>
 
@@ -129,7 +131,7 @@ export default function AlertsPage() {
         className="flex gap-1 p-1 rounded-xl w-fit"
         style={{ background: "var(--color-bg-secondary)" }}
       >
-        {TABS.map((tab) => (
+        {tabs.map((tab) => (
           <button
             key={tab.id}
             onClick={() => { setActiveTab(tab.id); setSelected(new Set()); }}
@@ -174,7 +176,7 @@ export default function AlertsPage() {
             style={{ color: "var(--color-text-secondary)" }}
           >
             <CheckSquare className="w-4 h-4" />
-            {selected.size === newAlerts.length ? "Avmarkera alla" : "Markera alla nya"}
+            {selected.size === newAlerts.length ? t("clearSelection") : t("selectAll")}
           </button>
           {selected.size > 0 && (
             <Button
@@ -183,7 +185,7 @@ export default function AlertsPage() {
               loading={bulkLoading}
               onClick={bulkDismiss}
             >
-              Avfärda {selected.size} markerade
+              {t("dismissSelected", { count: selected.size })}
             </Button>
           )}
         </div>
@@ -213,10 +215,10 @@ export default function AlertsPage() {
         >
           <AlertTriangle className="w-10 h-10 mx-auto mb-3" style={{ color: "var(--color-text-muted)" }} />
           <p className="font-medium text-sm" style={{ color: "var(--color-text-primary)" }}>
-            Inga prisvarningar
+            {t("emptyTitle")}
           </p>
           <p className="text-xs mt-1" style={{ color: "var(--color-text-muted)" }}>
-            Alla priser är stabila
+            {t("emptyDescription")}
           </p>
         </div>
       ) : (
@@ -255,6 +257,7 @@ function AlertCard({
   onUpdated: (id: string, status: Alert["status"]) => void;
   onNavigate: () => void;
 }) {
+  const t = useTranslations("alerts");
   const increase = alert.change_percent > 0;
 
   return (
@@ -305,8 +308,10 @@ function AlertCard({
             {alert.supplier_name} · {formatDate(alert.new_invoice_date)}
           </p>
           <p className="mt-1 text-xs" style={{ color: "var(--color-text-muted)" }}>
-            Priset ändrades mellan {formatDate(alert.previous_invoice_date)} och{" "}
-            {formatDate(alert.new_invoice_date)}
+            {t("changedBetween", {
+              from: formatDate(alert.previous_invoice_date),
+              to: formatDate(alert.new_invoice_date)
+            })}
           </p>
           <div className="flex items-center flex-wrap gap-3 mt-2">
             <span className="text-sm" style={{ color: "var(--color-text-secondary)" }}>
@@ -330,7 +335,7 @@ function AlertCard({
                 href={`/price-monitor/review/${alert.previous_document_id}`}
                 style={{ color: "var(--color-accent)" }}
               >
-                Se föregående faktura
+                {t("viewPreviousInvoice")}
               </Link>
             ) : null}
             {alert.new_document_id ? (
@@ -338,7 +343,7 @@ function AlertCard({
                 href={`/price-monitor/review/${alert.new_document_id}`}
                 style={{ color: "var(--color-accent)" }}
               >
-                Se ny faktura
+                {t("viewNewInvoice")}
               </Link>
             ) : null}
           </div>

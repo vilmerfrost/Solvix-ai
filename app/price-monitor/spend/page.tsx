@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useTranslations } from "next-intl";
 import { BarChart3, TrendingUp, Wallet } from "lucide-react";
 import {
   Card,
@@ -25,6 +26,7 @@ import {
 } from "@/lib/price-monitor-api";
 
 export default function SpendOverviewPage() {
+  const t = useTranslations("spend");
   const [overview, setOverview] = useState<SpendOverview | null>(null);
   const [insights, setInsights] = useState<AiInsight[]>([]);
   const [loading, setLoading] = useState(true);
@@ -52,7 +54,7 @@ export default function SpendOverviewPage() {
         setOverview(overviewData);
         setInsights(insightData);
       } catch (err) {
-        setError(err instanceof Error ? err.message : "Kunde inte hämta inköpsanalys.");
+        setError(err instanceof Error ? err.message : t("description"));
       } finally {
         setLoading(false);
       }
@@ -68,19 +70,19 @@ export default function SpendOverviewPage() {
 
   const stats = [
     {
-      label: "Totala utgifter",
+      label: t("totalSpend"),
       value: overview?.total_spend ?? 0,
       icon: Wallet,
       color: "#3B82F6",
     },
     {
-      label: "Senaste 30 dagarna",
+      label: t("last30d"),
       value: overview?.spend_last_30d ?? 0,
       icon: TrendingUp,
       color: "#10B981",
     },
     {
-      label: "Senaste 12 månaderna",
+      label: t("last12m"),
       value: overview?.spend_last_12m ?? 0,
       icon: BarChart3,
       color: "#8B5CF6",
@@ -90,8 +92,8 @@ export default function SpendOverviewPage() {
   return (
     <div className="max-w-7xl mx-auto space-y-8">
       <PageHeader
-        title="Utgiftsöversikt"
-        description="Se var pengarna går, vilka leverantörer som kostar mest och hur inköpen utvecklas över tid."
+        title={t("title")}
+        description={t("description")}
       />
 
       {error && (
@@ -148,8 +150,8 @@ export default function SpendOverviewPage() {
         <Card>
           <EmptyState
             icon={<BarChart3 className="w-6 h-6" />}
-            title="Ingen data ännu"
-            description="Ladda upp fakturor för att se din inköpsanalys"
+            title={t("emptyTitle")}
+            description={t("emptyDescription")}
           />
         </Card>
       ) : (
@@ -159,7 +161,7 @@ export default function SpendOverviewPage() {
           <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
             <Card>
               <CardHeader>
-                <CardTitle className="text-base">Per kategori</CardTitle>
+                <CardTitle className="text-base">{t("byCategory")}</CardTitle>
               </CardHeader>
               <CardContent>
                 <SpendDonutChart categories={overview?.by_category ?? []} />
@@ -168,7 +170,7 @@ export default function SpendOverviewPage() {
 
             <Card>
               <CardHeader>
-                <CardTitle className="text-base">Per leverantör</CardTitle>
+                <CardTitle className="text-base">{t("bySupplier")}</CardTitle>
               </CardHeader>
               <CardContent>
                 <SpendBarChart suppliers={overview?.by_supplier ?? []} />
@@ -178,7 +180,7 @@ export default function SpendOverviewPage() {
 
           <Card>
             <CardHeader>
-              <CardTitle className="text-base">Månadstrend</CardTitle>
+              <CardTitle className="text-base">{t("monthlyTrend")}</CardTitle>
             </CardHeader>
             <CardContent>
               <SpendTrendChart monthly={overview?.monthly ?? []} />

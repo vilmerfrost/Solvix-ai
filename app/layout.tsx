@@ -1,9 +1,11 @@
 import type { Metadata } from "next";
 import { Inter, Playfair_Display, Plus_Jakarta_Sans, JetBrains_Mono } from "next/font/google";
+import { NextIntlClientProvider } from "next-intl";
+import { getLocale, getMessages } from "next-intl/server";
 import "./globals.css";
 import { ToastProvider } from "@/components/toast";
 import { PostHogProvider } from "@/components/posthog-provider";
-import { getTenantConfig, getHtmlLang } from "@/config/tenant";
+import { getTenantConfig } from "@/config/tenant";
 
 const inter = Inter({ subsets: ["latin"], variable: "--font-inter" });
 const playfair = Playfair_Display({ 
@@ -37,22 +39,25 @@ export async function generateMetadata(): Promise<Metadata> {
   };
 }
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
   const config = getTenantConfig();
-  const htmlLang = getHtmlLang(config);
+  const locale = await getLocale();
+  const messages = await getMessages();
   
   return (
-    <html lang={htmlLang}>
+    <html lang={locale || config.language}>
       <body className={`${inter.variable} ${playfair.variable} ${plusJakarta.variable} ${jetbrainsMono.variable} antialiased`}>
-        <PostHogProvider>
-          <ToastProvider>
-            {children}
-          </ToastProvider>
-        </PostHogProvider>
+        <NextIntlClientProvider locale={locale} messages={messages}>
+          <PostHogProvider>
+            <ToastProvider>
+              {children}
+            </ToastProvider>
+          </PostHogProvider>
+        </NextIntlClientProvider>
       </body>
     </html>
   );

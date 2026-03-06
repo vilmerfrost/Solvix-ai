@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
 import {
   Package,
   Truck,
@@ -29,6 +30,7 @@ import {
 
 export default function PriceMonitorDashboard() {
   const router = useRouter();
+  const t = useTranslations("dashboard");
   const [overview, setOverview] = useState<DashboardOverview | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -52,36 +54,37 @@ export default function PriceMonitorDashboard() {
       setOverview(overviewData);
       setRecentDeviations(deviationData);
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Kunde inte hämta data.");
+      setError(e instanceof Error ? e.message : t("error"));
     } finally {
       setLoading(false);
     }
-  }, [router]);
+  }, [router, t]);
 
   useEffect(() => { load(); }, [load]);
 
   const stats = [
     {
       label: "Spårade produkter",
+      label: t("trackedProducts"),
       value: overview?.product_count ?? 0,
       icon: Package,
       color: "var(--color-accent)",
     },
     {
-      label: "Leverantörer",
+      label: t("suppliers"),
       value: overview?.supplier_count ?? 0,
       icon: Truck,
       color: "#8b5cf6",
     },
     {
-      label: "Öppna varningar",
+      label: t("openAlerts"),
       value: overview?.open_alerts ?? 0,
       icon: AlertTriangle,
       color: overview && overview.open_alerts > 0 ? "#ef4444" : "var(--color-success)",
       alert: (overview?.open_alerts ?? 0) > 0,
     },
     {
-      label: "Avtalsavvikelser",
+      label: t("agreementDeviations"),
       value: overview?.open_deviations ?? 0,
       icon: FileText,
       color: overview && overview.open_deviations > 0 ? "#ef4444" : "var(--color-accent)",
@@ -95,10 +98,10 @@ export default function PriceMonitorDashboard() {
       <div className="flex items-center justify-between flex-wrap gap-3">
         <div>
           <h1 className="text-2xl font-bold" style={{ color: "var(--color-text-primary)" }}>
-            Prisövervakning
+            {t("title")}
           </h1>
           <p className="text-sm mt-0.5" style={{ color: "var(--color-text-muted)" }}>
-            Övervaka prisutveckling för era produkter och leverantörer
+            {t("description")}
           </p>
         </div>
         <div className="flex gap-2">
@@ -108,7 +111,7 @@ export default function PriceMonitorDashboard() {
               icon={<Upload className="w-4 h-4" />}
               onClick={() => setShowUpload(true)}
             >
-              Ladda upp faktura
+              {t("uploadInvoice")}
             </Button>
           )}
         </div>
@@ -166,14 +169,14 @@ export default function PriceMonitorDashboard() {
       <section>
         <div className="flex items-center justify-between mb-4">
           <h2 className="font-semibold text-base" style={{ color: "var(--color-text-primary)" }}>
-            Senaste varningar
+            {t("recentAlerts")}
           </h2>
           <button
             onClick={() => router.push("/price-monitor/alerts")}
             className="flex items-center gap-1 text-xs"
             style={{ color: "var(--color-accent)" }}
           >
-            Visa alla <ArrowRight className="w-3.5 h-3.5" />
+            {t("showAll")} <ArrowRight className="w-3.5 h-3.5" />
           </button>
         </div>
 
@@ -191,7 +194,7 @@ export default function PriceMonitorDashboard() {
           >
             <AlertTriangle className="w-8 h-8 mx-auto mb-2" style={{ color: "var(--color-text-muted)" }} />
             <p className="text-sm" style={{ color: "var(--color-text-muted)" }}>
-              Inga prisvarningar — alla priser är stabila
+              {t("noAlerts")}
             </p>
           </div>
         ) : (
@@ -220,14 +223,14 @@ export default function PriceMonitorDashboard() {
       <section>
         <div className="flex items-center justify-between mb-4">
           <h2 className="font-semibold text-base" style={{ color: "var(--color-text-primary)" }}>
-            Senaste avtalsavvikelser
+            {t("recentAgreementDeviations")}
           </h2>
           <button
             onClick={() => router.push("/price-monitor/agreements/deviations")}
             className="flex items-center gap-1 text-xs"
             style={{ color: "var(--color-accent)" }}
           >
-            Visa alla <ArrowRight className="w-3.5 h-3.5" />
+            {t("showAll")} <ArrowRight className="w-3.5 h-3.5" />
           </button>
         </div>
 
@@ -247,7 +250,7 @@ export default function PriceMonitorDashboard() {
           >
             <FileText className="w-8 h-8 mx-auto mb-2" style={{ color: "var(--color-text-muted)" }} />
             <p className="text-sm" style={{ color: "var(--color-text-muted)" }}>
-              Inga nya avtalsavvikelser just nu
+              {t("noDeviations")}
             </p>
           </div>
         ) : (
@@ -272,21 +275,21 @@ export default function PriceMonitorDashboard() {
       {/* Quick actions */}
       <section>
         <h2 className="font-semibold text-base mb-4" style={{ color: "var(--color-text-primary)" }}>
-          Snabbåtgärder
+          {t("quickActions")}
         </h2>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           {session && (
             <QuickAction
               icon={<Upload className="w-5 h-5" />}
-              title="Ladda upp faktura"
-              desc="Analysera en ny faktura och uppdatera prishistorik"
+              title={t("uploadInvoice")}
+              desc={t("uploadInvoiceDesc")}
               onClick={() => setShowUpload(true)}
             />
           )}
           <QuickAction
             icon={<Package className="w-5 h-5" />}
-            title="Se alla produkter"
-            desc="Bläddra bland spårade produkter och prisförändringar"
+            title={t("viewProducts")}
+            desc={t("viewProductsDesc")}
             onClick={() => router.push("/price-monitor/products")}
           />
         </div>
@@ -405,6 +408,7 @@ function DeviationOverviewRow({
   last: boolean;
   onClick: () => void;
 }) {
+  const t = useTranslations("dashboard");
   const typeColors: Record<AgreementDeviation["deviation_type"], { bg: string; text: string }> = {
     wrong_supplier: { bg: "#fef2f2", text: "#ef4444" },
     price_above_agreed: { bg: "#fff7ed", text: "#f97316" },
@@ -413,10 +417,10 @@ function DeviationOverviewRow({
   };
 
   const typeLabels: Record<AgreementDeviation["deviation_type"], string> = {
-    wrong_supplier: "Fel leverantör",
-    price_above_agreed: "Över maxpris",
-    no_discount_applied: "Rabatt saknas",
-    expired_agreement: "Utgånget avtal",
+    wrong_supplier: t("deviationTypes.wrong_supplier"),
+    price_above_agreed: t("deviationTypes.price_above_agreed"),
+    no_discount_applied: t("deviationTypes.no_discount_applied"),
+    expired_agreement: t("deviationTypes.expired_agreement"),
   };
 
   const typeStyle = typeColors[deviation.deviation_type];
@@ -462,7 +466,7 @@ function DeviationOverviewRow({
             : "–"}
         </p>
         <p className="text-xs" style={{ color: "var(--color-text-muted)" }}>
-          Möjlig besparing
+          {t("possibleSavings")}
         </p>
       </div>
 

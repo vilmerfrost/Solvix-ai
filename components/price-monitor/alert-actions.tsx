@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
 import { CheckCircle, ChevronDown, ChevronUp, Phone, Repeat, Zap } from "lucide-react";
 import { Button } from "@/components/ui/index";
 import { Alert, updateAlert } from "@/lib/price-monitor-api";
@@ -20,6 +21,7 @@ export function AlertActions({
   comparisonHref = "/price-monitor/spend/compare",
 }: AlertActionsProps) {
   const router = useRouter();
+  const t = useTranslations("alerts.actions");
   const [loading, setLoading] = useState<string | null>(null);
   const [showMenu, setShowMenu] = useState(false);
   const [notes, setNotes] = useState(alert.notes ?? "");
@@ -33,7 +35,7 @@ export function AlertActions({
           color: "var(--color-text-muted)",
         }}
       >
-        {statusLabel(alert.status)}
+        {statusLabel(alert.status, t)}
       </span>
     );
   }
@@ -62,7 +64,7 @@ export function AlertActions({
           loading={loading === "reviewed"}
           onClick={() => act("reviewed")}
         >
-          Granskad
+          {t("reviewed")}
         </Button>
         <Button
           size="xs"
@@ -71,7 +73,7 @@ export function AlertActions({
           loading={loading === "actioned"}
           onClick={() => setShowMenu((prev) => !prev)}
         >
-          Åtgärda
+          {t("takeAction")}
           {!showMenu ? (
             <ChevronDown className="w-3 h-3" />
           ) : (
@@ -93,40 +95,40 @@ export function AlertActions({
             className="flex w-full items-center gap-2 rounded-md px-2 py-2 text-left text-xs transition-colors hover:bg-black/5"
             style={{ color: "var(--color-text-primary)" }}
             onClick={() => {
-              const next = "Kontakta leverantör";
+              const next = t("contactSupplier");
               setNotes(next);
               act("actioned", next);
             }}
           >
             <Phone className="h-3.5 w-3.5" />
-            Kontakta leverantör
+            {t("contactSupplier")}
           </button>
           <button
             type="button"
             className="flex w-full items-center gap-2 rounded-md px-2 py-2 text-left text-xs transition-colors hover:bg-black/5"
             style={{ color: "var(--color-text-primary)" }}
             onClick={() => {
-              const next = "Godkänn nytt pris";
+              const next = t("approvePrice");
               setNotes(next);
               act("dismissed", next);
             }}
           >
             <CheckCircle className="h-3.5 w-3.5" />
-            Godkänn nytt pris
+            {t("approvePrice")}
           </button>
           <button
             type="button"
             className="flex w-full items-center gap-2 rounded-md px-2 py-2 text-left text-xs transition-colors hover:bg-black/5"
             style={{ color: "var(--color-text-primary)" }}
             onClick={() => {
-              const next = "Byt leverantör";
+              const next = t("switchSupplier");
               setNotes(next);
               act("actioned", next);
               router.push(comparisonHref);
             }}
           >
             <Repeat className="h-3.5 w-3.5" />
-            Byt leverantör
+            {t("switchSupplier")}
           </button>
           <textarea
             className="w-full resize-none rounded-lg border px-3 py-2 text-xs"
@@ -136,7 +138,7 @@ export function AlertActions({
               color: "var(--color-text-primary)",
             }}
             rows={2}
-            placeholder="Anteckningar (valfritt)…"
+            placeholder={t("notesPlaceholder")}
             value={notes}
             onChange={(e) => setNotes(e.target.value)}
           />
@@ -146,11 +148,11 @@ export function AlertActions({
   );
 }
 
-function statusLabel(status: Alert["status"]) {
+function statusLabel(status: Alert["status"], t: (key: string) => string) {
   switch (status) {
-    case "reviewed": return "Granskad";
-    case "dismissed": return "Avfärdad";
-    case "actioned": return "Åtgärdad";
+    case "reviewed": return t("status.reviewed");
+    case "dismissed": return t("status.dismissed");
+    case "actioned": return t("status.actioned");
     default: return status;
   }
 }

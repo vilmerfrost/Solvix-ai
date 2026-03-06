@@ -13,6 +13,7 @@ import { ProductGroupCard } from "@/components/price-monitor/product-group-card"
 import { getSupabaseBrowserClient } from "@/lib/supabase-browser";
 import {
   createProductGroup,
+  ensureArray,
   fetchCategories,
   fetchDashboard,
   fetchProductGroups,
@@ -57,11 +58,14 @@ export default function ProductGroupsPage() {
     }
 
     try {
-      const [groupData, productData, categoryData] = await Promise.all([
+      const [groupDataRaw, productDataRaw, categoryData] = await Promise.all([
         fetchProductGroups(session),
-        fetchDashboard<ProductOverview[]>("products", {}, session),
+        fetchDashboard<unknown>("products", {}, session),
         fetchCategories(session),
       ]);
+
+      const groupData = ensureArray<ProductGroup>(groupDataRaw);
+      const productData = ensureArray<ProductOverview>(productDataRaw);
 
       setGroups(groupData);
       setProducts(productData);
@@ -73,13 +77,20 @@ export default function ProductGroupsPage() {
     }
   }
 
-  const assignedIds = useMemo(
-    () => new Set(groups.flatMap((group) => group.products.map((product) => product.id))),
-    [groups]
-  );
+  const assignedIds = useMemo(() => {
+    const safe = Array.isArray(groups) ? groups : [];
+    return new Set(
+      safe.flatMap((group) =>
+        Array.isArray(group?.products)
+          ? group.products.map((product) => product.id)
+          : []
+      )
+    );
+  }, [groups]);
 
   const unassignedProducts = useMemo(() => {
-    return products.filter((product) => !assignedIds.has(product.product_id));
+    const safe = Array.isArray(products) ? products : [];
+    return safe.filter((product) => !assignedIds.has(product.product_id));
   }, [assignedIds, products]);
 
   const filteredUnassigned = useMemo(() => {

@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
 import { Building2 } from "lucide-react";
 import { Skeleton } from "@/components/ui/index";
 import { SupplierCard } from "@/components/price-monitor/supplier-card";
@@ -10,6 +11,7 @@ import { fetchDashboard, Supplier } from "@/lib/price-monitor-api";
 
 export default function SuppliersPage() {
   const router = useRouter();
+  const t = useTranslations("suppliers");
   const [suppliers, setSuppliers] = useState<Supplier[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -25,23 +27,23 @@ export default function SuppliersPage() {
         const data = await fetchDashboard<Supplier[]>("suppliers", undefined, session);
         setSuppliers(data);
       } catch (e) {
-        setError(e instanceof Error ? e.message : "Kunde inte hämta leverantörer.");
+        setError(e instanceof Error ? e.message : t("error"));
       } finally {
         setLoading(false);
       }
     }
     load();
-  }, []);
+  }, [router, t]);
 
   return (
     <div className="space-y-6 max-w-5xl mx-auto">
       {/* Header */}
       <div>
         <h1 className="text-2xl font-bold" style={{ color: "var(--color-text-primary)" }}>
-          Leverantörer
+          {t("title")}
         </h1>
         <p className="text-sm mt-0.5" style={{ color: "var(--color-text-muted)" }}>
-          {loading ? "…" : `${suppliers.length} leverantörer`}
+          {loading ? "…" : t("count", { count: suppliers.length })}
         </p>
       </div>
 
@@ -73,10 +75,10 @@ export default function SuppliersPage() {
             style={{ color: "var(--color-text-muted)" }}
           />
           <p className="font-medium text-sm" style={{ color: "var(--color-text-primary)" }}>
-            Inga leverantörer hittades
+            {t("emptyTitle")}
           </p>
           <p className="text-xs mt-1" style={{ color: "var(--color-text-muted)" }}>
-            Ladda upp en faktura för att lägga till leverantörer
+            {t("emptyDescription")}
           </p>
         </div>
       ) : (

@@ -317,8 +317,15 @@ export interface AgreementDeviation {
 
 // ─── Formatting helpers ───────────────────────────────────────────────────────
 
+function getCurrentLocale(): "sv-SE" | "en-GB" {
+  if (typeof document === "undefined") return "sv-SE";
+
+  const match = document.cookie.match(/(?:^|;\s*)locale=(sv|en)(?:;|$)/);
+  return match?.[1] === "en" ? "en-GB" : "sv-SE";
+}
+
 export function formatSEK(value: number): string {
-  return new Intl.NumberFormat("sv-SE", {
+  return new Intl.NumberFormat(getCurrentLocale(), {
     style: "currency",
     currency: "SEK",
     minimumFractionDigits: 2,
@@ -329,7 +336,7 @@ export function formatCurrencyValue(
   value: number,
   currency: string
 ): string {
-  return new Intl.NumberFormat("sv-SE", {
+  return new Intl.NumberFormat(getCurrentLocale(), {
     style: "currency",
     currency,
     minimumFractionDigits: 2,
@@ -338,12 +345,16 @@ export function formatCurrencyValue(
 
 export function formatPercent(value: number): string {
   const prefix = value > 0 ? "+" : "";
-  return `${prefix}${value.toFixed(1).replace(".", ",")}%`;
+  const locale = getCurrentLocale();
+  return `${prefix}${value.toLocaleString(locale, {
+    minimumFractionDigits: 1,
+    maximumFractionDigits: 1,
+  })}%`;
 }
 
 export function formatDate(dateStr: string): string {
   const date = new Date(dateStr);
-  return new Intl.DateTimeFormat("sv-SE", {
+  return new Intl.DateTimeFormat(getCurrentLocale(), {
     year: "numeric",
     month: "short",
     day: "numeric",
@@ -353,6 +364,23 @@ export function formatDate(dateStr: string): string {
 // ─── API helpers ──────────────────────────────────────────────────────────────
 
 type Session = { access_token: string };
+
+/** Ensures value is an array. Handles wrapped responses like { products: [] } or { data: [] }. */
+export function ensureArray<T>(value: unknown): T[] {
+  if (Array.isArray(value)) return value as T[];
+  if (value && typeof value === "object") {
+    const obj = value as Record<string, unknown>;
+    const arr =
+      obj.products ??
+      obj.suppliers ??
+      obj.suggestions ??
+      obj.groups ??
+      obj.data ??
+      obj.items;
+    if (Array.isArray(arr)) return arr as T[];
+  }
+  return [];
+}
 
 const DASHBOARD_URL = `${process.env.NEXT_PUBLIC_SUPABASE_URL}/functions/v1/invoice-dashboard`;
 
