@@ -73,7 +73,7 @@ export function InvoiceUploadModal({
       const storagePath = `${session.user.id}/${Date.now()}-${crypto.randomUUID()}.${ext}`;
 
       const { error: uploadError } = await supabase.storage
-        .from("documents")
+        .from("raw_documents")
         .upload(storagePath, file);
 
       if (uploadError) throw new Error(`Uppladdning misslyckades: ${uploadError.message}`);
@@ -84,9 +84,14 @@ export function InvoiceUploadModal({
         .insert({
           user_id: session.user.id,
           filename: file.name,
-          status: "queued",
+          file_name: file.name,
           storage_path: storagePath,
+          file_path: storagePath,
+          file_size: file.size,
+          mime_type: file.type || "application/pdf",
+          status: "uploaded",
           document_domain: "invoice",
+          doc_type: "invoice",
         })
         .select("id")
         .single();

@@ -126,7 +126,6 @@ type Session = { access_token: string };
 function getHeaders(session: Session): Record<string, string> {
   return {
     Authorization: `Bearer ${session.access_token}`,
-    apikey: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
     "Content-Type": "application/json",
   };
 }
