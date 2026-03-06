@@ -81,6 +81,7 @@ export interface DashboardOverview {
   product_count: number;
   supplier_count: number;
   open_alerts: number;
+  open_deviations: number;
   recent_alerts: Alert[];
 }
 
@@ -253,6 +254,65 @@ export interface SpendCategory {
   user_id: string;
   name: string;
   color: string | null;
+}
+
+export interface AgreementItem {
+  id: string;
+  product_group_id: string | null;
+  category_id: string | null;
+  description: string | null;
+  agreed_price: number | null;
+  discount_percent: number | null;
+  max_price: number | null;
+  unit: string | null;
+  product_groups: { name: string } | null;
+  spend_categories: { name: string } | null;
+}
+
+export interface Agreement {
+  id: string;
+  user_id: string;
+  supplier_id: string;
+  suppliers: { name: string };
+  name: string;
+  agreement_number: string | null;
+  start_date: string;
+  end_date: string | null;
+  status: "active" | "expired" | "terminated";
+  discount_percent: number | null;
+  terms_description: string | null;
+  document_url: string | null;
+  notes: string | null;
+  created_at: string;
+  updated_at: string;
+  agreement_items: AgreementItem[];
+}
+
+export interface AgreementDeviation {
+  id: string;
+  user_id: string;
+  agreement_id: string;
+  agreements: {
+    name: string;
+    supplier_id: string;
+    suppliers: { name: string };
+  };
+  products: { name: string; unit: string | null } | null;
+  product_id: string | null;
+  supplier_id: string;
+  deviation_type:
+    | "wrong_supplier"
+    | "price_above_agreed"
+    | "no_discount_applied"
+    | "expired_agreement";
+  actual_price: number | null;
+  agreed_price: number | null;
+  potential_savings: number | null;
+  invoice_date: string | null;
+  description: string;
+  status: "new" | "reviewed" | "dismissed" | "actioned";
+  notes: string | null;
+  created_at: string;
 }
 
 // ─── Formatting helpers ───────────────────────────────────────────────────────
@@ -553,4 +613,95 @@ export async function createCategory(
   session: Session
 ): Promise<SpendCategory> {
   return postDashboard("categories", { name, color }, session);
+}
+
+export async function fetchAgreements(
+  params: { supplier_id?: string; status?: string },
+  session: Session
+): Promise<Agreement[]> {
+  return fetchDashboard("agreements", params as Record<string, string>, session);
+}
+
+export async function createAgreement(
+  data: unknown,
+  session: Session
+): Promise<Agreement> {
+  const url = new URL(DASHBOARD_URL);
+  url.searchParams.set("action", "agreements");
+  const res = await fetch(url.toString(), {
+    method: "POST",
+    headers: getHeaders(session),
+    body: JSON.stringify(data),
+  });
+  if (!res.ok) throw new Error(await getApiError(res));
+  return res.json();
+}
+
+export async function updateAgreement(
+  data: unknown,
+  session: Session
+): Promise<Agreement> {
+  const url = new URL(DASHBOARD_URL);
+  url.searchParams.set("action", "agreements");
+  const res = await fetch(url.toString(), {
+    method: "PUT",
+    headers: getHeaders(session),
+    body: JSON.stringify(data),
+  });
+  if (!res.ok) throw new Error(await getApiError(res));
+  return res.json();
+}
+
+export async function addAgreementItem(
+  data: unknown,
+  session: Session
+): Promise<AgreementItem> {
+  const url = new URL(DASHBOARD_URL);
+  url.searchParams.set("action", "agreement_items");
+  const res = await fetch(url.toString(), {
+    method: "POST",
+    headers: getHeaders(session),
+    body: JSON.stringify(data),
+  });
+  if (!res.ok) throw new Error(await getApiError(res));
+  return res.json();
+}
+
+export async function removeAgreementItem(
+  id: string,
+  session: Session
+): Promise<{ success?: boolean }> {
+  const url = new URL(DASHBOARD_URL);
+  url.searchParams.set("action", "agreement_items");
+  const res = await fetch(url.toString(), {
+    method: "DELETE",
+    headers: getHeaders(session),
+    body: JSON.stringify({ id }),
+  });
+  if (!res.ok) throw new Error(await getApiError(res));
+  return res.json();
+}
+
+export async function fetchDeviations(
+  params: { status?: string; agreement_id?: string },
+  session: Session
+): Promise<AgreementDeviation[]> {
+  return fetchDashboard("deviations", params as Record<string, string>, session);
+}
+
+export async function updateDeviation(
+  deviationId: string,
+  status: "reviewed" | "dismissed" | "actioned",
+  notes: string | null,
+  session: Session
+): Promise<AgreementDeviation> {
+  const url = new URL(DASHBOARD_URL);
+  url.searchParams.set("action", "update_deviation");
+  const res = await fetch(url.toString(), {
+    method: "POST",
+    headers: getHeaders(session),
+    body: JSON.stringify({ deviation_id: deviationId, status, notes }),
+  });
+  if (!res.ok) throw new Error(await getApiError(res));
+  return res.json();
 }

@@ -52,7 +52,11 @@ function ProductsPageContent() {
 
   const load = useCallback(async () => {
     const supabase = getSupabaseBrowserClient();
-    if (!supabase) return;
+    if (!supabase) {
+      setError("Supabase är inte konfigurerat.");
+      setLoading(false);
+      return;
+    }
     const { data: { session: s } } = await supabase.auth.getSession();
     if (!s) { router.push("/auth/login"); return; }
     setSession(s as { access_token: string; user: { id: string } });

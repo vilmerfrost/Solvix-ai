@@ -39,6 +39,8 @@ function isPublicPath(pathname: string): boolean {
 
 export async function middleware(request: NextRequest) {
   const { pathname, searchParams } = request.nextUrl;
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
   // SPECIAL CASE: Handle OAuth callback at root path
   // OAuth providers sometimes redirect to /?code=... instead of /auth/callback
@@ -66,10 +68,15 @@ export async function middleware(request: NextRequest) {
     },
   });
 
+  // Don't crash the app when Supabase public env vars are missing locally.
+  if (!supabaseUrl || !supabaseAnonKey) {
+    return response;
+  }
+
   // Create Supabase client with cookie handling
   const supabase = createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    supabaseUrl,
+    supabaseAnonKey,
     {
       cookies: {
         getAll() {
@@ -103,8 +110,6 @@ export async function middleware(request: NextRequest) {
 
   // User is authenticated - for multi-tenant mode, skip setup check
   // Setup is only needed for whitelabel/self-hosted deployments
-  const isWhitelabelSetup = process.env.TENANT_NAME || process.env.WHITELABEL_MODE !== "true";
-  
   // If whitelabel mode requires setup, check it
   if (process.env.WHITELABEL_MODE === "true" && !process.env.TENANT_NAME) {
     const isSetupComplete = await checkSetupStatus(supabase);
@@ -168,7 +173,7 @@ async function checkSetupStatus(supabase: ReturnType<typeof createServerClient>)
     }
 
     return settings.is_setup_complete === true;
-  } catch (error) {
+  } catch {
     return false;
   }
 }
@@ -201,10 +206,10 @@ async function checkSubscriptionStatus(supabase: ReturnType<typeof createServerC
 
     // Subscription exists but is not active/valid
     return false;
-  } catch (error) {
+  } catch {
     // SECURITY: Fail closed on subscription check errors
     // This prevents free access during database outages
-    console.error("Subscription check failed, denying access:", error);
+    console.error("Subscription check failed, denying access.");
     return false;
   }
 }

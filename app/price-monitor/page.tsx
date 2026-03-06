@@ -6,6 +6,7 @@ import {
   Package,
   Truck,
   AlertTriangle,
+  FileText,
   Upload,
   TrendingUp,
   TrendingDown,
@@ -17,6 +18,8 @@ import { InvoiceUploadModal } from "@/components/price-monitor/invoice-upload-mo
 import { getSupabaseBrowserClient } from "@/lib/supabase-browser";
 import {
   fetchDashboard,
+  fetchDeviations,
+  AgreementDeviation,
   DashboardOverview,
   Alert,
   formatSEK,
@@ -31,6 +34,7 @@ export default function PriceMonitorDashboard() {
   const [error, setError] = useState("");
   const [showUpload, setShowUpload] = useState(false);
   const [session, setSession] = useState<{ access_token: string; user: { id: string } } | null>(null);
+  const [recentDeviations, setRecentDeviations] = useState<AgreementDeviation[]>([]);
 
   const load = useCallback(async () => {
     const supabase = getSupabaseBrowserClient();
@@ -41,8 +45,12 @@ export default function PriceMonitorDashboard() {
     setSession(s as { access_token: string; user: { id: string } });
 
     try {
-      const data = await fetchDashboard<DashboardOverview>("overview", undefined, s);
-      setOverview(data);
+      const [overviewData, deviationData] = await Promise.all([
+        fetchDashboard<DashboardOverview>("overview", undefined, s),
+        fetchDeviations({ status: "new" }, s).catch(() => []),
+      ]);
+      setOverview(overviewData);
+      setRecentDeviations(deviationData);
     } catch (e) {
       setError(e instanceof Error ? e.message : "Kunde inte hämta data.");
     } finally {
@@ -72,6 +80,13 @@ export default function PriceMonitorDashboard() {
       color: overview && overview.open_alerts > 0 ? "#ef4444" : "var(--color-success)",
       alert: (overview?.open_alerts ?? 0) > 0,
     },
+    {
+      label: "Avtalsavvikelser",
+      value: overview?.open_deviations ?? 0,
+      icon: FileText,
+      color: overview && overview.open_deviations > 0 ? "#ef4444" : "var(--color-accent)",
+      alert: (overview?.open_deviations ?? 0) > 0,
+    },
   ];
 
   return (
@@ -100,7 +115,7 @@ export default function PriceMonitorDashboard() {
       </div>
 
       {/* Stat cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
         {stats.map((s) => {
           const Icon = s.icon;
           return (
@@ -195,6 +210,58 @@ export default function PriceMonitorDashboard() {
                       ? `/price-monitor/review/${alert.new_document_id}`
                       : `/price-monitor/products/${alert.product_id}`
                   )
+                }
+              />
+            ))}
+          </div>
+        )}
+      </section>
+
+      <section>
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="font-semibold text-base" style={{ color: "var(--color-text-primary)" }}>
+            Senaste avtalsavvikelser
+          </h2>
+          <button
+            onClick={() => router.push("/price-monitor/agreements/deviations")}
+            className="flex items-center gap-1 text-xs"
+            style={{ color: "var(--color-accent)" }}
+          >
+            Visa alla <ArrowRight className="w-3.5 h-3.5" />
+          </button>
+        </div>
+
+        {loading ? (
+          <div className="space-y-2">
+            {[...Array(3)].map((_, i) => (
+              <Skeleton key={i} className="h-16 rounded-xl" />
+            ))}
+          </div>
+        ) : recentDeviations.length === 0 ? (
+          <div
+            className="rounded-xl border p-8 text-center"
+            style={{
+              background: "var(--color-bg-secondary)",
+              borderColor: "var(--color-border)",
+            }}
+          >
+            <FileText className="w-8 h-8 mx-auto mb-2" style={{ color: "var(--color-text-muted)" }} />
+            <p className="text-sm" style={{ color: "var(--color-text-muted)" }}>
+              Inga nya avtalsavvikelser just nu
+            </p>
+          </div>
+        ) : (
+          <div
+            className="rounded-xl border overflow-hidden"
+            style={{ borderColor: "var(--color-border)" }}
+          >
+            {recentDeviations.slice(0, 5).map((deviation, idx) => (
+              <DeviationOverviewRow
+                key={deviation.id}
+                deviation={deviation}
+                last={idx === Math.min(recentDeviations.length, 5) - 1}
+                onClick={() =>
+                  router.push(`/price-monitor/agreements/${deviation.agreement_id}`)
                 }
               />
             ))}
@@ -325,6 +392,81 @@ function QuickAction({
           {desc}
         </p>
       </div>
+    </button>
+  );
+}
+
+function DeviationOverviewRow({
+  deviation,
+  last,
+  onClick,
+}: {
+  deviation: AgreementDeviation;
+  last: boolean;
+  onClick: () => void;
+}) {
+  const typeColors: Record<AgreementDeviation["deviation_type"], { bg: string; text: string }> = {
+    wrong_supplier: { bg: "#fef2f2", text: "#ef4444" },
+    price_above_agreed: { bg: "#fff7ed", text: "#f97316" },
+    no_discount_applied: { bg: "#fefce8", text: "#ca8a04" },
+    expired_agreement: { bg: "#f3f4f6", text: "#6b7280" },
+  };
+
+  const typeLabels: Record<AgreementDeviation["deviation_type"], string> = {
+    wrong_supplier: "Fel leverantör",
+    price_above_agreed: "Över maxpris",
+    no_discount_applied: "Rabatt saknas",
+    expired_agreement: "Utgånget avtal",
+  };
+
+  const typeStyle = typeColors[deviation.deviation_type];
+
+  return (
+    <button
+      onClick={onClick}
+      className="w-full flex items-center gap-4 px-5 py-3.5 text-left"
+      style={{
+        background: "var(--color-bg-elevated)",
+        borderBottom: last ? "none" : `1px solid var(--color-border)`,
+      }}
+    >
+      <div
+        className="flex h-9 w-9 items-center justify-center rounded-lg flex-shrink-0"
+        style={{ background: typeStyle.bg, color: typeStyle.text }}
+      >
+        <FileText className="h-4 w-4" />
+      </div>
+
+      <div className="min-w-0 flex-1">
+        <div className="flex flex-wrap items-center gap-2">
+          <p className="text-sm font-medium" style={{ color: "var(--color-text-primary)" }}>
+            {deviation.description}
+          </p>
+          <span
+            className="rounded-full px-2 py-0.5 text-xs font-medium"
+            style={{ background: typeStyle.bg, color: typeStyle.text }}
+          >
+            {typeLabels[deviation.deviation_type]}
+          </span>
+        </div>
+        <p className="text-xs mt-1" style={{ color: "var(--color-text-muted)" }}>
+          {deviation.agreements.name}
+          {deviation.invoice_date ? ` · ${formatDate(deviation.invoice_date)}` : ""}
+        </p>
+      </div>
+
+      <div className="text-right flex-shrink-0">
+        <p className="text-sm font-semibold" style={{ color: "#ef4444" }}>
+          {deviation.potential_savings != null
+            ? formatSEK(deviation.potential_savings)
+            : "–"}
+        </p>
+        <p className="text-xs" style={{ color: "var(--color-text-muted)" }}>
+          Möjlig besparing
+        </p>
+      </div>
+
+      <ArrowRight className="w-4 h-4 flex-shrink-0" style={{ color: "var(--color-text-muted)" }} />
     </button>
   );
 }
