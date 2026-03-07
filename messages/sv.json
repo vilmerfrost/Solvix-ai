@@ -92,6 +92,8 @@
     "allSuppliers": "Alla leverantörer",
     "showAll": "Visa alla",
     "hideZero": "Dölj nollposter",
+    "showDetailRows": "Visa detaljrader",
+    "hideDetailRows": "Dölj detaljrader",
     "emptyTitle": "Inga produkter hittades",
     "emptyDescription": "Ladda upp din första faktura för att börja spåra priser",
     "table": {

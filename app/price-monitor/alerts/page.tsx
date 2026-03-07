@@ -57,10 +57,20 @@ export default function AlertsPage() {
 
   useEffect(() => { load(); }, [load]);
 
+  const meaningfulAlerts = useMemo(
+    () =>
+      allAlerts.filter((a) => {
+        if (Math.abs(a.previous_price) < 0.01 && Math.abs(a.new_price) < 0.01) return false;
+        if (Math.abs(a.new_price) < 1) return false;
+        return true;
+      }),
+    [allAlerts]
+  );
+
   const filtered = useMemo(() => {
-    if (activeTab === "all") return allAlerts;
-    return allAlerts.filter((a) => a.status === activeTab);
-  }, [allAlerts, activeTab]);
+    if (activeTab === "all") return meaningfulAlerts;
+    return meaningfulAlerts.filter((a) => a.status === activeTab);
+  }, [meaningfulAlerts, activeTab]);
 
   const newAlerts = filtered.filter((a) => a.status === "new");
 
@@ -107,12 +117,12 @@ export default function AlertsPage() {
   }
 
   const tabCounts = useMemo(() => {
-    const counts: Record<string, number> = { all: allAlerts.length };
-    allAlerts.forEach((a) => {
+    const counts: Record<string, number> = { all: meaningfulAlerts.length };
+    meaningfulAlerts.forEach((a) => {
       counts[a.status] = (counts[a.status] ?? 0) + 1;
     });
     return counts;
-  }, [allAlerts]);
+  }, [meaningfulAlerts]);
 
   return (
     <div className="space-y-6 max-w-5xl mx-auto">

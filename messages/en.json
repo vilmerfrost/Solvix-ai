@@ -92,6 +92,8 @@
     "allSuppliers": "All suppliers",
     "showAll": "Show all",
     "hideZero": "Hide zero items",
+    "showDetailRows": "Show detail rows",
+    "hideDetailRows": "Hide detail rows",
     "emptyTitle": "No products found",
     "emptyDescription": "Upload your first invoice to start tracking prices",
     "table": {

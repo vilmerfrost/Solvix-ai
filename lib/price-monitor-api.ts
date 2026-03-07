@@ -359,6 +359,22 @@ export function formatPercent(value: number): string {
   })}%`;
 }
 
+/**
+ * Shows SEK amount, with original foreign amount in parentheses when applicable.
+ * e.g. "397,34 kr ($42.96 USD)"
+ */
+export function formatPrice(
+  sekAmount: number,
+  originalAmount?: number | null,
+  currency?: string | null
+): string {
+  const sekStr = formatSEK(sekAmount);
+  if (currency && currency !== "SEK" && originalAmount != null) {
+    return `${sekStr} (${formatCurrencyValue(originalAmount, currency)})`;
+  }
+  return sekStr;
+}
+
 export function formatDate(dateStr: string): string {
   if (!dateStr) return "–";
   const date = new Date(dateStr);

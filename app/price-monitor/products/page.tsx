@@ -373,7 +373,7 @@ function ProductsPageContent() {
           variant="secondary"
           onClick={() => setHideZeroItems((prev) => !prev)}
         >
-          {hideZeroItems ? t("showAll") : t("hideZero")}
+          {hideZeroItems ? t("showDetailRows") : t("hideDetailRows")}
         </Button>
         <Button
           variant="danger"

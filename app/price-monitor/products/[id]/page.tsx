@@ -40,6 +40,8 @@ interface ProductLineItem {
   invoice_number: string | null;
   invoice_date: string | null;
   match_confidence: number | null;
+  is_primary: boolean | null;
+  is_detail: boolean | null;
 }
 
 export default function ProductDetailPage() {
@@ -58,6 +60,8 @@ export default function ProductDetailPage() {
   const [monthFilter, setMonthFilter] = useState("all");
   const [compareLeftDocumentId, setCompareLeftDocumentId] = useState<string>("");
   const [compareRightDocumentId, setCompareRightDocumentId] = useState<string>("");
+  const [siblingItemsByDocument, setSiblingItemsByDocument] = useState<Record<string, ProductLineItem[]>>({});
+  const [showAllSiblingsByDocument, setShowAllSiblingsByDocument] = useState<Record<string, boolean>>({});
 
   const product = history[0];
 
@@ -78,7 +82,7 @@ export default function ProductDetailPage() {
 
       const documentIds = [...new Set(hist.map((row) => row.document_id))];
       if (documentIds.length > 0) {
-        const [{ data: docs, error: docsError }, { data: productLines, error: linesError }] =
+        const [{ data: docs, error: docsError }, { data: productLines, error: linesError }, { data: siblingLines, error: siblingError }] =
           await Promise.all([
             supabase
               .from("documents")
@@ -86,13 +90,21 @@ export default function ProductDetailPage() {
               .in("id", documentIds),
             supabase
               .from("invoice_line_items")
-              .select("document_id, raw_description, quantity, unit_price, amount, invoice_number, invoice_date, match_confidence")
+              .select("document_id, raw_description, quantity, unit_price, amount, invoice_number, invoice_date, match_confidence, is_primary, is_detail")
               .eq("product_id", id)
               .in("document_id", documentIds),
+            supabase
+              .from("invoice_line_items")
+              .select("document_id, raw_description, quantity, unit_price, amount, invoice_number, invoice_date, match_confidence, is_primary, is_detail")
+              .in("document_id", documentIds)
+              .neq("product_id", id)
+              .order("is_primary", { ascending: false })
+              .order("amount", { ascending: false }),
           ]);
 
         if (docsError) throw docsError;
         if (linesError) throw linesError;
+        if (siblingError) throw siblingError;
 
         const docMap = (docs ?? []).reduce<Record<string, DocumentHeader>>((acc, doc) => {
           acc[doc.id] = doc as DocumentHeader;
@@ -106,12 +118,22 @@ export default function ProductDetailPage() {
           },
           {}
         );
+        const siblingMap = (siblingLines ?? []).reduce<Record<string, ProductLineItem[]>>(
+          (acc, row) => {
+            const key = row.document_id as string;
+            acc[key] = [...(acc[key] ?? []), row as ProductLineItem];
+            return acc;
+          },
+          {}
+        );
 
         setDocumentHeaders(docMap);
         setLineItemsByDocument(linesMap);
+        setSiblingItemsByDocument(siblingMap);
       } else {
         setDocumentHeaders({});
         setLineItemsByDocument({});
+        setSiblingItemsByDocument({});
       }
     } catch (e) {
       setError(e instanceof Error ? e.message : "Could not fetch price history.");
@@ -374,43 +396,57 @@ export default function ProductDetailPage() {
                       </tr>
                     </thead>
                     <tbody>
+                      {/* Rows matched to this product */}
                       {(lineItemsByDocument[documentId] ?? rows).map((row, idx) => (
-                        <tr
-                          key={`${documentId}-${row.invoice_date ?? "no-date"}-${idx}`}
-                          className={`hover:bg-gray-50 transition-colors ${idx === (lineItemsByDocument[documentId] ?? rows).length - 1 ? '' : 'border-b border-gray-100'}`}
-                        >
-                          <td className="px-4 py-3 text-gray-900">
-                            {("raw_description" in row ? row.raw_description : null) || product?.product_name || "Rad utan namn"}
-                          </td>
-                          <td className="px-4 py-3 text-gray-900">
-                            {formatDate(row.invoice_date)}
-                          </td>
-                          <td className="px-4 py-3">
-                            {row.invoice_number ? (
-                              <Link
-                                href={`/price-monitor/review/${row.document_id}`}
-                                className="font-medium text-pink-500 hover:text-pink-600 hover:underline"
-                              >
-                                {row.invoice_number}
-                              </Link>
-                            ) : (
-                              <span className="text-gray-400">–</span>
-                            )}
-                          </td>
-                          <td className="px-4 py-3 font-medium text-gray-900">
-                            {formatSEK(row.unit_price)}
-                          </td>
-                          <td className="px-4 py-3 text-gray-500">
-                            {row.quantity}
-                          </td>
-                          <td className="px-4 py-3 text-gray-500">
-                            {formatSEK(row.amount)}
-                          </td>
-                          <td className="px-4 py-3">
-                            <ConfidenceBadge value={Number(row.match_confidence ?? 0)} />
-                          </td>
-                        </tr>
+                        <InvoiceLineRow
+                          key={`own-${documentId}-${idx}`}
+                          row={row}
+                          documentId={documentId}
+                          product={product}
+                          isLast={false}
+                          isOwn
+                        />
                       ))}
+                      {/* Sibling rows from same invoice */}
+                      {(() => {
+                        const siblings = siblingItemsByDocument[documentId] ?? [];
+                        const COLLAPSE_THRESHOLD = 1;
+                        const visible = showAllSiblingsByDocument[documentId]
+                          ? siblings
+                          : siblings.filter((s) => Math.abs(s.amount ?? 0) >= COLLAPSE_THRESHOLD);
+                        const hidden = siblings.filter((s) => Math.abs(s.amount ?? 0) < COLLAPSE_THRESHOLD);
+                        return (
+                          <>
+                            {visible.map((row, idx) => (
+                              <InvoiceLineRow
+                                key={`sibling-${documentId}-${idx}`}
+                                row={row}
+                                documentId={documentId}
+                                product={product}
+                                isLast={false}
+                                isOwn={false}
+                              />
+                            ))}
+                            {!showAllSiblingsByDocument[documentId] && hidden.length > 0 && (
+                              <tr>
+                                <td colSpan={7} className="px-4 py-2">
+                                  <button
+                                    onClick={() =>
+                                      setShowAllSiblingsByDocument((prev) => ({
+                                        ...prev,
+                                        [documentId]: true,
+                                      }))
+                                    }
+                                    className="text-xs text-pink-500 hover:text-pink-600 hover:underline"
+                                  >
+                                    Visa {hidden.length} fler rader
+                                  </button>
+                                </td>
+                              </tr>
+                            )}
+                          </>
+                        );
+                      })()}
                     </tbody>
                   </table>
                 </div>
@@ -592,6 +628,71 @@ export default function ProductDetailPage() {
         </section>
       )}
     </div>
+  );
+}
+
+function InvoiceLineRow({
+  row,
+  documentId,
+  product,
+  isLast,
+  isOwn,
+}: {
+  row: ProductLineItem;
+  documentId: string;
+  product: PriceHistory | undefined;
+  isLast: boolean;
+  isOwn: boolean;
+}) {
+  const isPrimary = row.is_primary === true;
+  const isDetail = row.is_detail === true || !isOwn;
+  const isZero = Math.abs(row.amount ?? 0) < 0.01;
+
+  const rowClass = [
+    "hover:bg-gray-50 transition-colors border-b border-gray-100",
+    isZero ? "opacity-50" : "",
+  ].join(" ");
+
+  const descClass = isPrimary
+    ? "px-4 py-3 font-semibold text-gray-900"
+    : isDetail
+      ? "px-4 py-3 text-gray-400 pl-7"
+      : "px-4 py-3 text-gray-900";
+
+  return (
+    <tr className={rowClass}>
+      <td className={descClass}>
+        {isPrimary && <span className="mr-1 text-amber-400">★</span>}
+        {row.raw_description || (isOwn ? product?.product_name : null) || "–"}
+      </td>
+      <td className="px-4 py-3 text-gray-500 text-xs">
+        {formatDate(row.invoice_date)}
+      </td>
+      <td className="px-4 py-3">
+        {row.invoice_number ? (
+          <Link
+            href={`/price-monitor/review/${documentId}`}
+            className="font-medium text-pink-500 hover:text-pink-600 hover:underline text-xs"
+          >
+            {row.invoice_number}
+          </Link>
+        ) : (
+          <span className="text-gray-400">–</span>
+        )}
+      </td>
+      <td className={`px-4 py-3 text-right ${isPrimary ? "font-semibold text-gray-900" : "text-gray-500"}`}>
+        {row.unit_price != null ? formatSEK(row.unit_price) : "–"}
+      </td>
+      <td className="px-4 py-3 text-right text-gray-500">
+        {row.quantity ?? "–"}
+      </td>
+      <td className={`px-4 py-3 text-right ${isPrimary ? "font-semibold text-gray-900" : isZero ? "text-gray-300" : "text-gray-500"}`}>
+        {row.amount != null ? formatSEK(row.amount) : "–"}
+      </td>
+      <td className="px-4 py-3">
+        {isOwn ? <ConfidenceBadge value={Number(row.match_confidence ?? 0)} /> : null}
+      </td>
+    </tr>
   );
 }
 

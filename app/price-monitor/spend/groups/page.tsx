@@ -91,7 +91,9 @@ export default function ProductGroupsPage() {
 
   const unassignedProducts = useMemo(() => {
     const safe = Array.isArray(products) ? products : [];
-    return safe.filter((product) => !assignedIds.has(product.product_id));
+    return safe.filter(
+      (product) => !assignedIds.has(product.product_id) && (product.latest_price ?? 0) > 0
+    );
   }, [assignedIds, products]);
 
   const filteredUnassigned = useMemo(() => {
