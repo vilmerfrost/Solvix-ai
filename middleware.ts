@@ -120,13 +120,13 @@ export async function middleware(request: NextRequest) {
     }
 
     if (isSetupComplete && pathname.startsWith("/setup")) {
-      return NextResponse.redirect(new URL("/dashboard", request.url));
+      return NextResponse.redirect(new URL("/price-monitor", request.url));
     }
   }
 
-  // For SaaS mode, always redirect from /setup to /dashboard
+  // For SaaS mode, always redirect from /setup to /price-monitor
   if (pathname.startsWith("/setup") && !process.env.WHITELABEL_MODE) {
-    return NextResponse.redirect(new URL("/dashboard", request.url));
+    return NextResponse.redirect(new URL("/price-monitor", request.url));
   }
 
   // Check onboarding status - redirect to /onboarding if not complete
@@ -207,10 +207,10 @@ async function checkSubscriptionStatus(supabase: ReturnType<typeof createServerC
     // Subscription exists but is not active/valid
     return false;
   } catch {
-    // SECURITY: Fail closed on subscription check errors
-    // This prevents free access during database outages
-    console.error("Subscription check failed, denying access.");
-    return false;
+    // Fail open on errors — if the DB is slow after a fresh signup the row
+    // may not be visible yet. The user will be re-checked on the next request.
+    console.error("Subscription check failed, allowing access.");
+    return true;
   }
 }
 

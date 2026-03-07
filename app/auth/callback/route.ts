@@ -5,7 +5,7 @@ import { NextResponse } from "next/server";
 export async function GET(request: Request) {
   const { searchParams, origin } = new URL(request.url);
   const code = searchParams.get("code");
-  const next = searchParams.get("next") ?? "/dashboard";
+  const next = searchParams.get("next") ?? "/price-monitor";
 
   if (code) {
     const cookieStore = await cookies();
@@ -68,8 +68,8 @@ export async function GET(request: Request) {
         }
       }
       
-      // Default redirect to dashboard - let middleware handle onboarding redirect
-      return NextResponse.redirect(`${origin}/dashboard`);
+      // Redirect to price-monitor (main page) - let middleware handle onboarding redirect
+      return NextResponse.redirect(`${origin}/price-monitor`);
     }
   }
 
