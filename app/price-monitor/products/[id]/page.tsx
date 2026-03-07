@@ -222,14 +222,14 @@ export default function ProductDetailPage() {
   function getDocumentSummary(documentId: string | null) {
     if (!documentId) return null;
 
-    const rows = getDocumentRows(documentId);
-    if (rows.length === 0) return null;
-
-    const total = rows.reduce((sum, row) => sum + (row.amount ?? 0), 0);
-    const count = rows.length;
     const header = documentHeaders[documentId];
-    const date = header?.document_date ?? rows[0].invoice_date ?? null;
-    const invoiceNumber = rows[0].invoice_number ?? null;
+    const rows = getDocumentRows(documentId);
+
+    // Prefer document total_cost (already FX-converted) over summing line items
+    const total = header?.total_cost ?? rows.reduce((sum, row) => sum + (row.amount ?? 0), 0);
+    const count = rows.length;
+    const date = header?.document_date ?? rows[0]?.invoice_date ?? null;
+    const invoiceNumber = rows[0]?.invoice_number ?? null;
 
     return { total, count, date, invoiceNumber };
   }

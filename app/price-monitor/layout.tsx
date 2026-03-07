@@ -19,6 +19,7 @@ import {
   Layers3,
   Tags,
   FileSpreadsheet,
+  PenLine,
 } from "lucide-react";
 
 export default function PriceMonitorLayout({ children }: { children: React.ReactNode }) {
@@ -53,6 +54,7 @@ export default function PriceMonitorLayout({ children }: { children: React.React
   const navItems = [
     { href: "/price-monitor", label: t("overview"), icon: LayoutDashboard, exact: true },
     { href: "/price-monitor/products", label: t("products"), icon: Package, exact: false },
+    { href: "/price-monitor/manual-entry", label: t("manualEntry"), icon: PenLine, exact: false },
     { href: "/price-monitor/alerts", label: t("alerts"), icon: AlertTriangle, exact: false },
     { href: "/price-monitor/suppliers", label: t("suppliers"), icon: Truck, exact: false },
     { href: "/price-monitor/agreements", label: t("agreements"), icon: FileText, exact: false },

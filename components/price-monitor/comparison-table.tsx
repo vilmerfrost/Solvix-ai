@@ -24,9 +24,16 @@ export function ComparisonTable({ rows }: ComparisonTableProps) {
       {Object.entries(groups).map(([key, groupRows]) => {
         const sorted = [...groupRows].sort((a, b) => a.unit_price - b.unit_price);
         const groupName = sorted[0]?.group_name ?? key;
-        const cheapest = sorted[0]?.unit_price ?? 0;
-        const mostExpensive = sorted[sorted.length - 1]?.unit_price ?? cheapest;
-        const potentialSavings = Math.max(mostExpensive - cheapest, 0);
+
+        // Only meaningful if ≥2 suppliers have a non-zero price for the SAME product
+        const priceableRows = sorted.filter((r) => r.unit_price > 0);
+        const cheapest = priceableRows[0]?.unit_price ?? 0;
+        const mostExpensive = priceableRows[priceableRows.length - 1]?.unit_price ?? cheapest;
+        // Savings only make sense when comparing the same product across suppliers
+        const uniqueProducts = new Set(sorted.map((r) => r.product_id)).size;
+        const uniqueSuppliers = priceableRows.length;
+        const hasMeaningfulSavings = uniqueSuppliers >= 2 && uniqueProducts === 1 && mostExpensive > cheapest;
+        const potentialSavings = hasMeaningfulSavings ? mostExpensive - cheapest : null;
 
         return (
           <Card key={key}>
@@ -39,9 +46,19 @@ export function ComparisonTable({ rows }: ComparisonTableProps) {
                     {sorted[0]?.unit ? ` · ${sorted[0].unit}` : ""} · {sorted.length} leverantörer
                   </p>
                 </div>
-                <Badge variant="info">
-                  Möjlig besparing {formatSEK(potentialSavings)}
-                </Badge>
+                {potentialSavings != null ? (
+                  <Badge variant="info">
+                    Möjlig besparing {formatSEK(potentialSavings)}
+                  </Badge>
+                ) : (
+                  <Badge variant="default">
+                    {uniqueProducts > 1
+                      ? "Olika produkter – ej jämförbara"
+                      : priceableRows.length < 2
+                        ? "Behöver fler leverantörer"
+                        : "Likvärdig prissättning"}
+                  </Badge>
+                )}
               </div>
             </CardHeader>
 
@@ -57,7 +74,9 @@ export function ComparisonTable({ rows }: ComparisonTableProps) {
                 </thead>
                 <tbody>
                   {sorted.map((row, index) => {
-                    const isCheapest = index === 0;
+                    const isZeroPrice = row.unit_price <= 0;
+                    // "Billigast" only applies when the price is meaningful (>0) and comparable
+                    const isCheapest = !isZeroPrice && index === sorted.findIndex((r) => r.unit_price > 0);
                     return (
                       <tr
                         key={`${row.group_id}-${row.supplier_id}-${row.product_id}`}
@@ -71,14 +90,16 @@ export function ComparisonTable({ rows }: ComparisonTableProps) {
                             {row.supplier_name}
                           </div>
                         </td>
-                        <td className="px-3 py-3 text-right" style={{ color: "var(--color-text-primary)" }}>
-                          {formatSEK(row.unit_price)}
+                        <td className="px-3 py-3 text-right" style={{ color: isZeroPrice ? "var(--color-text-muted)" : "var(--color-text-primary)" }}>
+                          {isZeroPrice ? "–" : formatSEK(row.unit_price)}
                         </td>
                         <td className="px-3 py-3" style={{ color: "var(--color-text-secondary)" }}>
                           {formatDate(row.invoice_date)}
                         </td>
                         <td className="px-3 py-3 text-right">
-                          {isCheapest ? (
+                          {isZeroPrice ? (
+                            <span className="text-xs text-gray-400">Ej prisatt</span>
+                          ) : isCheapest ? (
                             <Badge variant="success">Billigast</Badge>
                           ) : (
                             <span

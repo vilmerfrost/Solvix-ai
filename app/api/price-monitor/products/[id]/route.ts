@@ -2,6 +2,42 @@ import { NextResponse } from "next/server";
 import { getApiUser } from "@/lib/api-auth";
 import { createServiceRoleClient } from "@/lib/supabase";
 
+export async function PATCH(
+  request: Request,
+  context: { params: Promise<{ id: string }> }
+) {
+  const { user, error: authError } = await getApiUser();
+  if (authError || !user) return authError!;
+
+  const { id } = await context.params;
+  const body = await request.json().catch(() => ({}));
+  const name = typeof body?.name === "string" ? body.name.trim() : null;
+
+  if (!name) {
+    return NextResponse.json({ success: false, error: "Name is required." }, { status: 400 });
+  }
+
+  const supabase = createServiceRoleClient();
+
+  const { data: product, error: updateError } = await supabase
+    .from("products")
+    .update({ name })
+    .eq("id", id)
+    .eq("user_id", user.id)
+    .select("id, name")
+    .maybeSingle();
+
+  if (updateError) {
+    return NextResponse.json({ success: false, error: updateError.message }, { status: 500 });
+  }
+
+  if (!product) {
+    return NextResponse.json({ success: false, error: "Product not found." }, { status: 404 });
+  }
+
+  return NextResponse.json({ success: true, product });
+}
+
 export async function DELETE(
   _request: Request,
   context: { params: Promise<{ id: string }> }

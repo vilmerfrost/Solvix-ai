@@ -13,6 +13,9 @@ import {
   ChevronDown,
   Trash2,
   Merge,
+  Pencil,
+  Check,
+  X,
 } from "lucide-react";
 import { Button, Skeleton, useToast } from "@/components/ui/index";
 import { AiSuggestions } from "@/components/price-monitor/ai-suggestions";
@@ -287,6 +290,12 @@ function ProductsPageContent() {
     );
   }
 
+  function handleRenameProduct(productId: string, newName: string) {
+    setProducts((prev) =>
+      prev.map((p) => p.product_id === productId ? { ...p, product_name: newName } : p)
+    );
+  }
+
   function SortIcon({ k }: { k: SortKey }) {
     if (sort.key !== k)
       return <ChevronUp className="w-3 h-3 opacity-20" />;
@@ -467,6 +476,7 @@ function ProductsPageContent() {
                   selected={selectedProductIds.includes(p.product_id)}
                   onToggleSelect={() => toggleProductSelection(p.product_id)}
                   onClick={() => router.push(`/price-monitor/products/${p.product_id}`)}
+                  onRenamed={handleRenameProduct}
                 />
               ))}
             </tbody>
@@ -575,26 +585,53 @@ function ProductRow({
   selected,
   onToggleSelect,
   onClick,
+  onRenamed,
 }: {
   product: ProductOverview;
   last: boolean;
   selected: boolean;
   onToggleSelect: () => void;
   onClick: () => void;
+  onRenamed: (id: string, newName: string) => void;
 }) {
   const t = useTranslations("products");
   const change = p.change_percent;
   const increase = change !== null && change > 0;
   const decrease = change !== null && change < 0;
   const isZeroItem = p.latest_price === null || p.latest_price === 0;
+  const [editing, setEditing] = useState(false);
+  const [editName, setEditName] = useState(p.product_name);
+  const [saving, setSaving] = useState(false);
+
+  async function saveRename() {
+    const trimmed = editName.trim();
+    if (!trimmed || trimmed === p.product_name) { setEditing(false); return; }
+    setSaving(true);
+    try {
+      const res = await fetch(`/api/price-monitor/products/${p.product_id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name: trimmed }),
+      });
+      if (res.ok) {
+        onRenamed(p.product_id, trimmed);
+        setEditing(false);
+      }
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  function handleKeyDown(e: React.KeyboardEvent) {
+    if (e.key === "Enter") saveRename();
+    if (e.key === "Escape") { setEditing(false); setEditName(p.product_name); }
+  }
 
   return (
     <tr
-      onClick={onClick}
-      className={`cursor-pointer transition-colors hover:bg-pink-50 ${last ? '' : 'border-b border-gray-100'}`}
-      style={{
-        opacity: isZeroItem ? 0.65 : 1,
-      }}
+      onClick={editing ? undefined : onClick}
+      className={`transition-colors hover:bg-pink-50 ${editing ? '' : 'cursor-pointer'} ${last ? '' : 'border-b border-gray-100'}`}
+      style={{ opacity: isZeroItem ? 0.65 : 1 }}
     >
       <td className="px-4 py-3" onClick={(e) => e.stopPropagation()}>
         <input
@@ -605,45 +642,62 @@ function ProductRow({
           className="accent-pink-500"
         />
       </td>
-      <td
-        className="px-4 py-3 font-medium text-gray-900"
-      >
-        {p.product_name}
-        {isZeroItem && (
+      <td className="px-4 py-3 font-medium text-gray-900" onClick={(e) => e.stopPropagation()}>
+        {editing ? (
+          <div className="flex items-center gap-1">
+            <input
+              autoFocus
+              className="flex-1 min-w-0 text-sm border border-pink-400 rounded px-2 py-1 outline-none focus:ring-1 focus:ring-pink-500"
+              value={editName}
+              onChange={(e) => setEditName(e.target.value)}
+              onKeyDown={handleKeyDown}
+            />
+            <button
+              onClick={saveRename}
+              disabled={saving}
+              className="p-1 text-emerald-500 hover:text-emerald-600 disabled:opacity-50"
+            >
+              <Check className="w-4 h-4" />
+            </button>
+            <button
+              onClick={() => { setEditing(false); setEditName(p.product_name); }}
+              className="p-1 text-gray-400 hover:text-gray-600"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          </div>
+        ) : (
+          <div className="flex items-center gap-1.5 group">
+            <span onClick={onClick} className="cursor-pointer">{p.product_name}</span>
+            <button
+              onClick={(e) => { e.stopPropagation(); setEditing(true); }}
+              className="opacity-0 group-hover:opacity-100 p-0.5 text-gray-400 hover:text-pink-500 transition-opacity"
+            >
+              <Pencil className="w-3 h-3" />
+            </button>
+          </div>
+        )}
+        {isZeroItem && !editing && (
           <div className="text-xs font-normal text-gray-500">
             {t("includedZeroItem")}
           </div>
         )}
       </td>
-      <td className="px-4 py-3 text-gray-500">
-        {p.supplier_name}
-      </td>
-      <td className="px-4 py-3 text-gray-500">
-        {p.unit ?? "–"}
-      </td>
-      <td
-        className="px-4 py-3 text-right font-medium text-gray-900"
-      >
+      <td className="px-4 py-3 text-gray-500">{p.supplier_name}</td>
+      <td className="px-4 py-3 text-gray-500">{p.unit ?? "–"}</td>
+      <td className="px-4 py-3 text-right font-medium text-gray-900">
         {p.latest_price !== null ? formatSEK(p.latest_price) : "–"}
-        <div className="text-xs font-normal text-gray-500">
-          {formatDate(p.latest_date)}
-        </div>
+        <div className="text-xs font-normal text-gray-500">{formatDate(p.latest_date)}</div>
       </td>
-      <td
-        className="px-4 py-3 text-right text-gray-500"
-      >
+      <td className="px-4 py-3 text-right text-gray-500">
         {p.previous_price !== null ? formatSEK(p.previous_price) : "–"}
-        {p.previous_date && (
-          <div className="text-xs">{formatDate(p.previous_date)}</div>
-        )}
+        {p.previous_date && <div className="text-xs">{formatDate(p.previous_date)}</div>}
       </td>
       <td className="px-4 py-3 text-right">
         {change === null ? (
           <span className="text-gray-400">–</span>
         ) : (
-          <span
-            className={`inline-flex items-center gap-1 font-semibold ${increase ? 'text-red-500' : decrease ? 'text-emerald-500' : 'text-gray-400'}`}
-          >
+          <span className={`inline-flex items-center gap-1 font-semibold ${increase ? 'text-red-500' : decrease ? 'text-emerald-500' : 'text-gray-400'}`}>
             {increase && <TrendingUp className="w-3.5 h-3.5" />}
             {decrease && <TrendingDown className="w-3.5 h-3.5" />}
             {!increase && !decrease && <Minus className="w-3.5 h-3.5" />}
@@ -651,11 +705,7 @@ function ProductRow({
           </span>
         )}
       </td>
-      <td
-        className="px-4 py-3 text-right text-gray-500"
-      >
-        {p.invoice_count}
-      </td>
+      <td className="px-4 py-3 text-right text-gray-500">{p.invoice_count}</td>
     </tr>
   );
 }
