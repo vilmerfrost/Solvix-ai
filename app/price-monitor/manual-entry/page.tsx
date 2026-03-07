@@ -7,6 +7,7 @@ import { ArrowLeft, Plus, Trash2 } from "lucide-react";
 import { useToast } from "@/components/ui/index";
 import { getSupabaseBrowserClient } from "@/lib/supabase-browser";
 import { formatSEK } from "@/lib/price-monitor-api";
+import { getServiceProductName } from "@/lib/price-monitor-service-names";
 
 interface LineItem {
   description: string;
@@ -125,16 +126,21 @@ export default function ManualEntryPage() {
       if (docErr) throw docErr;
 
       // 3. Upsert products + insert line items
-      const maxAmount = Math.max(...validLines.map((_, i) => lineAmounts[lines.indexOf(lines.filter((l) => l.description.trim())[0])] || 0), ...validLines.map((l) => calcAmount(l.quantity, l.unitPrice)));
+      const supplierDisplayName = suppliers.find((s) => s.id === resolvedSupplierId)?.name ?? newSupplierName;
+      const serviceProductName = getServiceProductName(supplierDisplayName);
+      const lineAmountsCalc = validLines.map((l) => calcAmount(l.quantity, l.unitPrice));
+      const maxAmount = Math.max(0, ...lineAmountsCalc);
 
-      for (const line of validLines) {
-        const amount = calcAmount(line.quantity, line.unitPrice);
-        const normalizedName = line.description.toLowerCase().trim();
+      for (let i = 0; i < validLines.length; i++) {
+        const line = validLines[i];
+        const amount = lineAmountsCalc[i] ?? 0;
+        const productName = serviceProductName ?? line.description.trim();
+        const normalizedName = productName.toLowerCase().trim();
 
         const { data: product } = await supabase
           .from("products")
           .upsert(
-            { user_id: session.user.id, supplier_id: resolvedSupplierId, name: line.description.trim(), normalized_name: normalizedName, unit: line.unit || null, is_trackable: amount > 0 },
+            { user_id: session.user.id, supplier_id: resolvedSupplierId, name: productName, normalized_name: normalizedName, unit: line.unit || null, is_trackable: amount > 0 },
             { onConflict: "supplier_id,normalized_name" }
           )
           .select("id")

@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { getApiUser } from "@/lib/api-auth";
 import { createServiceRoleClient } from "@/lib/supabase";
+import { getServiceProductName } from "@/lib/price-monitor-service-names";
 
 function normalizeLabel(value: string | null | undefined): string {
   return value?.replace(/\s+/g, " ").trim() ?? "";
@@ -76,17 +77,28 @@ export async function POST(
     return NextResponse.json({ success: true, updated: 0 });
   }
 
-  const { data: existingProducts, error: productsError } = await supabase
-    .from("products")
-    .select("id, supplier_id, name")
-    .eq("user_id", user.id)
-    .in("supplier_id", supplierIds);
+  const [{ data: existingProducts, error: productsError }, { data: suppliersData, error: suppliersError }] =
+    await Promise.all([
+      supabase.from("products").select("id, supplier_id, name").eq("user_id", user.id).in("supplier_id", supplierIds),
+      supabase.from("suppliers").select("id, name").eq("user_id", user.id).in("id", supplierIds),
+    ]);
 
   if (productsError) {
     return NextResponse.json(
       { success: false, error: productsError.message },
       { status: 500 }
     );
+  }
+  if (suppliersError) {
+    return NextResponse.json(
+      { success: false, error: suppliersError.message },
+      { status: 500 }
+    );
+  }
+
+  const supplierNames = new Map<string, string>();
+  for (const s of suppliersData ?? []) {
+    if (s?.id && s?.name) supplierNames.set(s.id, s.name);
   }
 
   const productsBySupplier = new Map<
@@ -105,10 +117,17 @@ export async function POST(
     if (row.product_id || !row.supplier_id) continue;
 
     const supplierId = row.supplier_id;
-    const canonical = canonicalProductKey(row.raw_description);
+    const supplierName = supplierNames.get(supplierId) ?? "";
+    const serviceProductName = getServiceProductName(supplierName);
+
+    const canonical = serviceProductName
+      ? canonicalProductKey(serviceProductName)
+      : canonicalProductKey(row.raw_description);
     if (!canonical) continue;
 
-    const cacheKey = `${supplierId}:${canonical}`;
+    const cacheKey = serviceProductName
+      ? `${supplierId}:${canonical}`
+      : `${supplierId}:${canonical}`;
     let productId = cacheBySupplierAndKey.get(cacheKey) ?? null;
 
     if (!productId) {
@@ -118,7 +137,7 @@ export async function POST(
       );
       productId = exact?.id ?? null;
 
-      if (!productId) {
+      if (!productId && !serviceProductName) {
         const prefix = products.find((product) => {
           const key = canonicalProductKey(product.name);
           return (
@@ -132,12 +151,15 @@ export async function POST(
       }
 
       if (!productId) {
+        const productName = serviceProductName ?? normalizeLabel(row.raw_description) ?? canonical;
+        const normalizedName = productName.toLowerCase().trim();
         const { data: created, error: createError } = await supabase
           .from("products")
           .insert({
             user_id: user.id,
             supplier_id: supplierId,
-            name: normalizeLabel(row.raw_description) || canonical,
+            name: productName,
+            normalized_name: normalizedName,
             unit: row.unit ?? null,
           })
           .select("id, supplier_id, name")

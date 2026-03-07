@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useLocale, useTranslations } from "next-intl";
-import { Save, Bell, Mail, Percent, RefreshCw, Palette } from "lucide-react";
+import { Save, Bell, Mail, Percent, RefreshCw, Palette, Copy, Check, Inbox } from "lucide-react";
 import { Button, Skeleton, useToast } from "@/components/ui/index";
 import { FortnoxStatusCard } from "@/components/price-monitor/fortnox-status-card";
 import { getSupabaseBrowserClient } from "@/lib/supabase-browser";
@@ -29,10 +29,14 @@ export default function PriceMonitorSettingsPage() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [refreshingRates, setRefreshingRates] = useState(false);
-  const [session, setSession] = useState<{ access_token: string } | null>(null);
+  const [session, setSession] = useState<{ access_token: string; user: { id: string } } | null>(null);
   const [settings, setSettings] = useState<PriceMonitorSettings>(
     getDefaultPriceMonitorSettings()
   );
+  const [inboxCode, setInboxCode] = useState<string | null>(null);
+  const [inboxEnabled, setInboxEnabled] = useState(false);
+  const [savingInbox, setSavingInbox] = useState(false);
+  const [copied, setCopied] = useState(false);
 
   useEffect(() => {
     async function load() {
@@ -47,6 +51,24 @@ export default function PriceMonitorSettingsPage() {
         setSettings(data);
       } catch {
         // Use defaults if not configured yet
+      }
+
+      // Load inbox settings directly from DB (not via edge function)
+      try {
+        const supabase = getSupabaseBrowserClient();
+        if (supabase) {
+          const { data: inboxData } = await supabase
+            .from("settings")
+            .select("inbox_code, inbox_enabled")
+            .eq("user_id", s.user.id)
+            .single();
+          if (inboxData) {
+            setInboxCode(inboxData.inbox_code ?? null);
+            setInboxEnabled(inboxData.inbox_enabled ?? false);
+          }
+        }
+      } catch {
+        // inbox settings optional
       } finally {
         setLoading(false);
       }
@@ -96,6 +118,32 @@ export default function PriceMonitorSettingsPage() {
       successTitle: t("ratesUpdated"),
       successMessage: t("ratesUpdatedDesc"),
     });
+  }
+
+  async function handleCopyInboxCode() {
+    if (!inboxCode) return;
+    const emailAddress = `docs@inbox.solvix.ai`;
+    const subject = `VEXT-${inboxCode}`;
+    await navigator.clipboard.writeText(`${emailAddress} (ämne: ${subject})`);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  }
+
+  async function handleToggleInbox() {
+    if (!session) return;
+    setSavingInbox(true);
+    try {
+      const supabase = getSupabaseBrowserClient();
+      if (supabase) {
+        await supabase
+          .from("settings")
+          .update({ inbox_enabled: !inboxEnabled })
+          .eq("user_id", session.user.id);
+        setInboxEnabled((v) => !v);
+      }
+    } finally {
+      setSavingInbox(false);
+    }
   }
 
   function setManualRate(
@@ -533,9 +581,109 @@ export default function PriceMonitorSettingsPage() {
             </div>
           </div>
 
-          <FortnoxStatusCard />
+          {/* Email inbox */}
+          <div
+            className="rounded-xl border p-5"
+            style={{
+              background: "var(--color-bg-elevated)",
+              borderColor: "var(--color-border)",
+            }}
+          >
+            <div className="flex items-center justify-between gap-4 mb-4 flex-wrap">
+              <div className="flex items-center gap-3">
+                <div
+                  className="w-9 h-9 rounded-lg flex items-center justify-center"
+                  style={{ background: "var(--color-accent-muted)" }}
+                >
+                  <Inbox className="w-4 h-4" style={{ color: "var(--color-accent)" }} />
+                </div>
+                <div>
+                  <p className="text-sm font-semibold" style={{ color: "var(--color-text-primary)" }}>
+                    E-postinkorg
+                  </p>
+                  <p className="text-xs" style={{ color: "var(--color-text-muted)" }}>
+                    Vidarebefordra fakturor till inkorgen – de importeras automatiskt.
+                  </p>
+                </div>
+              </div>
+              {/* Enable toggle */}
+              <button
+                role="switch"
+                aria-checked={inboxEnabled}
+                disabled={savingInbox}
+                onClick={handleToggleInbox}
+                className="relative w-11 h-6 rounded-full transition-colors duration-200 flex-shrink-0 focus:outline-none focus-visible:ring-2 disabled:opacity-50"
+                style={{ background: inboxEnabled ? "var(--color-accent)" : "var(--color-border)" }}
+              >
+                <span
+                  className="absolute top-0.5 left-0.5 w-5 h-5 rounded-full bg-white shadow transition-transform duration-200"
+                  style={{ transform: inboxEnabled ? "translateX(20px)" : "translateX(0)" }}
+                />
+              </button>
+            </div>
 
-          {/* Save button */}
+            {inboxCode ? (
+              <div className="space-y-3">
+                <div>
+                  <p className="text-xs font-medium mb-1" style={{ color: "var(--color-text-muted)" }}>
+                    Skicka till
+                  </p>
+                  <code
+                    className="block text-xs px-3 py-2 rounded-lg border font-mono"
+                    style={{
+                      background: "var(--color-bg)",
+                      borderColor: "var(--color-border)",
+                      color: "var(--color-text-primary)",
+                    }}
+                  >
+                    docs@inbox.solvix.ai
+                  </code>
+                </div>
+                <div>
+                  <p className="text-xs font-medium mb-1" style={{ color: "var(--color-text-muted)" }}>
+                    Ämnesrad (inkludera alltid)
+                  </p>
+                  <div className="flex items-center gap-2">
+                    <code
+                      className="flex-1 text-xs px-3 py-2 rounded-lg border font-mono"
+                      style={{
+                        background: "var(--color-bg)",
+                        borderColor: "var(--color-border)",
+                        color: "var(--color-text-primary)",
+                      }}
+                    >
+                      VEXT-{inboxCode}
+                    </code>
+                    <button
+                      onClick={handleCopyInboxCode}
+                      className="flex items-center gap-1.5 px-3 py-2 rounded-lg border text-xs transition-all"
+                      style={{
+                        background: "var(--color-bg-elevated)",
+                        borderColor: "var(--color-border)",
+                        color: "var(--color-text-secondary)",
+                      }}
+                    >
+                      {copied ? <Check className="w-3.5 h-3.5 text-emerald-500" /> : <Copy className="w-3.5 h-3.5" />}
+                      {copied ? "Kopierat!" : "Kopiera"}
+                    </button>
+                  </div>
+                </div>
+                <div
+                  className="flex items-center gap-2 px-3 py-2 rounded-lg text-xs"
+                  style={{ background: "var(--color-accent-muted)", color: "var(--color-accent)" }}
+                >
+                  <span>🚧</span>
+                  <span>Under utveckling — e-postinkorgen är inte aktiv ännu.</span>
+                </div>
+              </div>
+            ) : (
+              <p className="text-xs" style={{ color: "var(--color-text-muted)" }}>
+                Ingen inkorgskod hittades. Kontakta supporten.
+              </p>
+            )}
+          </div>
+
+          <FortnoxStatusCard />
           <div className="flex justify-end">
             <Button
               variant="primary"

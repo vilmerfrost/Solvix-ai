@@ -121,18 +121,40 @@ export async function POST(request: NextRequest) {
           continue;
         }
 
-        const { error: docError } = await supabase.from("documents").insert({
-          user_id: userId,
-          filename: fileName,
-          storage_path: storagePath,
-          status: settings.inbox_auto_process ? "uploaded" : "uploaded",
-          document_domain: defaultDomain,
-          doc_type: defaultDomain === "office_it" ? "unknown_office" : null,
-          review_status: defaultDomain === "office_it" ? "new" : null,
-          metadata: { source: "email", from: fromAddress, subject },
-        });
+        const { data: docRecord, error: docError } = await supabase
+          .from("documents")
+          .insert({
+            user_id: userId,
+            filename: fileName,
+            storage_path: storagePath,
+            status: "uploaded",
+            document_domain: defaultDomain,
+            doc_type: defaultDomain === "office_it" ? "unknown_office" : null,
+            review_status: defaultDomain === "office_it" ? "new" : null,
+            metadata: { source: "email", from: fromAddress, subject },
+          })
+          .select("id")
+          .single();
 
-        if (!docError) documentsCreated++;
+        if (!docError && docRecord) {
+          documentsCreated++;
+
+          // Auto-process if enabled
+          if (settings.inbox_auto_process) {
+            const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+            const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+            if (supabaseUrl && serviceKey) {
+              fetch(`${supabaseUrl}/functions/v1/process-invoice`, {
+                method: "POST",
+                headers: {
+                  "Content-Type": "application/json",
+                  Authorization: `Bearer ${serviceKey}`,
+                },
+                body: JSON.stringify({ document_id: docRecord.id, user_id: userId }),
+              }).catch((e) => console.error("[INBOX] process-invoice call failed:", e));
+            }
+          }
+        }
       } catch (err) {
         console.error("[INBOX] Error processing attachment:", err);
       }
