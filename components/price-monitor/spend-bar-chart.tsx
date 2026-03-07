@@ -16,13 +16,22 @@ interface SpendBarChartProps {
 }
 
 export function SpendBarChart({ suppliers }: SpendBarChartProps) {
-  const topSuppliers = [...suppliers]
-    .sort((a, b) => b.total_spend - a.total_spend)
+  const topSuppliers = [...(suppliers ?? [])]
+    .filter((s) => s && (Number(s.total_spend) || 0) > 0)
+    .sort((a, b) => (b?.total_spend ?? 0) - (a?.total_spend ?? 0))
     .slice(0, 10)
     .map((supplier) => ({
-      name: supplier.supplier_name,
-      spend: supplier.total_spend,
+      name: supplier?.supplier_name ?? "",
+      spend: Number(supplier?.total_spend) || 0,
     }));
+
+  if (topSuppliers.length === 0) {
+    return (
+      <div className="flex items-center justify-center h-[350px] text-sm" style={{ color: "var(--color-text-muted)" }}>
+        Ingen leverantörsdata att visa
+      </div>
+    );
+  }
 
   return (
     <ResponsiveContainer width="100%" height={350}>

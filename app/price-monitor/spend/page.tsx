@@ -42,7 +42,7 @@ export default function SpendOverviewPage() {
       } = await supabase.auth.getSession();
 
       if (!session) {
-        window.location.href = "/auth/login";
+        window.location.href = "/login";
         return;
       }
 

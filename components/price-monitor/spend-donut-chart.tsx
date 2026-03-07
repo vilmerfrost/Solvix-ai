@@ -26,11 +26,19 @@ interface SpendDonutChartProps {
 }
 
 export function SpendDonutChart({ categories }: SpendDonutChartProps) {
-  const categoryData = categories.map((category) => ({
-    name: category.category_name,
-    value: category.total_spend,
-    color: category.color,
-  }));
+  const categoryData = (categories ?? []).map((category) => ({
+    name: category?.category_name ?? "",
+    value: Number(category?.total_spend) || 0,
+    color: category?.color ?? null,
+  })).filter((d) => d.value > 0);
+
+  if (categoryData.length === 0) {
+    return (
+      <div className="flex items-center justify-center h-[350px] text-sm" style={{ color: "var(--color-text-muted)" }}>
+        Ingen kategoridata att visa
+      </div>
+    );
+  }
 
   return (
     <ResponsiveContainer width="100%" height={350}>

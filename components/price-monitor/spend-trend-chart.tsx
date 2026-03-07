@@ -18,8 +18,10 @@ interface SpendTrendChartProps {
 export function SpendTrendChart({ monthly }: SpendTrendChartProps) {
   const grouped = new Map<string, number>();
 
-  for (const row of monthly) {
-    grouped.set(row.month, (grouped.get(row.month) ?? 0) + row.total_spend);
+  for (const row of monthly ?? []) {
+    if (row?.month != null) {
+      grouped.set(row.month, (grouped.get(row.month) ?? 0) + (Number(row.total_spend) || 0));
+    }
   }
 
   const formatter = new Intl.DateTimeFormat("sv-SE", {
@@ -33,6 +35,14 @@ export function SpendTrendChart({ monthly }: SpendTrendChartProps) {
       const label = Number.isNaN(parsedDate.getTime()) ? month : formatter.format(parsedDate);
       return { month: label, spend };
     });
+
+  if (monthlyData.length === 0) {
+    return (
+      <div className="flex items-center justify-center h-[300px] text-sm" style={{ color: "var(--color-text-muted)" }}>
+        Ingen månadsdata att visa
+      </div>
+    );
+  }
 
   return (
     <ResponsiveContainer width="100%" height={300}>
