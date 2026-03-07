@@ -11,8 +11,9 @@ import {
   Search,
   ChevronUp,
   ChevronDown,
+  Trash2,
 } from "lucide-react";
-import { Button, Skeleton } from "@/components/ui/index";
+import { Button, Skeleton, useToast } from "@/components/ui/index";
 import { AiSuggestions } from "@/components/price-monitor/ai-suggestions";
 import { InvoiceUploadModal } from "@/components/price-monitor/invoice-upload-modal";
 import { getSupabaseBrowserClient } from "@/lib/supabase-browser";
@@ -36,6 +37,7 @@ function ProductsPageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const t = useTranslations("products");
+  const { addToast } = useToast();
   const supplierParam = searchParams.get("supplier_id") ?? "";
 
   const [products, setProducts] = useState<ProductOverview[]>([]);
@@ -52,6 +54,8 @@ function ProductsPageContent() {
   });
   const [hideZeroItems, setHideZeroItems] = useState(true);
   const [suggestions, setSuggestions] = useState<AiGroupSuggestion[]>([]);
+  const [selectedProductIds, setSelectedProductIds] = useState<string[]>([]);
+  const [deletingSelected, setDeletingSelected] = useState(false);
 
   const load = useCallback(async () => {
     const supabase = getSupabaseBrowserClient();
@@ -122,6 +126,84 @@ function ProductsPageContent() {
     });
     return list;
   }, [hideZeroItems, products, search, sort]);
+
+  useEffect(() => {
+    const validIds = new Set(filtered.map((product) => product.product_id));
+    setSelectedProductIds((prev) => prev.filter((id) => validIds.has(id)));
+  }, [filtered]);
+
+  const allFilteredSelected =
+    filtered.length > 0 &&
+    filtered.every((product) => selectedProductIds.includes(product.product_id));
+
+  function toggleProductSelection(productId: string) {
+    setSelectedProductIds((prev) =>
+      prev.includes(productId)
+        ? prev.filter((id) => id !== productId)
+        : [...prev, productId]
+    );
+  }
+
+  function toggleSelectAll() {
+    if (allFilteredSelected) {
+      setSelectedProductIds([]);
+      return;
+    }
+
+    setSelectedProductIds(filtered.map((product) => product.product_id));
+  }
+
+  async function handleDeleteSelected() {
+    if (selectedProductIds.length === 0) return;
+
+    const confirmed = window.confirm(
+      t("deleteSelectedConfirm", { count: selectedProductIds.length })
+    );
+    if (!confirmed) return;
+
+    setDeletingSelected(true);
+    setError("");
+
+    try {
+      const results = await Promise.allSettled(
+        selectedProductIds.map(async (productId) => {
+          const response = await fetch(`/api/price-monitor/products/${productId}`, {
+            method: "DELETE",
+          });
+          const body = await response.json().catch(() => ({}));
+
+          if (!response.ok) {
+            throw new Error(body?.error || t("deleteError"));
+          }
+        })
+      );
+
+      const failed = results.filter((result) => result.status === "rejected");
+      const deletedCount = results.length - failed.length;
+
+      if (deletedCount > 0) {
+        addToast({
+          type: "success",
+          title: t("deleteSelectedSuccess", { count: deletedCount }),
+        });
+      }
+
+      if (failed.length > 0) {
+        setError(
+          failed[0].status === "rejected"
+            ? failed[0].reason instanceof Error
+              ? failed[0].reason.message
+              : t("deleteSelectedError")
+            : t("deleteSelectedError")
+        );
+      }
+
+      setSelectedProductIds([]);
+      await load();
+    } finally {
+      setDeletingSelected(false);
+    }
+  }
 
   async function handleAcceptSuggestion(suggestion: AiGroupSuggestion) {
     if (!session) return;
@@ -258,6 +340,15 @@ function ProductsPageContent() {
         >
           {hideZeroItems ? t("showAll") : t("hideZero")}
         </Button>
+        <Button
+          variant="danger"
+          icon={<Trash2 className="w-4 h-4" />}
+          onClick={handleDeleteSelected}
+          disabled={selectedProductIds.length === 0 || deletingSelected}
+          loading={deletingSelected}
+        >
+          {t("deleteSelected", { count: selectedProductIds.length })}
+        </Button>
       </div>
 
       <AiSuggestions
@@ -311,6 +402,14 @@ function ProductsPageContent() {
               }}
             >
               <tr>
+                <th className="px-4 py-3 text-left">
+                  <input
+                    type="checkbox"
+                    checked={allFilteredSelected}
+                    onChange={toggleSelectAll}
+                    aria-label={t("selectAll")}
+                  />
+                </th>
                 <Th label={t("table.product")} k="product_name" />
                 <Th label={t("table.supplier")} k="supplier_name" />
                 <Th label={t("table.unit")} k="unit" />
@@ -326,6 +425,8 @@ function ProductsPageContent() {
                   key={p.product_id}
                   product={p}
                   last={idx === filtered.length - 1}
+                  selected={selectedProductIds.includes(p.product_id)}
+                  onToggleSelect={() => toggleProductSelection(p.product_id)}
                   onClick={() => router.push(`/price-monitor/products/${p.product_id}`)}
                 />
               ))}
@@ -366,10 +467,14 @@ export default function ProductsPage() {
 function ProductRow({
   product: p,
   last,
+  selected,
+  onToggleSelect,
   onClick,
 }: {
   product: ProductOverview;
   last: boolean;
+  selected: boolean;
+  onToggleSelect: () => void;
   onClick: () => void;
 }) {
   const t = useTranslations("products");
@@ -387,6 +492,14 @@ function ProductRow({
         opacity: isZeroItem ? 0.65 : 1,
       }}
     >
+      <td className="px-4 py-3" onClick={(e) => e.stopPropagation()}>
+        <input
+          type="checkbox"
+          checked={selected}
+          onChange={onToggleSelect}
+          aria-label={t("selectProduct")}
+        />
+      </td>
       <td
         className="px-4 py-3 font-medium"
         style={{ color: "var(--color-text-primary)" }}

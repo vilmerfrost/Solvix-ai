@@ -85,6 +85,91 @@ function convertToSEK(amount: number | null, rate: number): number | null {
   return Math.round(amount * rate * 100) / 100;
 }
 
+function isIncludedLineItem(item: LineItemForm): boolean {
+  const amount = parseSENum(item.amount);
+  return amount != null && Math.abs(amount) < 0.01;
+}
+
+function normalizeProductLabel(value: string | null | undefined): string {
+  return value?.replace(/\s+/g, " ").trim() ?? "";
+}
+
+function collapseBundledLineItems(
+  items: LineItemForm[],
+  dbItems: ExistingDbLineItem[]
+): { items: LineItemForm[]; changed: boolean } {
+  if (items.length < 2) {
+    return { items, changed: false };
+  }
+
+  const paidIndexes = items
+    .map((item, index) => ({
+      index,
+      amount: parseSENum(item.amount) ?? 0,
+    }))
+    .filter((item) => item.amount > 0.01)
+    .map((item) => item.index);
+
+  const includedIndexes = items
+    .map((item, index) => (isIncludedLineItem(item) ? index : -1))
+    .filter((index) => index >= 0);
+
+  if (paidIndexes.length !== 1 || includedIndexes.length === 0) {
+    return { items, changed: false };
+  }
+
+  const parentIndex = paidIndexes[0];
+  const parentItem = items[parentIndex];
+  const parentDbItem = dbItems[parentIndex];
+  const parentProductId = parentItem.product_id ?? parentDbItem?.product_id ?? null;
+  const parentLabel = normalizeProductLabel(
+    parentItem.matched_product ?? parentItem.description
+  );
+
+  if (!parentLabel) {
+    return { items, changed: false };
+  }
+
+  let changed = false;
+  const nextItems = items.map((item, index) => {
+    if (index === parentIndex) {
+      const nextItem = {
+        ...item,
+        matched_product: parentLabel,
+      };
+
+      if (nextItem.matched_product !== item.matched_product) {
+        changed = true;
+      }
+
+      return nextItem;
+    }
+
+    if (!includedIndexes.includes(index)) {
+      return item;
+    }
+
+    const nextItem = {
+      ...item,
+      matched_product: parentLabel,
+      product_id: parentProductId,
+      is_new_product: parentProductId ? false : item.is_new_product,
+    };
+
+    if (
+      nextItem.matched_product !== item.matched_product ||
+      nextItem.product_id !== item.product_id ||
+      nextItem.is_new_product !== item.is_new_product
+    ) {
+      changed = true;
+    }
+
+    return nextItem;
+  });
+
+  return changed ? { items: nextItems, changed: true } : { items, changed: false };
+}
+
 function buildLineItemsSummary(lineItems: LineItemForm[], rate: number) {
   return lineItems.map((item) => {
     const amount = parseSENum(item.amount) ?? 0;
@@ -273,10 +358,14 @@ export function InvoiceUploadFlow({
 
       const extractedData = (docData.extracted_data ?? null) as ExtractedInvoiceData | null;
       const nextFormData = extractedToForm(extractedData);
-      const nextLineItems =
+      const extractedLineItems =
         extractedData?.line_items?.length
           ? extractedData.line_items.map(rawToFormItem)
           : [emptyLineItem()];
+      const normalizedLineItems = collapseBundledLineItems(
+        extractedLineItems,
+        (dbItems as ExistingDbLineItem[]) ?? []
+      );
       const extractedCurrency = extractedData?.currency ?? currency;
       const extractedRate = extractedData?.exchange_rate_to_sek ?? exchangeRate;
 
@@ -284,7 +373,7 @@ export function InvoiceUploadFlow({
       setProcessedDoc(docData as InvoiceDocumentRecord);
       setExistingDbItems((dbItems as ExistingDbLineItem[]) ?? []);
       setFormData(nextFormData);
-      setLineItems(nextLineItems);
+      setLineItems(normalizedLineItems.items);
       setCurrency(extractedCurrency);
       setExchangeRate(extractedRate || 1);
       setRateSource(
@@ -293,6 +382,17 @@ export function InvoiceUploadFlow({
       setRateFetchedAt(extractedData?.exchange_rate_updated_at ?? new Date().toISOString());
 
       if (autoProcess) {
+        if (normalizedLineItems.changed) {
+          await saveEditedData({
+            document: docData as InvoiceDocumentRecord,
+            result,
+            items: normalizedLineItems.items,
+            invoiceData: nextFormData,
+            selectedCurrency: extractedCurrency,
+            selectedRate: extractedRate || 1,
+            dbItems: (dbItems as ExistingDbLineItem[]) ?? [],
+          });
+        }
         setStep(4);
         onProcessed();
         return;
@@ -322,6 +422,7 @@ export function InvoiceUploadFlow({
     const targetRate = args?.selectedRate ?? exchangeRate;
     const targetResult = args?.result ?? processResult;
     const targetDbItems = args?.dbItems ?? existingDbItems;
+    const normalizedItems = collapseBundledLineItems(targetItems, targetDbItems).items;
 
     if (!targetDoc?.id) return;
 
@@ -355,7 +456,7 @@ export function InvoiceUploadFlow({
         exchange_rate_manual_override: rateSource === "manual",
         invoice_classification:
           targetDoc.extracted_data?.invoice_classification ?? null,
-        line_items: targetItems.map((item) => {
+        line_items: normalizedItems.map((item) => {
           const unitPriceOriginal = parseSENum(item.unit_price);
           const amountOriginal = parseSENum(item.amount);
 
@@ -398,8 +499,8 @@ export function InvoiceUploadFlow({
 
       if (deleteError) throw deleteError;
 
-      if (targetItems.length > 0) {
-        const rows = targetItems.map((item, index) => {
+      if (normalizedItems.length > 0) {
+        const rows = normalizedItems.map((item, index) => {
           const sourceRow = targetDbItems[index];
           const unitPriceOriginal = parseSENum(item.unit_price);
           const amountOriginal = parseSENum(item.amount);
@@ -439,6 +540,7 @@ export function InvoiceUploadFlow({
             }
           : prev
       );
+      setLineItems(normalizedItems);
       setProcessResult(targetResult ?? null);
       addToast({ type: "success", title: "Fakturan sparades" });
     } catch (error) {

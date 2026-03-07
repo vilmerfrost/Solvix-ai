@@ -162,6 +162,91 @@ function dbItemToFormItem(item: DbLineItem): LineItemForm {
   };
 }
 
+function isIncludedLineItem(item: LineItemForm): boolean {
+  const amount = parseSENum(item.amount);
+  return amount != null && Math.abs(amount) < 0.01;
+}
+
+function normalizeProductLabel(value: string | null | undefined): string {
+  return value?.replace(/\s+/g, " ").trim() ?? "";
+}
+
+function collapseBundledLineItems(
+  items: LineItemForm[],
+  dbItems: DbLineItem[]
+): { items: LineItemForm[]; changed: boolean } {
+  if (items.length < 2) {
+    return { items, changed: false };
+  }
+
+  const paidIndexes = items
+    .map((item, index) => ({
+      index,
+      amount: parseSENum(item.amount) ?? 0,
+    }))
+    .filter((item) => item.amount > 0.01)
+    .map((item) => item.index);
+
+  const includedIndexes = items
+    .map((item, index) => (isIncludedLineItem(item) ? index : -1))
+    .filter((index) => index >= 0);
+
+  if (paidIndexes.length !== 1 || includedIndexes.length === 0) {
+    return { items, changed: false };
+  }
+
+  const parentIndex = paidIndexes[0];
+  const parentItem = items[parentIndex];
+  const parentDbItem = dbItems[parentIndex];
+  const parentProductId = parentItem.product_id ?? parentDbItem?.product_id ?? null;
+  const parentLabel = normalizeProductLabel(
+    parentItem.matched_product ?? parentItem.description
+  );
+
+  if (!parentLabel) {
+    return { items, changed: false };
+  }
+
+  let changed = false;
+  const nextItems = items.map((item, index) => {
+    if (index === parentIndex) {
+      const nextItem = {
+        ...item,
+        matched_product: parentLabel,
+      };
+
+      if (nextItem.matched_product !== item.matched_product) {
+        changed = true;
+      }
+
+      return nextItem;
+    }
+
+    if (!includedIndexes.includes(index)) {
+      return item;
+    }
+
+    const nextItem = {
+      ...item,
+      matched_product: parentLabel,
+      product_id: parentProductId,
+      is_new_product: parentProductId ? false : item.is_new_product,
+    };
+
+    if (
+      nextItem.matched_product !== item.matched_product ||
+      nextItem.product_id !== item.product_id ||
+      nextItem.is_new_product !== item.is_new_product
+    ) {
+      changed = true;
+    }
+
+    return nextItem;
+  });
+
+  return changed ? { items: nextItems, changed: true } : { items, changed: false };
+}
+
 // ─── Page ────────────────────────────────────────────────────────────────────
 
 export default function ReviewPage() {
@@ -182,6 +267,7 @@ export default function ReviewPage() {
   const [supplierId, setSupplierId] = useState<string | null>(null);
   const [userId, setUserId] = useState<string | null>(null);
   const [mobileTab, setMobileTab] = useState<"pdf" | "form">("form");
+  const [dbLineItems, setDbLineItems] = useState<DbLineItem[]>([]);
 
   useEffect(() => {
     load();
@@ -216,6 +302,7 @@ export default function ReviewPage() {
         ]);
 
       setSettings(priceMonitorSettings);
+      setDbLineItems((dbItems as DbLineItem[]) ?? []);
 
       if (docData) {
         setDoc(docData as InvoiceDocument);
@@ -225,9 +312,19 @@ export default function ReviewPage() {
         setFormData(extractedToForm(ed));
 
         if (ed?.line_items?.length) {
-          setLineItems(ed.line_items.map(rawToFormItem));
+          setLineItems(
+            collapseBundledLineItems(
+              ed.line_items.map(rawToFormItem),
+              (dbItems as DbLineItem[]) ?? []
+            ).items
+          );
         } else if (dbItems?.length) {
-          setLineItems((dbItems as DbLineItem[]).map(dbItemToFormItem));
+          setLineItems(
+            collapseBundledLineItems(
+              (dbItems as DbLineItem[]).map(dbItemToFormItem),
+              (dbItems as DbLineItem[]) ?? []
+            ).items
+          );
         }
 
         // PDF signed URL
@@ -261,6 +358,10 @@ export default function ReviewPage() {
 
     setSaving(true);
     try {
+      const normalizedLineItems = collapseBundledLineItems(
+        lineItems,
+        dbLineItems
+      ).items;
       const normalizedCurrency = normalizeCurrency(formData.currency);
       const fxSnapshot = getFxSnapshot(normalizedCurrency, settings);
 
@@ -301,7 +402,7 @@ export default function ReviewPage() {
         exchange_rate_source: fxSnapshot.source,
         exchange_rate_updated_at: fxSnapshot.updated_at,
         exchange_rate_manual_override: fxSnapshot.manual_override,
-        line_items: lineItems.map((item) => {
+        line_items: normalizedLineItems.map((item) => {
           const unitPriceOriginal = parseSENum(item.unit_price);
           const amountOriginal = parseSENum(item.amount);
 
@@ -360,9 +461,9 @@ export default function ReviewPage() {
         .eq("document_id", id);
       if (delErr) throw delErr;
 
-      if (lineItems.length > 0) {
-        const insertRows = lineItems.map((item, index) => {
-          const sourceRow = dbItems[index];
+      if (normalizedLineItems.length > 0) {
+        const insertRows = normalizedLineItems.map((item, index) => {
+          const sourceRow = dbLineItems[index];
           const unitPriceOriginal = parseSENum(item.unit_price);
           const amountOriginal = parseSENum(item.amount);
 
@@ -397,6 +498,8 @@ export default function ReviewPage() {
           .insert(insertRows);
         if (insErr) throw insErr;
       }
+
+      setLineItems(normalizedLineItems);
 
       const toastTitle = opts?.approve
         ? "Faktura godkänd"

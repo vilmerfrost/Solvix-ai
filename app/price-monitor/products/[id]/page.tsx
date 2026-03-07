@@ -31,6 +31,17 @@ interface DocumentHeader {
   } | null;
 }
 
+interface ProductLineItem {
+  document_id: string;
+  raw_description: string | null;
+  quantity: number | null;
+  unit_price: number | null;
+  amount: number | null;
+  invoice_number: string | null;
+  invoice_date: string | null;
+  match_confidence: number | null;
+}
+
 export default function ProductDetailPage() {
   const router = useRouter();
   const { id } = useParams<{ id: string }>();
@@ -42,6 +53,7 @@ export default function ProductDetailPage() {
   const [error, setError] = useState("");
   const [session, setSession] = useState<{ access_token: string } | null>(null);
   const [documentHeaders, setDocumentHeaders] = useState<Record<string, DocumentHeader>>({});
+  const [lineItemsByDocument, setLineItemsByDocument] = useState<Record<string, ProductLineItem[]>>({});
   const [deleting, setDeleting] = useState(false);
 
   const product = history[0];
@@ -63,18 +75,40 @@ export default function ProductDetailPage() {
 
       const documentIds = [...new Set(hist.map((row) => row.document_id))];
       if (documentIds.length > 0) {
-        const { data: docs, error: docsError } = await supabase
-          .from("documents")
-          .select("id, sender_name, document_date, total_cost, extracted_data")
-          .in("id", documentIds);
+        const [{ data: docs, error: docsError }, { data: productLines, error: linesError }] =
+          await Promise.all([
+            supabase
+              .from("documents")
+              .select("id, sender_name, document_date, total_cost, extracted_data")
+              .in("id", documentIds),
+            supabase
+              .from("invoice_line_items")
+              .select("document_id, raw_description, quantity, unit_price, amount, invoice_number, invoice_date, match_confidence")
+              .eq("product_id", id)
+              .in("document_id", documentIds),
+          ]);
 
         if (docsError) throw docsError;
+        if (linesError) throw linesError;
 
         const docMap = (docs ?? []).reduce<Record<string, DocumentHeader>>((acc, doc) => {
           acc[doc.id] = doc as DocumentHeader;
           return acc;
         }, {});
+        const linesMap = (productLines ?? []).reduce<Record<string, ProductLineItem[]>>(
+          (acc, row) => {
+            const key = row.document_id as string;
+            acc[key] = [...(acc[key] ?? []), row as ProductLineItem];
+            return acc;
+          },
+          {}
+        );
+
         setDocumentHeaders(docMap);
+        setLineItemsByDocument(linesMap);
+      } else {
+        setDocumentHeaders({});
+        setLineItemsByDocument({});
       }
     } catch (e) {
       setError(e instanceof Error ? e.message : "Could not fetch price history.");
@@ -264,7 +298,7 @@ export default function ProductDetailPage() {
                       }}
                     >
                       <tr>
-                        {["Fakturadatum", "Faktura #", "Enhetspris", "Antal", "Totalbelopp", "Matchning"].map(
+                        {["Beskrivning", "Fakturadatum", "Faktura #", "Enhetspris", "Antal", "Totalbelopp", "Matchning"].map(
                           (h) => (
                             <th
                               key={h}
@@ -278,16 +312,19 @@ export default function ProductDetailPage() {
                       </tr>
                     </thead>
                     <tbody>
-                      {rows.map((row, idx) => (
+                      {(lineItemsByDocument[documentId] ?? rows).map((row, idx) => (
                         <tr
-                          key={`${row.document_id}-${row.invoice_date}-${idx}`}
+                          key={`${documentId}-${row.invoice_date ?? "no-date"}-${idx}`}
                           style={{
                             borderBottom:
-                              idx === rows.length - 1
+                              idx === (lineItemsByDocument[documentId] ?? rows).length - 1
                                 ? "none"
                                 : "1px solid var(--color-border)",
                           }}
                         >
+                          <td className="px-4 py-3" style={{ color: "var(--color-text-primary)" }}>
+                            {("raw_description" in row ? row.raw_description : null) || product?.product_name || "Rad utan namn"}
+                          </td>
                           <td className="px-4 py-3" style={{ color: "var(--color-text-primary)" }}>
                             {formatDate(row.invoice_date)}
                           </td>
