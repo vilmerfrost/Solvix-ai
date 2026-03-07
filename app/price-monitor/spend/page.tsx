@@ -52,7 +52,7 @@ export default function SpendOverviewPage() {
           fetchAiInsights(session).catch(() => []),
         ]);
         setOverview(overviewData);
-        setInsights(insightData);
+        setInsights(Array.isArray(insightData) ? insightData : []);
       } catch (err) {
         setError(err instanceof Error ? err.message : t("description"));
       } finally {
@@ -65,6 +65,7 @@ export default function SpendOverviewPage() {
 
   const supplierRows = Array.isArray(overview?.by_supplier) ? overview.by_supplier : [];
   const categoryRows = Array.isArray(overview?.by_category) ? overview.by_category : [];
+  const monthlyRows = Array.isArray(overview?.monthly) ? overview.monthly : [];
   const hasData =
     (overview?.total_spend ?? 0) > 0 ||
     supplierRows.length > 0 ||
@@ -166,7 +167,7 @@ export default function SpendOverviewPage() {
                 <CardTitle className="text-base">{t("byCategory")}</CardTitle>
               </CardHeader>
               <CardContent>
-                <SpendDonutChart categories={overview?.by_category ?? []} />
+                <SpendDonutChart categories={categoryRows} />
               </CardContent>
             </Card>
 
@@ -175,7 +176,7 @@ export default function SpendOverviewPage() {
                 <CardTitle className="text-base">{t("bySupplier")}</CardTitle>
               </CardHeader>
               <CardContent>
-                <SpendBarChart suppliers={overview?.by_supplier ?? []} />
+                <SpendBarChart suppliers={supplierRows} />
               </CardContent>
             </Card>
           </div>
@@ -185,7 +186,7 @@ export default function SpendOverviewPage() {
               <CardTitle className="text-base">{t("monthlyTrend")}</CardTitle>
             </CardHeader>
             <CardContent>
-              <SpendTrendChart monthly={overview?.monthly ?? []} />
+              <SpendTrendChart monthly={monthlyRows} />
             </CardContent>
           </Card>
         </>
