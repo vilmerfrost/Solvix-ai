@@ -44,8 +44,15 @@ interface InvoiceUploadFlowProps {
 }
 
 interface ExistingDbLineItem {
+  id: string;
   supplier_id: string | null;
   product_id: string | null;
+  raw_description: string | null;
+}
+
+interface ExistingSupplierProduct {
+  id: string;
+  name: string | null;
 }
 
 type Step = 1 | 2 | 3 | 4;
@@ -92,6 +99,63 @@ function isIncludedLineItem(item: LineItemForm): boolean {
 
 function normalizeProductLabel(value: string | null | undefined): string {
   return value?.replace(/\s+/g, " ").trim() ?? "";
+}
+
+function canonicalProductKey(value: string | null | undefined): string {
+  const normalized = normalizeProductLabel(value).toLowerCase();
+  if (!normalized) return "";
+
+  return normalized
+    .replace(/\s+-\s+[a-z0-9]{8,}$/i, "")
+    .replace(/\s+[a-z0-9]{8,}$/i, "")
+    .replace(/\s*\([^)]*\)$/i, "")
+    .replace(/[_-]{2,}/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+function findBestProductMatchId(
+  description: string | null | undefined,
+  products: ExistingSupplierProduct[]
+): string | null {
+  const key = canonicalProductKey(description);
+  if (!key) return null;
+
+  const productWithKeys = products
+    .map((product) => ({
+      id: product.id,
+      key: canonicalProductKey(product.name),
+    }))
+    .filter((product) => product.key.length > 0);
+
+  const exact = productWithKeys.find((product) => product.key === key);
+  if (exact) return exact.id;
+
+  const prefix = productWithKeys.find(
+    (product) =>
+      key.startsWith(`${product.key} `) ||
+      product.key.startsWith(`${key} `) ||
+      key.includes(`${product.key} -`) ||
+      product.key.includes(`${key} -`)
+  );
+  if (prefix) return prefix.id;
+
+  return null;
+}
+
+function applyDbProductIdsToLineItems(
+  items: LineItemForm[],
+  dbItems: ExistingDbLineItem[]
+) {
+  return items.map((item, index) => {
+    const dbProductId = dbItems[index]?.product_id ?? null;
+    const productId = item.product_id ?? dbProductId;
+    return {
+      ...item,
+      product_id: productId,
+      is_new_product: productId ? false : item.is_new_product,
+    };
+  });
 }
 
 function collapseBundledLineItems(
@@ -275,6 +339,27 @@ export function InvoiceUploadFlow({
     return { supabase, session };
   }
 
+  async function ensureDocumentProducts(
+    documentIdToEnsure: string,
+    accessToken: string
+  ) {
+    const response = await fetch(
+      `/api/price-monitor/documents/${documentIdToEnsure}/ensure-products`,
+      {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+          "Content-Type": "application/json",
+        },
+      }
+    );
+
+    if (!response.ok) {
+      const body = await response.json().catch(() => ({}));
+      throw new Error(body?.error || "Kunde inte säkerställa produkter för fakturan.");
+    }
+  }
+
   async function uploadDocument() {
     if (!file) return;
 
@@ -340,6 +425,8 @@ export function InvoiceUploadFlow({
         throw new Error("Bearbetningen misslyckades.");
       }
 
+      await ensureDocumentProducts(documentId, session.access_token);
+
       const [{ data: docData, error: docError }, { data: dbItems, error: dbError }] =
         await Promise.all([
           supabase
@@ -349,12 +436,19 @@ export function InvoiceUploadFlow({
             .single(),
           supabase
             .from("invoice_line_items")
-            .select("supplier_id, product_id")
+            .select("id, supplier_id, product_id, raw_description")
             .eq("document_id", documentId),
         ]);
 
       if (docError || !docData) throw new Error(docError?.message ?? "Kunde inte läsa dokumentet.");
       if (dbError) throw new Error(dbError.message);
+
+      let nextDbItems = (dbItems as ExistingDbLineItem[]) ?? [];
+      nextDbItems = await reconcileProductLinksByDescription(
+        supabase,
+        session.user.id,
+        nextDbItems
+      );
 
       const extractedData = (docData.extracted_data ?? null) as ExtractedInvoiceData | null;
       const nextFormData = extractedToForm(extractedData);
@@ -362,16 +456,20 @@ export function InvoiceUploadFlow({
         extractedData?.line_items?.length
           ? extractedData.line_items.map(rawToFormItem)
           : [emptyLineItem()];
-      const normalizedLineItems = collapseBundledLineItems(
+      const matchedLineItems = applyDbProductIdsToLineItems(
         extractedLineItems,
-        (dbItems as ExistingDbLineItem[]) ?? []
+        nextDbItems
+      );
+      const normalizedLineItems = collapseBundledLineItems(
+        matchedLineItems,
+        nextDbItems
       );
       const extractedCurrency = extractedData?.currency ?? currency;
       const extractedRate = extractedData?.exchange_rate_to_sek ?? exchangeRate;
 
       setProcessResult(result);
       setProcessedDoc(docData as InvoiceDocumentRecord);
-      setExistingDbItems((dbItems as ExistingDbLineItem[]) ?? []);
+      setExistingDbItems(nextDbItems);
       setFormData(nextFormData);
       setLineItems(normalizedLineItems.items);
       setCurrency(extractedCurrency);
@@ -390,7 +488,7 @@ export function InvoiceUploadFlow({
             invoiceData: nextFormData,
             selectedCurrency: extractedCurrency,
             selectedRate: extractedRate || 1,
-            dbItems: (dbItems as ExistingDbLineItem[]) ?? [],
+            dbItems: nextDbItems,
           });
         }
         setStep(4);
@@ -549,6 +647,54 @@ export function InvoiceUploadFlow({
     } finally {
       setLoading(false);
     }
+  }
+
+  async function reconcileProductLinksByDescription(
+    supabase: Awaited<ReturnType<typeof getSessionOrThrow>>["supabase"],
+    userId: string,
+    dbItems: ExistingDbLineItem[]
+  ): Promise<ExistingDbLineItem[]> {
+    const supplierId = dbItems.find((item) => item.supplier_id)?.supplier_id;
+    if (!supplierId || dbItems.length === 0) {
+      return dbItems;
+    }
+
+    const { data: supplierProducts, error: productsError } = await supabase
+      .from("products")
+      .select("id, name")
+      .eq("user_id", userId)
+      .eq("supplier_id", supplierId);
+
+    if (productsError || !Array.isArray(supplierProducts) || supplierProducts.length === 0) {
+      return dbItems;
+    }
+
+    const updates = dbItems
+      .map((item) => {
+        const matchId = findBestProductMatchId(item.raw_description, supplierProducts);
+        if (!matchId || matchId === item.product_id) return null;
+        return { lineItemId: item.id, productId: matchId };
+      })
+      .filter((item): item is { lineItemId: string; productId: string } => item !== null);
+
+    if (updates.length === 0) {
+      return dbItems;
+    }
+
+    await Promise.all(
+      updates.map((update) =>
+        supabase
+          .from("invoice_line_items")
+          .update({ product_id: update.productId })
+          .eq("id", update.lineItemId)
+      )
+    );
+
+    const updateMap = new Map(updates.map((update) => [update.lineItemId, update.productId]));
+    return dbItems.map((item) => ({
+      ...item,
+      product_id: updateMap.get(item.id) ?? item.product_id,
+    }));
   }
 
   async function handleApproveAndSave() {

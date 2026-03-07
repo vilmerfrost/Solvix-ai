@@ -397,6 +397,33 @@
     "pdfFileName": "monthly-report-{period}.pdf",
     "excelFileName": "purchase-report-{period}.xlsx"
   },
+  "savings": {
+    "identified": "Identified Savings",
+    "sinceStart": "since you started using the system",
+    "priceAlerts": "Price increases caught",
+    "deviations": "Agreement deviations",
+    "cheaperSupplier": "Cheaper supplier found",
+    "noSavingsYet": "Upload invoices to start tracking savings",
+    "roi": "ROI",
+    "monthlyCost": "Monthly tool cost",
+    "annualSavings": "Estimated annual savings"
+  },
+  "onboarding": {
+    "title": "🚀 Get started with Price Monitoring",
+    "subtitle": "Three steps to start saving money:",
+    "step1": "Connect Fortnox or upload invoices",
+    "step2": "Create agreements with your suppliers",
+    "step3": "See the AI analysis of your purchases",
+    "start": "Start →",
+    "create": "Create →",
+    "waiting": "Waiting...",
+    "support": "Need help? Contact support@simplitics.se"
+  },
+  "activity": {
+    "title": "Recent activity",
+    "invoiceProcessed": "Invoice from {sender} processed",
+    "priceAlert": "Price increase caught: {product} {percent}%"
+  },
   "fortnoxOnboarding": {
     "welcome": "Welcome!",
     "welcomeDescription": "Connect Fortnox and import your supplier invoices automatically.",

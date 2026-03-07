@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useRouter, useParams } from "next/navigation";
 import { useTranslations } from "next-intl";
 import Link from "next/link";
@@ -55,6 +55,9 @@ export default function ProductDetailPage() {
   const [documentHeaders, setDocumentHeaders] = useState<Record<string, DocumentHeader>>({});
   const [lineItemsByDocument, setLineItemsByDocument] = useState<Record<string, ProductLineItem[]>>({});
   const [deleting, setDeleting] = useState(false);
+  const [monthFilter, setMonthFilter] = useState("all");
+  const [compareLeftDocumentId, setCompareLeftDocumentId] = useState<string>("");
+  const [compareRightDocumentId, setCompareRightDocumentId] = useState<string>("");
 
   const product = history[0];
 
@@ -151,10 +154,68 @@ export default function ProductDetailPage() {
   const sorted = [...history].sort(
     (a, b) => new Date(b.invoice_date).getTime() - new Date(a.invoice_date).getTime()
   );
-  const groupedHistory = sorted.reduce<Record<string, PriceHistory[]>>((acc, row) => {
+  const monthOptions = useMemo(() => {
+    const months = new Set(
+      sorted
+        .map((row) => row.invoice_date?.slice(0, 7))
+        .filter((month): month is string => Boolean(month))
+    );
+    return Array.from(months).sort((a, b) => b.localeCompare(a));
+  }, [sorted]);
+
+  const filteredByMonth = useMemo(() => {
+    if (monthFilter === "all") return sorted;
+    return sorted.filter((row) => row.invoice_date?.startsWith(monthFilter));
+  }, [monthFilter, sorted]);
+
+  const groupedHistory = filteredByMonth.reduce<Record<string, PriceHistory[]>>((acc, row) => {
     acc[row.document_id] = [...(acc[row.document_id] ?? []), row];
     return acc;
   }, {});
+
+  const groupedDocumentIds = useMemo(() => Object.keys(groupedHistory), [groupedHistory]);
+
+  useEffect(() => {
+    if (groupedDocumentIds.length === 0) {
+      setCompareLeftDocumentId("");
+      setCompareRightDocumentId("");
+      return;
+    }
+
+    const left = groupedDocumentIds[0];
+    const right = groupedDocumentIds[1] ?? groupedDocumentIds[0];
+
+    setCompareLeftDocumentId((prev) =>
+      prev && groupedDocumentIds.includes(prev) ? prev : left
+    );
+    setCompareRightDocumentId((prev) =>
+      prev && groupedDocumentIds.includes(prev) ? prev : right
+    );
+  }, [groupedDocumentIds]);
+
+  function getDocumentRows(documentId: string): ProductLineItem[] {
+    return lineItemsByDocument[documentId] ?? [];
+  }
+
+  function getDocumentSummary(documentId: string | null) {
+    if (!documentId) return null;
+
+    const rows = getDocumentRows(documentId);
+    if (rows.length === 0) return null;
+
+    const total = rows.reduce((sum, row) => sum + (row.amount ?? 0), 0);
+    const count = rows.length;
+    const header = documentHeaders[documentId];
+    const date = header?.document_date ?? rows[0].invoice_date ?? null;
+    const invoiceNumber = rows[0].invoice_number ?? null;
+
+    return { total, count, date, invoiceNumber };
+  }
+
+  const compareLeft = getDocumentSummary(compareLeftDocumentId || null);
+  const compareRight = getDocumentSummary(compareRightDocumentId || null);
+  const compareDelta =
+    compareLeft && compareRight ? compareRight.total - compareLeft.total : null;
 
   return (
     <div className="space-y-8 max-w-5xl mx-auto">
@@ -233,14 +294,36 @@ export default function ProductDetailPage() {
 
       {/* Price history table */}
       <section>
-        <h2 className="font-semibold text-base mb-4" style={{ color: "var(--color-text-primary)" }}>
-          Fakturarader
-        </h2>
+        <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+          <h2 className="font-semibold text-base" style={{ color: "var(--color-text-primary)" }}>
+            Fakturarader
+          </h2>
+          <div className="flex items-center gap-2 text-sm">
+            <span style={{ color: "var(--color-text-muted)" }}>Månad</span>
+            <select
+              className="rounded-lg border px-3 py-1.5 text-sm"
+              style={{
+                background: "var(--color-bg-elevated)",
+                borderColor: "var(--color-border)",
+                color: "var(--color-text-primary)",
+              }}
+              value={monthFilter}
+              onChange={(event) => setMonthFilter(event.target.value)}
+            >
+              <option value="all">Alla</option>
+              {monthOptions.map((month) => (
+                <option key={month} value={month}>
+                  {month}
+                </option>
+              ))}
+            </select>
+          </div>
+        </div>
         {loading ? (
           <div className="space-y-2">
             {[...Array(5)].map((_, i) => <Skeleton key={i} className="h-12 rounded-xl" />)}
           </div>
-        ) : sorted.length === 0 ? (
+        ) : filteredByMonth.length === 0 ? (
           <p className="text-sm" style={{ color: "var(--color-text-muted)" }}>
             Inga fakturarader hittades
           </p>
@@ -354,7 +437,7 @@ export default function ProductDetailPage() {
                             {formatSEK(row.amount)}
                           </td>
                           <td className="px-4 py-3">
-                            <ConfidenceBadge value={row.match_confidence} />
+                            <ConfidenceBadge value={Number(row.match_confidence ?? 0)} />
                           </td>
                         </tr>
                       ))}
@@ -366,6 +449,125 @@ export default function ProductDetailPage() {
           </div>
         )}
       </section>
+
+      {!loading && groupedDocumentIds.length > 0 && (
+        <section>
+          <h2 className="font-semibold text-base mb-4" style={{ color: "var(--color-text-primary)" }}>
+            Fakturajämförelse (head-to-head)
+          </h2>
+          <div
+            className="rounded-xl border p-4 space-y-4"
+            style={{
+              background: "var(--color-bg-elevated)",
+              borderColor: "var(--color-border)",
+            }}
+          >
+            <div className="grid gap-3 md:grid-cols-2">
+              <label className="text-sm">
+                <span className="mb-1 block" style={{ color: "var(--color-text-muted)" }}>
+                  Faktura A
+                </span>
+                <select
+                  className="w-full rounded-lg border px-3 py-2 text-sm"
+                  style={{
+                    background: "var(--color-bg)",
+                    borderColor: "var(--color-border)",
+                    color: "var(--color-text-primary)",
+                  }}
+                  value={compareLeftDocumentId}
+                  onChange={(event) => setCompareLeftDocumentId(event.target.value)}
+                >
+                  {groupedDocumentIds.map((docId) => {
+                    const header = documentHeaders[docId];
+                    const rows = groupedHistory[docId] ?? [];
+                    const date = header?.document_date ?? rows[0]?.invoice_date;
+                    return (
+                      <option key={docId} value={docId}>
+                        {date ? formatDate(date) : docId} · {docId.slice(0, 8)}
+                      </option>
+                    );
+                  })}
+                </select>
+              </label>
+
+              <label className="text-sm">
+                <span className="mb-1 block" style={{ color: "var(--color-text-muted)" }}>
+                  Faktura B
+                </span>
+                <select
+                  className="w-full rounded-lg border px-3 py-2 text-sm"
+                  style={{
+                    background: "var(--color-bg)",
+                    borderColor: "var(--color-border)",
+                    color: "var(--color-text-primary)",
+                  }}
+                  value={compareRightDocumentId}
+                  onChange={(event) => setCompareRightDocumentId(event.target.value)}
+                >
+                  {groupedDocumentIds.map((docId) => {
+                    const header = documentHeaders[docId];
+                    const rows = groupedHistory[docId] ?? [];
+                    const date = header?.document_date ?? rows[0]?.invoice_date;
+                    return (
+                      <option key={docId} value={docId}>
+                        {date ? formatDate(date) : docId} · {docId.slice(0, 8)}
+                      </option>
+                    );
+                  })}
+                </select>
+              </label>
+            </div>
+
+            <div className="grid gap-3 md:grid-cols-3">
+              <div
+                className="rounded-lg border px-4 py-3"
+                style={{ borderColor: "var(--color-border)" }}
+              >
+                <p className="text-xs" style={{ color: "var(--color-text-muted)" }}>
+                  Faktura A total
+                </p>
+                <p className="mt-1 text-sm font-semibold" style={{ color: "var(--color-text-primary)" }}>
+                  {compareLeft ? formatSEK(compareLeft.total) : "–"}
+                </p>
+              </div>
+              <div
+                className="rounded-lg border px-4 py-3"
+                style={{ borderColor: "var(--color-border)" }}
+              >
+                <p className="text-xs" style={{ color: "var(--color-text-muted)" }}>
+                  Faktura B total
+                </p>
+                <p className="mt-1 text-sm font-semibold" style={{ color: "var(--color-text-primary)" }}>
+                  {compareRight ? formatSEK(compareRight.total) : "–"}
+                </p>
+              </div>
+              <div
+                className="rounded-lg border px-4 py-3"
+                style={{ borderColor: "var(--color-border)" }}
+              >
+                <p className="text-xs" style={{ color: "var(--color-text-muted)" }}>
+                  Skillnad (B - A)
+                </p>
+                <p
+                  className="mt-1 text-sm font-semibold"
+                  style={{
+                    color:
+                      compareDelta == null
+                        ? "var(--color-text-primary)"
+                        : compareDelta > 0
+                        ? "#ef4444"
+                        : compareDelta < 0
+                        ? "#22c55e"
+                        : "var(--color-text-primary)",
+                  }}
+                >
+                  {compareDelta == null ? "–" : formatSEK(compareDelta)}
+                </p>
+              </div>
+            </div>
+          </div>
+        </section>
+      )}
 
       {/* Alerts for this product */}
       {!loading && alerts.length > 0 && session && (

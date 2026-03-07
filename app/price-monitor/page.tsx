@@ -16,6 +16,9 @@ import {
 import { Button, Skeleton } from "@/components/ui/index";
 import { AlertBanner } from "@/components/price-monitor/alert-banner";
 import { InvoiceUploadModal } from "@/components/price-monitor/invoice-upload-modal";
+import { SavingsBanner } from "@/components/price-monitor/savings-banner";
+import { OnboardingCard } from "@/components/price-monitor/onboarding-card";
+import { ActivityFeed, ActivityItem } from "@/components/price-monitor/activity-feed";
 import { getSupabaseBrowserClient } from "@/lib/supabase-browser";
 import {
   fetchDashboard,
@@ -37,6 +40,8 @@ export default function PriceMonitorDashboard() {
   const [showUpload, setShowUpload] = useState(false);
   const [session, setSession] = useState<{ access_token: string; user: { id: string } } | null>(null);
   const [recentDeviations, setRecentDeviations] = useState<AgreementDeviation[]>([]);
+  const [savings, setSavings] = useState<{ total_savings: number, price_alert_savings: number, deviation_savings: number, comparison_savings: number } | null>(null);
+  const [activities, setActivities] = useState<ActivityItem[]>([]);
 
   const load = useCallback(async () => {
     const supabase = getSupabaseBrowserClient();
@@ -53,6 +58,59 @@ export default function PriceMonitorDashboard() {
       ]);
       setOverview(overviewData);
       setRecentDeviations(deviationData);
+
+      // Fetch savings fallback
+      const { data: savingsData } = await supabase
+        .from('v_savings_summary')
+        .select('*')
+        .eq('user_id', s.user.id)
+        .single();
+      
+      if (savingsData) {
+        setSavings(savingsData);
+      } else {
+        setSavings({ total_savings: 0, price_alert_savings: 0, deviation_savings: 0, comparison_savings: 0 });
+      }
+
+      // Fetch activities
+      const [recentDocs, recentAlerts, recentDevs] = await Promise.all([
+        supabase.from('documents')
+          .select('id, sender_name, status, processed_at, created_at')
+          .eq('user_id', s.user.id)
+          .eq('document_domain', 'invoice')
+          .order('created_at', { ascending: false })
+          .limit(5),
+        supabase.from('price_alerts')
+          .select('id, product_id, change_percent, created_at, products(name)')
+          .eq('user_id', s.user.id)
+          .order('created_at', { ascending: false })
+          .limit(5),
+        supabase.from('agreement_deviations')
+          .select('id, deviation_type, description, created_at')
+          .eq('user_id', s.user.id)
+          .order('created_at', { ascending: false })
+          .limit(5),
+      ]);
+
+      const feed: ActivityItem[] = [
+        ...(recentDocs.data || []).map((d: any) => ({
+          type: 'invoice' as const,
+          text: `Faktura från ${d.sender_name || 'Okänd'} bearbetad`,
+          date: d.processed_at || d.created_at,
+        })),
+        ...(recentAlerts.data || []).map((a: any) => ({
+          type: 'alert' as const,
+          text: `Prisökning upptäckt: ${a.products?.name} ${a.change_percent > 0 ? '+' : ''}${a.change_percent}%`,
+          date: a.created_at,
+        })),
+        ...(recentDevs.data || []).map((d: any) => ({
+          type: 'deviation' as const,
+          text: d.description,
+          date: d.created_at,
+        })),
+      ].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()).slice(0, 10);
+      
+      setActivities(feed);
     } catch (e) {
       setError(e instanceof Error ? e.message : t("error"));
     } finally {
@@ -94,6 +152,21 @@ export default function PriceMonitorDashboard() {
 
   return (
     <div className="space-y-8 max-w-5xl mx-auto">
+      {/* Savings Banner */}
+      {!loading && savings && (overview?.product_count !== 0 || overview?.supplier_count !== 0) && (
+        <SavingsBanner
+          totalSavings={savings.total_savings}
+          priceAlertSavings={savings.price_alert_savings}
+          deviationSavings={savings.deviation_savings}
+          comparisonSavings={savings.comparison_savings}
+        />
+      )}
+
+      {/* Empty State Onboarding */}
+      {!loading && overview?.product_count === 0 && overview?.supplier_count === 0 && (
+        <OnboardingCard onUploadClick={() => setShowUpload(true)} />
+      )}
+
       {/* Page header */}
       <div className="flex items-center justify-between flex-wrap gap-3">
         <div>
@@ -294,6 +367,11 @@ export default function PriceMonitorDashboard() {
           />
         </div>
       </section>
+
+      {/* Activity Feed */}
+      {!loading && activities.length > 0 && (
+        <ActivityFeed activities={activities} />
+      )}
 
       {/* Upload modal */}
       {showUpload && session && (

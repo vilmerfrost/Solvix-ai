@@ -397,6 +397,33 @@
     "pdfFileName": "manadsrapport-{period}.pdf",
     "excelFileName": "inkopsrapport-{period}.xlsx"
   },
+  "savings": {
+    "identified": "Identifierade besparingar",
+    "sinceStart": "sedan du började använda systemet",
+    "priceAlerts": "Prisökningar upptäckta",
+    "deviations": "Avtalsavvikelser",
+    "cheaperSupplier": "Billigare leverantör hittad",
+    "noSavingsYet": "Ladda upp fakturor för att börja spåra besparingar",
+    "roi": "ROI",
+    "monthlyCost": "Månadskostnad för verktyget",
+    "annualSavings": "Beräknad årlig besparing"
+  },
+  "onboarding": {
+    "title": "🚀 Kom igång med Prisövervakning",
+    "subtitle": "Tre steg för att börja spara pengar:",
+    "step1": "Koppla Fortnox eller ladda upp fakturor",
+    "step2": "Skapa avtal med dina leverantörer",
+    "step3": "Se AI-analysen av dina inköp",
+    "start": "Starta →",
+    "create": "Skapa →",
+    "waiting": "Väntar...",
+    "support": "Behöver du hjälp? Kontakta support@simplitics.se"
+  },
+  "activity": {
+    "title": "Senaste aktivitet",
+    "invoiceProcessed": "Faktura från {sender} bearbetad",
+    "priceAlert": "Prisökning upptäckt: {product} {percent}%"
+  },
   "fortnoxOnboarding": {
     "welcome": "Välkommen!",
     "welcomeDescription": "Koppla din Fortnox och importera dina leverantörsfakturor automatiskt.",
