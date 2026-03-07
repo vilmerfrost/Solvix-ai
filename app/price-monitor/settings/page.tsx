@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useLocale, useTranslations } from "next-intl";
-import { Save, Bell, Mail, Percent, RefreshCw } from "lucide-react";
+import { Save, Bell, Mail, Percent, RefreshCw, Palette } from "lucide-react";
 import { Button, Skeleton, useToast } from "@/components/ui/index";
 import { FortnoxStatusCard } from "@/components/price-monitor/fortnox-status-card";
 import { getSupabaseBrowserClient } from "@/lib/supabase-browser";
@@ -399,6 +399,137 @@ export default function PriceMonitorSettingsPage() {
                   </div>
                 );
               })}
+            </div>
+          </div>
+
+          {/* Branding (White-Label) */}
+          <div
+            className="rounded-xl border p-5"
+            style={{
+              background: "var(--color-bg-elevated)",
+              borderColor: "var(--color-border)",
+            }}
+          >
+            <div className="flex items-center gap-3 mb-6">
+              <div
+                className="w-9 h-9 rounded-lg flex items-center justify-center"
+                style={{ background: "var(--color-accent-muted)" }}
+              >
+                <Palette className="w-4 h-4" style={{ color: "var(--color-accent)" }} />
+              </div>
+              <div>
+                <p className="text-sm font-semibold" style={{ color: "var(--color-text-primary)" }}>
+                  Varumärke (White-label)
+                </p>
+                <p className="text-xs" style={{ color: "var(--color-text-muted)" }}>
+                  Anpassa utseendet på portalen för dina användare.
+                </p>
+              </div>
+            </div>
+
+            <div className="space-y-4">
+              <div>
+                <label className="block text-xs font-medium mb-1" style={{ color: "var(--color-text-primary)" }}>
+                  Företagsnamn
+                </label>
+                <input
+                  type="text"
+                  className="w-full rounded-lg border px-3 py-2 text-sm"
+                  style={{
+                    background: "var(--color-bg)",
+                    borderColor: "var(--color-border)",
+                    color: "var(--color-text-primary)",
+                  }}
+                  placeholder="T.ex. Simplitix"
+                  value={settings.company_name ?? ""}
+                  onChange={(e) =>
+                    setSettings((prev) => ({
+                      ...prev,
+                      company_name: e.target.value || null,
+                    }))
+                  }
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-medium mb-1" style={{ color: "var(--color-text-primary)" }}>
+                  Logotyp URL
+                </label>
+                <input
+                  type="url"
+                  className="w-full rounded-lg border px-3 py-2 text-sm"
+                  style={{
+                    background: "var(--color-bg)",
+                    borderColor: "var(--color-border)",
+                    color: "var(--color-text-primary)",
+                  }}
+                  placeholder="https://example.com/logo.png"
+                  value={settings.company_logo_url ?? ""}
+                  onChange={(e) =>
+                    setSettings((prev) => ({
+                      ...prev,
+                      company_logo_url: e.target.value || null,
+                    }))
+                  }
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-medium mb-1" style={{ color: "var(--color-text-primary)" }}>
+                  Primärfärg (Hex)
+                </label>
+                <div className="flex gap-2 items-center">
+                  <input
+                    type="color"
+                    className="h-9 w-12 rounded border p-1 cursor-pointer"
+                    style={{ borderColor: "var(--color-border)" }}
+                    value={settings.primary_color ?? "#10b981"}
+                    onChange={(e) =>
+                      setSettings((prev) => ({
+                        ...prev,
+                        primary_color: e.target.value,
+                      }))
+                    }
+                  />
+                  <input
+                    type="text"
+                    className="flex-1 rounded-lg border px-3 py-2 text-sm uppercase"
+                    style={{
+                      background: "var(--color-bg)",
+                      borderColor: "var(--color-border)",
+                      color: "var(--color-text-primary)",
+                    }}
+                    placeholder="#10B981"
+                    value={settings.primary_color ?? ""}
+                    onChange={(e) =>
+                      setSettings((prev) => ({
+                        ...prev,
+                        primary_color: e.target.value || null,
+                      }))
+                    }
+                  />
+                </div>
+              </div>
+
+              {/* Preview */}
+              <div className="mt-4 p-4 rounded-lg border bg-white" style={{ borderColor: "var(--color-border)" }}>
+                <p className="text-xs font-medium mb-3 text-gray-500">Förhandsgranskning</p>
+                <div className="flex items-center gap-3">
+                  {settings.company_logo_url ? (
+                    <img src={settings.company_logo_url} alt="Logo" className="h-6 object-contain" />
+                  ) : (
+                    <span className="font-bold text-base" style={{ color: settings.primary_color || "var(--color-text-primary)" }}>
+                      {settings.company_name || 'Prisövervakning'}
+                    </span>
+                  )}
+                  <div 
+                    className="ml-auto px-3 py-1.5 text-xs rounded text-white font-medium" 
+                    style={{ backgroundColor: settings.primary_color || "#10b981" }}
+                  >
+                    Exempelknapp
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
 

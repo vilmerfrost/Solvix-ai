@@ -3,8 +3,10 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useTranslations } from "next-intl";
+import { useEffect, useState } from "react";
 import { ToastProvider } from "@/components/ui/index";
 import { LanguageSwitcher } from "@/components/price-monitor/language-switcher";
+import { getSupabaseBrowserClient } from "@/lib/supabase-browser";
 import {
   LayoutDashboard,
   Package,
@@ -22,6 +24,32 @@ import {
 export default function PriceMonitorLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const t = useTranslations("nav");
+  const [settings, setSettings] = useState<{ company_name?: string; company_logo_url?: string; primary_color?: string } | null>(null);
+
+  useEffect(() => {
+    async function loadSettings() {
+      const supabase = getSupabaseBrowserClient();
+      if (!supabase) return;
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) return;
+
+      const { data } = await supabase
+        .from('settings')
+        .select('company_name, company_logo_url, primary_color')
+        .eq('user_id', session.user.id)
+        .single();
+      
+      if (data) {
+        setSettings(data);
+        if (data.primary_color) {
+          document.documentElement.style.setProperty('--brand-color', data.primary_color);
+          document.documentElement.style.setProperty('--brand-gradient', `linear-gradient(to right, ${data.primary_color}, ${data.primary_color}dd)`);
+          document.documentElement.style.setProperty('--color-accent', data.primary_color);
+        }
+      }
+    }
+    loadSettings();
+  }, []);
 
   const navItems = [
     { href: "/price-monitor", label: t("overview"), icon: LayoutDashboard, exact: true },
@@ -47,11 +75,22 @@ export default function PriceMonitorLayout({ children }: { children: React.React
       <div style={{ background: "var(--color-bg)", color: "var(--color-text-primary)", minHeight: "100vh" }}>
         {/* Sub-nav bar */}
         <div
-          className="border-b px-6"
+          className="border-b px-6 pt-2 pb-0"
           style={{ background: "var(--color-bg-secondary)", borderColor: "var(--color-border)" }}
         >
           <div className="flex items-center justify-between gap-3">
-            <nav className="flex items-center gap-1 overflow-x-auto">
+            <div className="flex items-center gap-6">
+              {/* Branding */}
+              <div className="flex items-center gap-2 flex-shrink-0 mb-1">
+                {settings?.company_logo_url ? (
+                  <img src={settings.company_logo_url} alt={settings.company_name || 'Logo'} className="h-8 object-contain" />
+                ) : (
+                  <span className="font-bold text-lg" style={{ color: "var(--brand-color, var(--color-text-primary))" }}>
+                    {settings?.company_name || 'Prisövervakning'}
+                  </span>
+                )}
+              </div>
+              <nav className="flex items-center gap-1 overflow-x-auto">
               {navItems.map((item) => {
                 const active = isActive(item);
                 const Icon = item.icon;
@@ -71,7 +110,10 @@ export default function PriceMonitorLayout({ children }: { children: React.React
                 );
               })}
             </nav>
-            <LanguageSwitcher />
+            </div>
+            <div className="mb-1">
+              <LanguageSwitcher />
+            </div>
           </div>
         </div>
 

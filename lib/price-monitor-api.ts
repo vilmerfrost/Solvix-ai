@@ -93,6 +93,10 @@ export interface PriceMonitorSettings {
   manual_exchange_rates: PriceMonitorManualExchangeRates;
   exchange_rates_source: string | null;
   exchange_rates_updated_at: string | null;
+  company_name?: string | null;
+  company_logo_url?: string | null;
+  company_slug?: string | null;
+  primary_color?: string | null;
 }
 
 export interface ProcessInvoiceResult {
