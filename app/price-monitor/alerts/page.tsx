@@ -194,7 +194,7 @@ export default function AlertsPage() {
       {error && (
         <p
           className="text-sm px-4 py-3 rounded-lg"
-          style={{ background: "#fef2f2", color: "#ef4444" }}
+          style={{ background: "var(--color-error-bg)", color: "var(--color-error)" }}
         >
           {error}
         </p>
@@ -285,7 +285,7 @@ function AlertCard({
         {/* Icon */}
         <div
           className="w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0"
-          style={{ background: increase ? "#fef2f2" : "#f0fdf4" }}
+          style={{ background: increase ? "var(--color-error-bg)" : "var(--color-success-bg)" }}
         >
           {increase ? (
             <TrendingUp className="w-4 h-4" style={{ color: "#ef4444" }} />
@@ -320,8 +320,8 @@ function AlertCard({
             <span
               className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold"
               style={{
-                background: increase ? "#fef2f2" : "#f0fdf4",
-                color: increase ? "#ef4444" : "#22c55e",
+                background: increase ? "var(--color-error-bg)" : "var(--color-success-bg)",
+                color: increase ? "var(--color-error)" : "var(--color-success)",
               }}
             >
               {increase && <TrendingUp className="w-3 h-3" />}

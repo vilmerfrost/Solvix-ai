@@ -63,10 +63,12 @@ export default function SpendOverviewPage() {
     load();
   }, []);
 
+  const supplierRows = Array.isArray(overview?.by_supplier) ? overview.by_supplier : [];
+  const categoryRows = Array.isArray(overview?.by_category) ? overview.by_category : [];
   const hasData =
     (overview?.total_spend ?? 0) > 0 ||
-    (overview?.by_supplier.length ?? 0) > 0 ||
-    (overview?.by_category.length ?? 0) > 0;
+    supplierRows.length > 0 ||
+    categoryRows.length > 0;
 
   const stats = [
     {

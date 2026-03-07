@@ -329,6 +329,7 @@ function getCurrentLocale(): "sv-SE" | "en-GB" {
 }
 
 export function formatSEK(value: number): string {
+  if (!Number.isFinite(value)) return "–";
   return new Intl.NumberFormat(getCurrentLocale(), {
     style: "currency",
     currency: "SEK",
@@ -340,6 +341,7 @@ export function formatCurrencyValue(
   value: number,
   currency: string
 ): string {
+  if (!Number.isFinite(value)) return "–";
   return new Intl.NumberFormat(getCurrentLocale(), {
     style: "currency",
     currency,
@@ -348,6 +350,7 @@ export function formatCurrencyValue(
 }
 
 export function formatPercent(value: number): string {
+  if (!Number.isFinite(value)) return "–";
   const prefix = value > 0 ? "+" : "";
   const locale = getCurrentLocale();
   return `${prefix}${value.toLocaleString(locale, {
@@ -357,7 +360,9 @@ export function formatPercent(value: number): string {
 }
 
 export function formatDate(dateStr: string): string {
+  if (!dateStr) return "–";
   const date = new Date(dateStr);
+  if (Number.isNaN(date.getTime())) return "–";
   return new Intl.DateTimeFormat(getCurrentLocale(), {
     year: "numeric",
     month: "short",

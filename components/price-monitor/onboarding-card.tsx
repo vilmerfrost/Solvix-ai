@@ -13,26 +13,26 @@ export function OnboardingCard({ onUploadClick }: OnboardingCardProps) {
   const router = useRouter();
 
   return (
-    <div className="rounded-2xl border p-8 mb-8 bg-white" style={{ borderColor: "var(--color-border)", boxShadow: "0 4px 20px rgba(0,0,0,0.05)" }}>
+    <div className="rounded-2xl border p-8 mb-8" style={{ background: "var(--color-bg-elevated)", borderColor: "var(--color-border)", boxShadow: "var(--shadow-sm)" }}>
       <h2 className="text-2xl font-bold mb-2" style={{ color: "var(--color-text-primary)" }}>{t("title")}</h2>
       <p className="mb-8" style={{ color: "var(--color-text-muted)" }}>{t("subtitle")}</p>
       
       <div className="space-y-4 mb-8">
-        <div className="flex items-center justify-between p-4 rounded-xl border bg-gray-50/50">
+        <div className="flex items-center justify-between p-4 rounded-xl border" style={{ background: "var(--color-bg-secondary)", borderColor: "var(--color-border)" }}>
           <div className="flex items-center gap-4">
-            <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 font-bold">1</div>
+            <div className="w-10 h-10 rounded-full flex items-center justify-center font-bold" style={{ background: "var(--color-accent-muted)", color: "var(--color-accent)" }}>1</div>
             <div>
               <p className="font-medium" style={{ color: "var(--color-text-primary)" }}>{t("step1")}</p>
             </div>
           </div>
-          <Button variant="primary" onClick={onUploadClick} className="whitespace-nowrap" style={{ backgroundColor: "var(--brand-color)", borderColor: "var(--brand-color)" }}>
+          <Button variant="primary" onClick={onUploadClick} className="whitespace-nowrap" style={{ backgroundColor: "var(--color-accent)", borderColor: "var(--color-accent)" }}>
             {t("start")}
           </Button>
         </div>
 
-        <div className="flex items-center justify-between p-4 rounded-xl border bg-gray-50/50">
+        <div className="flex items-center justify-between p-4 rounded-xl border" style={{ background: "var(--color-bg-secondary)", borderColor: "var(--color-border)" }}>
           <div className="flex items-center gap-4">
-            <div className="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center text-gray-600 font-bold">2</div>
+            <div className="w-10 h-10 rounded-full flex items-center justify-center font-bold" style={{ background: "var(--color-bg-tertiary)", color: "var(--color-text-muted)" }}>2</div>
             <div>
               <p className="font-medium" style={{ color: "var(--color-text-primary)" }}>{t("step2")}</p>
             </div>
@@ -42,14 +42,14 @@ export function OnboardingCard({ onUploadClick }: OnboardingCardProps) {
           </Button>
         </div>
 
-        <div className="flex items-center justify-between p-4 rounded-xl border bg-gray-50/50 opacity-70">
+        <div className="flex items-center justify-between p-4 rounded-xl border opacity-70" style={{ background: "var(--color-bg-secondary)", borderColor: "var(--color-border)" }}>
           <div className="flex items-center gap-4">
-            <div className="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center text-gray-600 font-bold">3</div>
+            <div className="w-10 h-10 rounded-full flex items-center justify-center font-bold" style={{ background: "var(--color-bg-tertiary)", color: "var(--color-text-muted)" }}>3</div>
             <div>
               <p className="font-medium" style={{ color: "var(--color-text-primary)" }}>{t("step3")}</p>
             </div>
           </div>
-          <div className="text-sm font-medium text-gray-500 px-4">
+          <div className="text-sm font-medium px-4" style={{ color: "var(--color-text-muted)" }}>
             {t("waiting")}
           </div>
         </div>

@@ -42,9 +42,8 @@ export default function PriceMonitorLayout({ children }: { children: React.React
       if (data) {
         setSettings(data);
         if (data.primary_color) {
-          document.documentElement.style.setProperty('--brand-color', data.primary_color);
-          document.documentElement.style.setProperty('--brand-gradient', `linear-gradient(to right, ${data.primary_color}, ${data.primary_color}dd)`);
-          document.documentElement.style.setProperty('--color-accent', data.primary_color);
+          // Allow override if specifically set, otherwise use Simplitics defaults from CSS
+          // document.documentElement.style.setProperty('--color-accent', data.primary_color);
         }
       }
     }
@@ -72,53 +71,59 @@ export default function PriceMonitorLayout({ children }: { children: React.React
 
   return (
     <ToastProvider>
-      <div style={{ background: "var(--color-bg)", color: "var(--color-text-primary)", minHeight: "100vh" }}>
-        {/* Sub-nav bar */}
-        <div
-          className="border-b px-6 pt-2 pb-0"
-          style={{ background: "var(--color-bg-secondary)", borderColor: "var(--color-border)" }}
-        >
-          <div className="flex items-center justify-between gap-3">
-            <div className="flex items-center gap-6">
-              {/* Branding */}
-              <div className="flex items-center gap-2 flex-shrink-0 mb-1">
-                {settings?.company_logo_url ? (
-                  <img src={settings.company_logo_url} alt={settings.company_name || 'Logo'} className="h-8 object-contain" />
-                ) : (
-                  <span className="font-bold text-lg" style={{ color: "var(--brand-color, var(--color-text-primary))" }}>
-                    {settings?.company_name || 'Prisövervakning'}
-                  </span>
-                )}
+      <div className="simplitics-theme dark flex h-screen overflow-hidden" style={{ background: "var(--color-bg)", color: "var(--color-text-primary)" }}>
+        {/* Sidebar */}
+        <aside className="w-64 border-r flex flex-col flex-shrink-0" style={{ backgroundColor: "#000000", borderColor: "var(--color-border)" }}>
+          {/* Logo area */}
+          <div className="p-6 border-b" style={{ borderColor: "var(--color-border)" }}>
+            <img src="/simplitics-logo.png" alt="Simplitics" className="h-8 w-auto object-contain" />
+            <p className="text-xs mt-1" style={{ color: "var(--color-text-muted)" }}>Prisövervakning</p>
+          </div>
+          
+          {/* Nav items */}
+          <nav className="flex-1 px-3 py-4 space-y-1 overflow-y-auto">
+            {navItems.map((item) => {
+              const active = isActive(item);
+              const Icon = item.icon;
+              return (
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all"
+                  style={{
+                    backgroundColor: active ? "var(--color-accent-muted)" : "transparent",
+                    color: active ? "var(--color-accent-text)" : "var(--color-text-secondary)",
+                    borderLeft: active ? "2px solid var(--color-accent)" : "2px solid transparent",
+                  }}
+                >
+                  <Icon className="w-4 h-4" />
+                  {item.label}
+                </Link>
+              );
+            })}
+          </nav>
+          
+          {/* Language / User section at bottom */}
+          <div className="p-4 border-t flex flex-col gap-4" style={{ borderColor: "var(--color-border)" }}>
+            <LanguageSwitcher />
+            <div className="flex items-center gap-3">
+              <div className="w-8 h-8 rounded-full bg-gradient-to-r from-pink-500 to-fuchsia-500 flex items-center justify-center text-white text-sm font-bold">
+                N
               </div>
-              <nav className="flex items-center gap-1 overflow-x-auto">
-              {navItems.map((item) => {
-                const active = isActive(item);
-                const Icon = item.icon;
-                return (
-                  <Link
-                    key={item.href}
-                    href={item.href}
-                    className="flex items-center gap-2 px-3 py-3 text-sm font-medium whitespace-nowrap border-b-2 transition-colors"
-                    style={{
-                      borderColor: active ? "var(--color-accent)" : "transparent",
-                      color: active ? "var(--color-accent)" : "var(--color-text-muted)",
-                    }}
-                  >
-                    <Icon className="w-4 h-4" />
-                    {item.label}
-                  </Link>
-                );
-              })}
-            </nav>
-            </div>
-            <div className="mb-1">
-              <LanguageSwitcher />
+              <div className="min-w-0">
+                <p className="text-sm text-white truncate">Niklas Elm</p>
+                <p className="text-xs truncate" style={{ color: "var(--color-text-muted)" }}>Simplitics</p>
+              </div>
             </div>
           </div>
-        </div>
+        </aside>
 
         {/* Page content */}
-        <main className="p-6">{children}</main>
+        <main className="flex-1 overflow-auto bg-black">
+          <div className="max-w-7xl mx-auto p-6 lg:p-8">
+            {children}
+          </div>
+        </main>
       </div>
     </ToastProvider>
   );

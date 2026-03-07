@@ -512,8 +512,8 @@ export default function PriceMonitorSettingsPage() {
               </div>
 
               {/* Preview */}
-              <div className="mt-4 p-4 rounded-lg border bg-white" style={{ borderColor: "var(--color-border)" }}>
-                <p className="text-xs font-medium mb-3 text-gray-500">Förhandsgranskning</p>
+              <div className="mt-4 p-4 rounded-lg border" style={{ background: "var(--color-bg-elevated)", borderColor: "var(--color-border)" }}>
+                <p className="text-xs font-medium mb-3" style={{ color: "var(--color-text-muted)" }}>Förhandsgranskning</p>
                 <div className="flex items-center gap-3">
                   {settings.company_logo_url ? (
                     <img src={settings.company_logo_url} alt="Logo" className="h-6 object-contain" />

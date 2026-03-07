@@ -286,7 +286,7 @@ export default function AgreementDetailPage() {
         <Card padding="none">
           {loading ? (
             <Skeleton className="h-56 rounded-xl" />
-          ) : agreement?.agreement_items.length ? (
+          ) : Array.isArray(agreement?.agreement_items) && agreement.agreement_items.length > 0 ? (
             <div className="overflow-x-auto">
               <table className="min-w-full text-sm">
                 <thead
@@ -351,8 +351,8 @@ export default function AgreementDetailPage() {
                           onClick={() => handleRemoveItem(item.id)}
                           className="inline-flex items-center gap-1 rounded-lg px-2 py-1 text-xs font-medium"
                           style={{
-                            background: "#fef2f2",
-                            color: "#ef4444",
+                            background: "var(--color-error-bg)",
+                            color: "var(--color-error)",
                           }}
                         >
                           <Trash2 className="h-3.5 w-3.5" />

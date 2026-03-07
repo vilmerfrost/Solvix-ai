@@ -843,8 +843,8 @@ export default function ReviewPage() {
                   key={alert.id}
                   className="flex items-center gap-3 px-4 py-2.5 rounded-xl border text-sm"
                   style={{
-                    background: increase ? "#fef2f2" : "#f0fdf4",
-                    borderColor: increase ? "#fca5a5" : "#86efac",
+                    background: increase ? "var(--color-error-bg)" : "var(--color-success-bg)",
+                    borderColor: increase ? "var(--color-error-border)" : "var(--color-success-border)",
                   }}
                 >
                   <div

@@ -22,33 +22,44 @@ export function SpendTrendChart({ monthly }: SpendTrendChartProps) {
     grouped.set(row.month, (grouped.get(row.month) ?? 0) + row.total_spend);
   }
 
+  const formatter = new Intl.DateTimeFormat("sv-SE", {
+    month: "short",
+    year: "numeric",
+  });
   const monthlyData = [...grouped.entries()]
     .sort(([a], [b]) => a.localeCompare(b))
-    .map(([month, spend]) => ({
-      month: new Intl.DateTimeFormat("sv-SE", {
-        month: "short",
-        year: "numeric",
-      }).format(new Date(month)),
-      spend,
-    }));
+    .map(([month, spend]) => {
+      const parsedDate = new Date(month);
+      const label = Number.isNaN(parsedDate.getTime()) ? month : formatter.format(parsedDate);
+      return { month: label, spend };
+    });
 
   return (
     <ResponsiveContainer width="100%" height={300}>
       <AreaChart data={monthlyData}>
         <defs>
           <linearGradient id="spendGrad" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="5%" stopColor="#3B82F6" stopOpacity={0.3} />
-            <stop offset="95%" stopColor="#3B82F6" stopOpacity={0} />
+            <stop offset="5%" stopColor="#D946EF" stopOpacity={0.3} />
+            <stop offset="95%" stopColor="#D946EF" stopOpacity={0} />
           </linearGradient>
         </defs>
-        <CartesianGrid strokeDasharray="3 3" />
-        <XAxis dataKey="month" />
-        <YAxis tickFormatter={(value: number) => `${(value / 1000).toFixed(0)}k`} />
-        <Tooltip formatter={(value: number) => formatSEK(value)} />
+        <CartesianGrid strokeDasharray="3 3" stroke="#27272A" vertical={false} />
+        <XAxis dataKey="month" stroke="#71717A" tick={{ fill: '#A1A1AA' }} tickLine={false} axisLine={false} />
+        <YAxis tickFormatter={(value: number) => `${(value / 1000).toFixed(0)}k`} stroke="#71717A" tick={{ fill: '#A1A1AA' }} tickLine={false} axisLine={false} />
+        <Tooltip 
+          formatter={(value: number) => formatSEK(value)} 
+          contentStyle={{
+            backgroundColor: '#18181B',
+            border: '1px solid #3F3F46',
+            borderRadius: '8px',
+            color: '#FFFFFF',
+          }}
+        />
         <Area
           type="monotone"
           dataKey="spend"
-          stroke="#3B82F6"
+          stroke="#D946EF"
+          strokeWidth={2}
           fill="url(#spendGrad)"
         />
       </AreaChart>

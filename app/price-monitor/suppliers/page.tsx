@@ -50,7 +50,7 @@ export default function SuppliersPage() {
       {error && (
         <p
           className="text-sm px-4 py-3 rounded-lg"
-          style={{ background: "#fef2f2", color: "#ef4444" }}
+          style={{ background: "var(--color-error-bg)", color: "var(--color-error)" }}
         >
           {error}
         </p>

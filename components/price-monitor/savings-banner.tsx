@@ -25,26 +25,19 @@ export function SavingsBanner({
     <div 
       className={`rounded-2xl p-8 mb-8 text-white ${
         hasSavings 
-          ? "" 
-          : "bg-gray-400 opacity-90"
+          ? "bg-gradient-to-r from-pink-600 to-fuchsia-600" 
+          : "bg-zinc-800 opacity-90"
       }`}
-      style={
-        hasSavings 
-          ? { 
-              background: "var(--brand-gradient, linear-gradient(to right, #10b981, #0d9488))",
-            }
-          : undefined
-      }
     >
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
         <div>
-          <p className="text-emerald-50 text-sm font-medium uppercase tracking-wide opacity-90">
+          <p className="text-pink-100 text-sm font-medium uppercase tracking-wide opacity-90">
             {t("identified")}
           </p>
           <p className="text-4xl md:text-5xl font-bold mt-2">
             {formatSEK(totalSavings)}
           </p>
-          <p className="text-emerald-50 mt-1 opacity-90">
+          <p className="text-pink-100 mt-1 opacity-90">
             {hasSavings ? t("sinceStart") : t("noSavingsYet")}
           </p>
         </div>

@@ -122,7 +122,6 @@ export default function PriceMonitorDashboard() {
 
   const stats = [
     {
-      label: "Spårade produkter",
       label: t("trackedProducts"),
       value: overview?.product_count ?? 0,
       icon: Package,
@@ -132,7 +131,7 @@ export default function PriceMonitorDashboard() {
       label: t("suppliers"),
       value: overview?.supplier_count ?? 0,
       icon: Truck,
-      color: "#8b5cf6",
+      color: "var(--color-info)",
     },
     {
       label: t("openAlerts"),
@@ -229,7 +228,7 @@ export default function PriceMonitorDashboard() {
       </div>
 
       {error && (
-        <p className="text-sm px-4 py-3 rounded-lg" style={{ background: "#fef2f2", color: "#ef4444" }}>
+        <p className="text-sm px-4 py-3 rounded-lg" style={{ background: "var(--color-error-bg)", color: "var(--color-error)" }}>
           {error}
         </p>
       )}
@@ -407,7 +406,7 @@ function AlertRow({
     >
       <div
         className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0"
-        style={{ background: increase ? "#fef2f2" : "#f0fdf4" }}
+        style={{ background: increase ? "var(--color-error-bg)" : "var(--color-success-bg)" }}
       >
         {increase ? (
           <TrendingUp className="w-4 h-4" style={{ color: "#ef4444" }} />
@@ -488,10 +487,10 @@ function DeviationOverviewRow({
 }) {
   const t = useTranslations("dashboard");
   const typeColors: Record<AgreementDeviation["deviation_type"], { bg: string; text: string }> = {
-    wrong_supplier: { bg: "#fef2f2", text: "#ef4444" },
-    price_above_agreed: { bg: "#fff7ed", text: "#f97316" },
-    no_discount_applied: { bg: "#fefce8", text: "#ca8a04" },
-    expired_agreement: { bg: "#f3f4f6", text: "#6b7280" },
+    wrong_supplier: { bg: "var(--color-error-bg)", text: "var(--color-error)" },
+    price_above_agreed: { bg: "var(--color-warning-bg)", text: "var(--color-warning)" },
+    no_discount_applied: { bg: "rgba(202, 138, 4, 0.1)", text: "#ca8a04" },
+    expired_agreement: { bg: "rgba(107, 114, 128, 0.1)", text: "var(--color-text-muted)" },
   };
 
   const typeLabels: Record<AgreementDeviation["deviation_type"], string> = {

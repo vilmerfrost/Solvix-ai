@@ -854,7 +854,7 @@ export function InvoiceUploadFlow({
                       type="button"
                       onClick={() => setAutoProcess((prev) => !prev)}
                       className={`relative h-6 w-11 rounded-full transition-colors ${
-                        autoProcess ? "bg-[var(--color-accent)]" : "bg-gray-300"
+                        autoProcess ? "bg-[var(--color-accent)]" : "bg-zinc-600"
                       }`}
                     >
                       <span
@@ -993,7 +993,7 @@ export function InvoiceUploadFlow({
           )}
 
           {loading && (
-            <div className="pointer-events-none absolute inset-0 flex items-center justify-center bg-white/40">
+            <div className="pointer-events-none absolute inset-0 flex items-center justify-center bg-black/60">
               <Loader2 className="h-8 w-8 animate-spin" style={{ color: "var(--color-accent)" }} />
             </div>
           )}

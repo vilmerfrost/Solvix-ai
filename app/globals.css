@@ -152,6 +152,61 @@
 }
 
 /* ============================================================================
+   SIMPLITICS DARK THEME (Price Monitor Rebrand)
+   ============================================================================ */
+.simplitics-theme {
+  /* Background - Simplitics */
+  --color-bg: #000000;
+  --color-bg-secondary: #0A0A0A;
+  --color-bg-tertiary: #111111;
+  --color-bg-elevated: #18181B;
+  --color-bg-inset: #111111;
+  
+  /* Text */
+  --color-text-primary: #FFFFFF;
+  --color-text-secondary: #A1A1AA;
+  --color-text-muted: #71717A;
+  --color-text-disabled: #525252;
+  --color-text-inverse: #000000;
+  
+  /* Borders */
+  --color-border: #27272A;
+  --color-border-strong: #3F3F46;
+  --color-border-muted: #18181B;
+  
+  /* Accent - Fuchsia/Pink */
+  --color-accent: #D946EF;
+  --color-accent-hover: #C026D3;
+  --color-accent-active: #C026D3;
+  --color-accent-muted: rgba(217, 70, 239, 0.1);
+  --color-accent-text: #E879F9;
+  
+  /* Status Colors */
+  --color-success: #10B981;
+  --color-success-bg: rgba(16, 185, 129, 0.1);
+  --color-success-text: #34D399;
+  --color-success-border: rgba(16, 185, 129, 0.2);
+  
+  --color-warning: #F59E0B;
+  --color-warning-bg: rgba(245, 158, 11, 0.1);
+  --color-warning-text: #FBBF24;
+  --color-warning-border: rgba(245, 158, 11, 0.2);
+  
+  --color-error: #EF4444;
+  --color-error-bg: rgba(239, 68, 68, 0.1);
+  --color-error-text: #F87171;
+  --color-error-border: rgba(239, 68, 68, 0.2);
+  
+  --color-info: #D946EF;
+  --color-info-bg: rgba(217, 70, 239, 0.1);
+  --color-info-text: #E879F9;
+  --color-info-border: rgba(217, 70, 239, 0.2);
+
+  /* Force dark mode */
+  color-scheme: dark;
+}
+
+/* ============================================================================
    TAILWIND THEME EXTENSION
    ============================================================================ */
 @theme {

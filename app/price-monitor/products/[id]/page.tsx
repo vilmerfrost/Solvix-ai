@@ -260,7 +260,7 @@ export default function ProductDetailPage() {
       {error && (
         <p
           className="text-sm px-4 py-3 rounded-lg"
-          style={{ background: "#fef2f2", color: "#ef4444" }}
+          style={{ background: "var(--color-error-bg)", color: "var(--color-error)" }}
         >
           {error}
         </p>
@@ -589,7 +589,7 @@ export default function ProductDetailPage() {
                   <div className="flex items-center gap-3">
                     <div
                       className="w-8 h-8 rounded-lg flex items-center justify-center"
-                      style={{ background: "#fef2f2" }}
+                      style={{ background: "var(--color-error-bg)" }}
                     >
                       {alert.change_percent > 0 ? (
                         <TrendingUp className="w-4 h-4" style={{ color: "#ef4444" }} />

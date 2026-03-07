@@ -142,7 +142,7 @@ export default function AgreementDeviationsPage() {
             <div className="flex items-center gap-4">
               <div
                 className="flex h-12 w-12 items-center justify-center rounded-xl"
-                style={{ background: "#fef2f2" }}
+                style={{ background: "var(--color-error-bg)" }}
               >
                 <AlertTriangle className="h-6 w-6" style={{ color: "#ef4444" }} />
               </div>
