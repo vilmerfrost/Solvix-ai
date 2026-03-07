@@ -27,22 +27,19 @@ function CustomTooltip({ active, payload }: { active?: boolean; payload?: Toolti
 
   return (
     <div
-      className="rounded-xl border p-3 text-sm shadow-lg"
+      className="bg-white rounded-xl border border-gray-200 p-3 text-sm shadow-lg text-gray-900"
       style={{
-        background: "var(--color-bg-elevated)",
-        borderColor: "var(--color-border)",
-        color: "var(--color-text-primary)",
         minWidth: 180,
       }}
     >
-      <p className="font-semibold mb-1" style={{ color: "var(--color-text-primary)" }}>
+      <p className="font-semibold mb-1 text-gray-900">
         {d.date}
       </p>
-      <div className="space-y-0.5" style={{ color: "var(--color-text-secondary)" }}>
-        <p>Enhetspris: <span className="font-medium">{formatSEK(d.unit_price)}</span></p>
-        <p>Antal: <span className="font-medium">{d.quantity}</span></p>
+      <div className="space-y-0.5 text-gray-500">
+        <p>Enhetspris: <span className="font-medium text-gray-900">{formatSEK(d.unit_price)}</span></p>
+        <p>Antal: <span className="font-medium text-gray-900">{d.quantity}</span></p>
         {d.invoice_number && (
-          <p>Faktura: <span className="font-medium">{d.invoice_number}</span></p>
+          <p>Faktura: <span className="font-medium text-gray-900">{d.invoice_number}</span></p>
         )}
       </div>
     </div>
@@ -74,25 +71,25 @@ export function PriceChart({ data }: PriceChartProps) {
       <AreaChart data={chartData} margin={{ top: 8, right: 16, left: 0, bottom: 0 }}>
         <defs>
           <linearGradient id="priceGradient" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="5%" stopColor="var(--color-accent)" stopOpacity={0.25} />
-            <stop offset="95%" stopColor="var(--color-accent)" stopOpacity={0} />
+            <stop offset="5%" stopColor="#EC4899" stopOpacity={0.25} />
+            <stop offset="95%" stopColor="#EC4899" stopOpacity={0} />
           </linearGradient>
         </defs>
         <CartesianGrid
           strokeDasharray="3 3"
-          stroke="var(--color-border)"
+          stroke="#F3F4F6"
           vertical={false}
         />
         <XAxis
           dataKey="date"
-          tick={{ fontSize: 11, fill: "var(--color-text-muted)" }}
+          tick={{ fontSize: 11, fill: "#6B7280" }}
           tickLine={false}
           axisLine={false}
           interval="preserveStartEnd"
         />
         <YAxis
           domain={[minPrice - padding, maxPrice + padding]}
-          tick={{ fontSize: 11, fill: "var(--color-text-muted)" }}
+          tick={{ fontSize: 11, fill: "#6B7280" }}
           tickLine={false}
           axisLine={false}
           tickFormatter={(v: number) =>
@@ -104,24 +101,24 @@ export function PriceChart({ data }: PriceChartProps) {
         {avg > 0 && (
           <ReferenceLine
             y={avg}
-            stroke="var(--color-text-muted)"
+            stroke="#9CA3AF"
             strokeDasharray="4 4"
             label={{
               value: `Snitt: ${formatSEK(avg)}`,
               position: "insideTopRight",
               fontSize: 11,
-              fill: "var(--color-text-muted)",
+              fill: "#6B7280",
             }}
           />
         )}
         <Area
           type="monotone"
           dataKey="unit_price"
-          stroke="var(--color-accent)"
+          stroke="#EC4899"
           strokeWidth={2}
           fill="url(#priceGradient)"
-          dot={{ r: 3, fill: "var(--color-accent)", strokeWidth: 0 }}
-          activeDot={{ r: 5, fill: "var(--color-accent)" }}
+          dot={{ r: 3, fill: "#EC4899", strokeWidth: 0 }}
+          activeDot={{ r: 5, fill: "#EC4899" }}
         />
       </AreaChart>
     </ResponsiveContainer>

@@ -222,8 +222,7 @@ export default function ProductDetailPage() {
       {/* Back */}
       <button
         onClick={() => router.push("/price-monitor/products")}
-        className="flex items-center gap-1.5 text-sm"
-        style={{ color: "var(--color-text-muted)" }}
+        className="flex items-center gap-1.5 text-sm text-gray-500 hover:text-gray-900 transition-colors"
       >
         <ArrowLeft className="w-4 h-4" />
         {t("backToProducts")}
@@ -235,10 +234,10 @@ export default function ProductDetailPage() {
       ) : product ? (
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div>
-            <h1 className="text-2xl font-bold" style={{ color: "var(--color-text-primary)" }}>
+            <h1 className="text-2xl font-bold text-gray-900">
               {product.product_name}
             </h1>
-            <p className="text-sm mt-1" style={{ color: "var(--color-text-muted)" }}>
+            <p className="text-sm mt-1 text-gray-500">
               {product.supplier_name}
               {product.product_unit && ` · ${product.product_unit}`}
             </p>
@@ -268,21 +267,17 @@ export default function ProductDetailPage() {
 
       {/* Price chart */}
       <section>
-        <h2 className="font-semibold text-base mb-4" style={{ color: "var(--color-text-primary)" }}>
+        <h2 className="font-semibold text-base mb-4 text-gray-900">
           Prisutveckling
         </h2>
         <div
-          className="rounded-xl border p-5"
-          style={{
-            background: "var(--color-bg-elevated)",
-            borderColor: "var(--color-border)",
-          }}
+          className="bg-white rounded-xl border border-gray-200 p-5 shadow-sm"
         >
           {loading ? (
             <Skeleton className="h-64 rounded-lg" />
           ) : history.length === 0 ? (
             <div className="h-64 flex items-center justify-center">
-              <p className="text-sm" style={{ color: "var(--color-text-muted)" }}>
+              <p className="text-sm text-gray-500">
                 Ingen prishistorik tillgänglig
               </p>
             </div>
@@ -295,18 +290,13 @@ export default function ProductDetailPage() {
       {/* Price history table */}
       <section>
         <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
-          <h2 className="font-semibold text-base" style={{ color: "var(--color-text-primary)" }}>
+          <h2 className="font-semibold text-base text-gray-900">
             Fakturarader
           </h2>
           <div className="flex items-center gap-2 text-sm">
-            <span style={{ color: "var(--color-text-muted)" }}>Månad</span>
+            <span className="text-gray-500">Månad</span>
             <select
-              className="rounded-lg border px-3 py-1.5 text-sm"
-              style={{
-                background: "var(--color-bg-elevated)",
-                borderColor: "var(--color-border)",
-                color: "var(--color-text-primary)",
-              }}
+              className="bg-white rounded-lg border border-gray-300 px-3 py-1.5 text-sm text-gray-900 outline-none focus:border-pink-500 focus:ring-1 focus:ring-pink-500 transition-all"
               value={monthFilter}
               onChange={(event) => setMonthFilter(event.target.value)}
             >
@@ -324,7 +314,7 @@ export default function ProductDetailPage() {
             {[...Array(5)].map((_, i) => <Skeleton key={i} className="h-12 rounded-xl" />)}
           </div>
         ) : filteredByMonth.length === 0 ? (
-          <p className="text-sm" style={{ color: "var(--color-text-muted)" }}>
+          <p className="text-sm text-gray-500">
             Inga fakturarader hittades
           </p>
         ) : (
@@ -339,26 +329,21 @@ export default function ProductDetailPage() {
               return (
                 <div
                   key={documentId}
-                  className="rounded-xl border overflow-hidden"
-                  style={{ borderColor: "var(--color-border)" }}
+                  className="bg-white rounded-xl border border-gray-200 overflow-hidden shadow-sm"
                 >
                   <div
-                    className="flex flex-wrap items-center justify-between gap-3 border-b px-4 py-3"
-                    style={{
-                      background: "var(--color-bg-secondary)",
-                      borderColor: "var(--color-border)",
-                    }}
+                    className="flex flex-wrap items-center justify-between gap-3 border-b border-gray-200 px-4 py-3 bg-gray-50"
                   >
                     <div>
-                      <p className="text-sm font-semibold" style={{ color: "var(--color-text-primary)" }}>
+                      <p className="text-sm font-semibold text-gray-900">
                         {header?.sender_name ?? product?.supplier_name ?? "Okänd leverantör"}
                       </p>
-                      <p className="text-xs" style={{ color: "var(--color-text-muted)" }}>
+                      <p className="text-xs text-gray-500">
                         {formatDate(header?.document_date ?? rows[0].invoice_date)}
                       </p>
                     </div>
                     <div className="text-right">
-                      <p className="text-sm font-medium" style={{ color: "var(--color-text-primary)" }}>
+                      <p className="text-sm font-medium text-gray-900">
                         {originalTotal != null
                           ? formatCurrencyValue(originalTotal, originalCurrency)
                           : header?.total_cost != null
@@ -366,27 +351,21 @@ export default function ProductDetailPage() {
                             : "Total saknas"}
                       </p>
                       {header?.total_cost != null && originalCurrency !== "SEK" ? (
-                        <p className="text-xs" style={{ color: "var(--color-text-muted)" }}>
+                        <p className="text-xs text-gray-500">
                           {formatSEK(header.total_cost)}
                         </p>
                       ) : null}
                     </div>
                   </div>
 
-                  <table className="w-full text-sm" style={{ background: "var(--color-bg-elevated)" }}>
-                    <thead
-                      style={{
-                        background: "var(--color-bg-secondary)",
-                        borderBottom: "1px solid var(--color-border)",
-                      }}
-                    >
+                  <table className="w-full text-sm">
+                    <thead className="bg-white border-b border-gray-100">
                       <tr>
                         {["Beskrivning", "Fakturadatum", "Faktura #", "Enhetspris", "Antal", "Totalbelopp", "Matchning"].map(
                           (h) => (
                             <th
                               key={h}
-                              className="px-4 py-3 text-left text-xs font-medium whitespace-nowrap"
-                              style={{ color: "var(--color-text-muted)" }}
+                              className="px-4 py-3 text-left text-xs font-medium whitespace-nowrap text-gray-500"
                             >
                               {h}
                             </th>
@@ -398,42 +377,33 @@ export default function ProductDetailPage() {
                       {(lineItemsByDocument[documentId] ?? rows).map((row, idx) => (
                         <tr
                           key={`${documentId}-${row.invoice_date ?? "no-date"}-${idx}`}
-                          style={{
-                            borderBottom:
-                              idx === (lineItemsByDocument[documentId] ?? rows).length - 1
-                                ? "none"
-                                : "1px solid var(--color-border)",
-                          }}
+                          className={`hover:bg-gray-50 transition-colors ${idx === (lineItemsByDocument[documentId] ?? rows).length - 1 ? '' : 'border-b border-gray-100'}`}
                         >
-                          <td className="px-4 py-3" style={{ color: "var(--color-text-primary)" }}>
+                          <td className="px-4 py-3 text-gray-900">
                             {("raw_description" in row ? row.raw_description : null) || product?.product_name || "Rad utan namn"}
                           </td>
-                          <td className="px-4 py-3" style={{ color: "var(--color-text-primary)" }}>
+                          <td className="px-4 py-3 text-gray-900">
                             {formatDate(row.invoice_date)}
                           </td>
                           <td className="px-4 py-3">
                             {row.invoice_number ? (
                               <Link
                                 href={`/price-monitor/review/${row.document_id}`}
-                                className="font-medium hover:underline"
-                                style={{ color: "var(--color-accent)" }}
+                                className="font-medium text-pink-500 hover:text-pink-600 hover:underline"
                               >
                                 {row.invoice_number}
                               </Link>
                             ) : (
-                              <span style={{ color: "var(--color-text-muted)" }}>–</span>
+                              <span className="text-gray-400">–</span>
                             )}
                           </td>
-                          <td
-                            className="px-4 py-3 font-medium"
-                            style={{ color: "var(--color-text-primary)" }}
-                          >
+                          <td className="px-4 py-3 font-medium text-gray-900">
                             {formatSEK(row.unit_price)}
                           </td>
-                          <td className="px-4 py-3" style={{ color: "var(--color-text-secondary)" }}>
+                          <td className="px-4 py-3 text-gray-500">
                             {row.quantity}
                           </td>
-                          <td className="px-4 py-3" style={{ color: "var(--color-text-secondary)" }}>
+                          <td className="px-4 py-3 text-gray-500">
                             {formatSEK(row.amount)}
                           </td>
                           <td className="px-4 py-3">
@@ -452,28 +422,19 @@ export default function ProductDetailPage() {
 
       {!loading && groupedDocumentIds.length > 0 && (
         <section>
-          <h2 className="font-semibold text-base mb-4" style={{ color: "var(--color-text-primary)" }}>
+          <h2 className="font-semibold text-base mb-4 text-gray-900">
             Fakturajämförelse (head-to-head)
           </h2>
           <div
-            className="rounded-xl border p-4 space-y-4"
-            style={{
-              background: "var(--color-bg-elevated)",
-              borderColor: "var(--color-border)",
-            }}
+            className="bg-white rounded-xl border border-gray-200 p-4 space-y-4 shadow-sm"
           >
             <div className="grid gap-3 md:grid-cols-2">
               <label className="text-sm">
-                <span className="mb-1 block" style={{ color: "var(--color-text-muted)" }}>
+                <span className="mb-1 block text-gray-500">
                   Faktura A
                 </span>
                 <select
-                  className="w-full rounded-lg border px-3 py-2 text-sm"
-                  style={{
-                    background: "var(--color-bg)",
-                    borderColor: "var(--color-border)",
-                    color: "var(--color-text-primary)",
-                  }}
+                  className="w-full bg-white rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-900 outline-none focus:border-pink-500 focus:ring-1 focus:ring-pink-500 transition-all"
                   value={compareLeftDocumentId}
                   onChange={(event) => setCompareLeftDocumentId(event.target.value)}
                 >
@@ -491,16 +452,11 @@ export default function ProductDetailPage() {
               </label>
 
               <label className="text-sm">
-                <span className="mb-1 block" style={{ color: "var(--color-text-muted)" }}>
+                <span className="mb-1 block text-gray-500">
                   Faktura B
                 </span>
                 <select
-                  className="w-full rounded-lg border px-3 py-2 text-sm"
-                  style={{
-                    background: "var(--color-bg)",
-                    borderColor: "var(--color-border)",
-                    color: "var(--color-text-primary)",
-                  }}
+                  className="w-full bg-white rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-900 outline-none focus:border-pink-500 focus:ring-1 focus:ring-pink-500 transition-all"
                   value={compareRightDocumentId}
                   onChange={(event) => setCompareRightDocumentId(event.target.value)}
                 >
@@ -520,46 +476,33 @@ export default function ProductDetailPage() {
 
             <div className="grid gap-3 md:grid-cols-3">
               <div
-                className="rounded-lg border px-4 py-3"
-                style={{ borderColor: "var(--color-border)" }}
+                className="rounded-lg border border-gray-200 px-4 py-3"
               >
-                <p className="text-xs" style={{ color: "var(--color-text-muted)" }}>
+                <p className="text-xs text-gray-500">
                   Faktura A total
                 </p>
-                <p className="mt-1 text-sm font-semibold" style={{ color: "var(--color-text-primary)" }}>
+                <p className="mt-1 text-sm font-semibold text-gray-900">
                   {compareLeft ? formatSEK(compareLeft.total) : "–"}
                 </p>
               </div>
               <div
-                className="rounded-lg border px-4 py-3"
-                style={{ borderColor: "var(--color-border)" }}
+                className="rounded-lg border border-gray-200 px-4 py-3"
               >
-                <p className="text-xs" style={{ color: "var(--color-text-muted)" }}>
+                <p className="text-xs text-gray-500">
                   Faktura B total
                 </p>
-                <p className="mt-1 text-sm font-semibold" style={{ color: "var(--color-text-primary)" }}>
+                <p className="mt-1 text-sm font-semibold text-gray-900">
                   {compareRight ? formatSEK(compareRight.total) : "–"}
                 </p>
               </div>
               <div
-                className="rounded-lg border px-4 py-3"
-                style={{ borderColor: "var(--color-border)" }}
+                className="rounded-lg border border-gray-200 px-4 py-3"
               >
-                <p className="text-xs" style={{ color: "var(--color-text-muted)" }}>
+                <p className="text-xs text-gray-500">
                   Skillnad (B - A)
                 </p>
                 <p
-                  className="mt-1 text-sm font-semibold"
-                  style={{
-                    color:
-                      compareDelta == null
-                        ? "var(--color-text-primary)"
-                        : compareDelta > 0
-                        ? "#ef4444"
-                        : compareDelta < 0
-                        ? "#22c55e"
-                        : "var(--color-text-primary)",
-                  }}
+                  className={`mt-1 text-sm font-semibold ${compareDelta == null ? 'text-gray-900' : compareDelta > 0 ? 'text-red-500' : compareDelta < 0 ? 'text-emerald-500' : 'text-gray-900'}`}
                 >
                   {compareDelta == null ? "–" : formatSEK(compareDelta)}
                 </p>
@@ -572,42 +515,36 @@ export default function ProductDetailPage() {
       {/* Alerts for this product */}
       {!loading && alerts.length > 0 && session && (
         <section>
-          <h2 className="font-semibold text-base mb-4" style={{ color: "var(--color-text-primary)" }}>
+          <h2 className="font-semibold text-base mb-4 text-gray-900">
             Prisvarningar
           </h2>
           <div className="space-y-3">
             {alerts.map((alert) => (
               <div
                 key={alert.id}
-                className="rounded-xl border p-4"
-                style={{
-                  background: "var(--color-bg-elevated)",
-                  borderColor: "var(--color-border)",
-                }}
+                className="bg-white rounded-xl border border-gray-200 p-4 shadow-sm"
               >
                 <div className="flex flex-wrap items-start gap-4 justify-between">
                   <div className="flex items-center gap-3">
                     <div
-                      className="w-8 h-8 rounded-lg flex items-center justify-center"
-                      style={{ background: "var(--color-error-bg)" }}
+                      className={`w-8 h-8 rounded-lg flex items-center justify-center ${alert.change_percent > 0 ? 'bg-red-50 text-red-500' : 'bg-emerald-50 text-emerald-500'}`}
                     >
                       {alert.change_percent > 0 ? (
-                        <TrendingUp className="w-4 h-4" style={{ color: "#ef4444" }} />
+                        <TrendingUp className="w-4 h-4" />
                       ) : (
-                        <TrendingDown className="w-4 h-4" style={{ color: "#22c55e" }} />
+                        <TrendingDown className="w-4 h-4" />
                       )}
                     </div>
                     <div>
-                      <p className="text-sm font-medium" style={{ color: "var(--color-text-primary)" }}>
+                      <p className="text-sm font-medium text-gray-900">
                         {formatSEK(alert.previous_price)} → {formatSEK(alert.new_price)}{" "}
                         <span
-                          className="font-semibold"
-                          style={{ color: alert.change_percent > 0 ? "#ef4444" : "#22c55e" }}
+                          className={`font-semibold ${alert.change_percent > 0 ? 'text-red-500' : 'text-emerald-500'}`}
                         >
                           ({formatPercent(alert.change_percent)})
                         </span>
                       </p>
-                      <p className="text-xs" style={{ color: "var(--color-text-muted)" }}>
+                      <p className="text-xs text-gray-500">
                         Priset ändrades mellan {formatDate(alert.previous_invoice_date)} och{" "}
                         {formatDate(alert.new_invoice_date)}
                       </p>
@@ -615,7 +552,7 @@ export default function ProductDetailPage() {
                         {alert.previous_document_id ? (
                           <Link
                             href={`/price-monitor/review/${alert.previous_document_id}`}
-                            style={{ color: "var(--color-accent)" }}
+                            className="text-pink-500 hover:text-pink-600 hover:underline"
                           >
                             Se föregående faktura
                           </Link>
@@ -623,7 +560,7 @@ export default function ProductDetailPage() {
                         {alert.new_document_id ? (
                           <Link
                             href={`/price-monitor/review/${alert.new_document_id}`}
-                            style={{ color: "var(--color-accent)" }}
+                            className="text-pink-500 hover:text-pink-600 hover:underline"
                           >
                             Se ny faktura
                           </Link>
@@ -644,11 +581,7 @@ export default function ProductDetailPage() {
                 </div>
                 {alert.notes && (
                   <p
-                    className="mt-2 text-xs px-3 py-1.5 rounded-md"
-                    style={{
-                      background: "var(--color-bg-secondary)",
-                      color: "var(--color-text-secondary)",
-                    }}
+                    className="mt-2 text-xs px-3 py-1.5 rounded-md bg-gray-50 text-gray-600 border border-gray-100"
                   >
                     {alert.notes}
                   </p>
@@ -664,12 +597,13 @@ export default function ProductDetailPage() {
 
 function ConfidenceBadge({ value }: { value: number }) {
   const pct = Math.round(value * 100);
-  const color =
-    pct >= 90 ? "#22c55e" : pct >= 70 ? "#f59e0b" : "#ef4444";
+  let badgeClass = "bg-red-50 text-red-600 border-red-200";
+  if (pct >= 90) badgeClass = "bg-emerald-50 text-emerald-600 border-emerald-200";
+  else if (pct >= 70) badgeClass = "bg-amber-50 text-amber-600 border-amber-200";
+
   return (
     <span
-      className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium"
-      style={{ background: `${color}18`, color }}
+      className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium border ${badgeClass}`}
     >
       {pct}%
     </span>

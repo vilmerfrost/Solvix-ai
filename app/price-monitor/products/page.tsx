@@ -308,10 +308,9 @@ function ProductsPageContent() {
   }) {
     return (
       <th
-        className={`px-4 py-3 text-xs font-medium cursor-pointer select-none whitespace-nowrap ${
+        className={`px-4 py-3 text-xs font-medium text-gray-500 cursor-pointer select-none whitespace-nowrap ${
           right ? "text-right" : "text-left"
         }`}
-        style={{ color: "var(--color-text-muted)" }}
         onClick={() => toggleSort(k)}
       >
         <span className="inline-flex items-center gap-1">
@@ -327,10 +326,10 @@ function ProductsPageContent() {
       {/* Header */}
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-bold" style={{ color: "var(--color-text-primary)" }}>
+          <h1 className="text-2xl font-bold text-gray-900">
             {t("title")}
           </h1>
-          <p className="text-sm mt-0.5" style={{ color: "var(--color-text-muted)" }}>
+          <p className="text-sm mt-0.5 text-gray-500">
             {loading ? "…" : t("count", { count: filtered.length })}
           </p>
         </div>
@@ -348,28 +347,18 @@ function ProductsPageContent() {
       {/* Filters */}
       <div className="flex flex-wrap gap-3">
         <div
-          className="flex items-center gap-2 rounded-lg border px-3 py-2 flex-1 min-w-48"
-          style={{
-            background: "var(--color-bg-elevated)",
-            borderColor: "var(--color-border)",
-          }}
+          className="flex items-center gap-2 bg-white rounded-lg border border-gray-300 px-3 py-2 flex-1 min-w-48 focus-within:border-pink-500 focus-within:ring-1 focus-within:ring-pink-500 transition-all shadow-sm"
         >
-          <Search className="w-4 h-4 flex-shrink-0" style={{ color: "var(--color-text-muted)" }} />
+          <Search className="w-4 h-4 flex-shrink-0 text-gray-400" />
           <input
-            className="flex-1 text-sm bg-transparent outline-none"
-            style={{ color: "var(--color-text-primary)" }}
+            className="flex-1 text-sm bg-transparent outline-none text-gray-900 placeholder-gray-400"
             placeholder={t("searchPlaceholder")}
             value={search}
             onChange={(e) => setSearch(e.target.value)}
           />
         </div>
         <select
-          className="rounded-lg border px-3 py-2 text-sm"
-          style={{
-            background: "var(--color-bg-elevated)",
-            borderColor: "var(--color-border)",
-            color: "var(--color-text-primary)",
-          }}
+          className="bg-white rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-900 focus:border-pink-500 focus:ring-1 focus:ring-pink-500 outline-none transition-all shadow-sm"
           value={supplierFilter}
           onChange={(e) => setSupplierFilter(e.target.value)}
         >
@@ -435,32 +424,22 @@ function ProductsPageContent() {
         </div>
       ) : filtered.length === 0 ? (
         <div
-          className="rounded-xl border p-12 text-center"
-          style={{
-            background: "var(--color-bg-secondary)",
-            borderColor: "var(--color-border)",
-          }}
+          className="bg-gray-50 rounded-xl border border-gray-200 p-12 text-center"
         >
-          <Upload className="w-10 h-10 mx-auto mb-3" style={{ color: "var(--color-text-muted)" }} />
-          <p className="font-medium text-sm" style={{ color: "var(--color-text-primary)" }}>
+          <Upload className="w-10 h-10 mx-auto mb-3 text-gray-400" />
+          <p className="font-medium text-sm text-gray-900">
             {t("emptyTitle")}
           </p>
-          <p className="text-xs mt-1" style={{ color: "var(--color-text-muted)" }}>
+          <p className="text-xs mt-1 text-gray-500">
             {t("emptyDescription")}
           </p>
         </div>
       ) : (
         <div
-          className="rounded-xl border overflow-x-auto"
-          style={{ borderColor: "var(--color-border)" }}
+          className="bg-white rounded-xl border border-gray-200 overflow-x-auto shadow-sm"
         >
-          <table className="w-full text-sm" style={{ background: "var(--color-bg-elevated)" }}>
-            <thead
-              style={{
-                background: "var(--color-bg-secondary)",
-                borderBottom: "1px solid var(--color-border)",
-              }}
-            >
+          <table className="w-full text-sm">
+            <thead className="bg-gray-50 border-b border-gray-200">
               <tr>
                 <th className="px-4 py-3 text-left">
                   <input
@@ -505,18 +484,14 @@ function ProductsPageContent() {
 
       {/* Merge dialog */}
       {showMergeDialog && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 backdrop-blur-sm p-4">
           <div
-            className="w-full max-w-md rounded-2xl border p-6 shadow-2xl"
-            style={{
-              background: "var(--color-bg-elevated)",
-              borderColor: "var(--color-border)",
-            }}
+            className="w-full max-w-md bg-white rounded-2xl border border-gray-200 p-6 shadow-xl"
           >
-            <h2 className="text-base font-semibold mb-1" style={{ color: "var(--color-text-primary)" }}>
+            <h2 className="text-base font-semibold mb-1 text-gray-900">
               {t("mergeTitle")}
             </h2>
-            <p className="text-sm mb-4" style={{ color: "var(--color-text-muted)" }}>
+            <p className="text-sm mb-4 text-gray-500">
               {t("mergeDescription", { count: selectedProductIds.length })}
             </p>
 
@@ -526,15 +501,14 @@ function ProductsPageContent() {
                 return (
                   <div key={id} className="flex items-center gap-2 text-sm">
                     <span
-                      className="inline-flex items-center justify-center w-5 h-5 rounded-full text-xs font-medium"
-                      style={{ background: idx === 0 ? "var(--color-accent)" : "var(--color-bg-secondary)", color: idx === 0 ? "#fff" : "var(--color-text-muted)" }}
+                      className={`inline-flex items-center justify-center w-5 h-5 rounded-full text-xs font-medium ${idx === 0 ? 'bg-pink-500 text-white' : 'bg-gray-100 text-gray-500'}`}
                     >
                       {idx === 0 ? "✓" : "→"}
                     </span>
-                    <span style={{ color: idx === 0 ? "var(--color-text-primary)" : "var(--color-text-muted)" }}>
+                    <span className={idx === 0 ? 'text-gray-900 font-medium' : 'text-gray-500'}>
                       {prod?.product_name ?? id}
                       {idx === 0 && (
-                        <span className="ml-1.5 text-xs" style={{ color: "var(--color-accent)" }}>
+                        <span className="ml-1.5 text-xs text-pink-500">
                           {t("mergeKept")}
                         </span>
                       )}
@@ -544,16 +518,11 @@ function ProductsPageContent() {
               })}
             </div>
 
-            <label className="block text-xs font-medium mb-1" style={{ color: "var(--color-text-muted)" }}>
+            <label className="block text-xs font-medium mb-1 text-gray-500">
               {t("mergeNameLabel")}
             </label>
             <input
-              className="w-full rounded-lg border px-3 py-2 text-sm mb-5 outline-none"
-              style={{
-                background: "var(--color-bg)",
-                borderColor: "var(--color-border)",
-                color: "var(--color-text-primary)",
-              }}
+              className="w-full bg-white rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-900 mb-5 outline-none focus:border-pink-500 focus:ring-1 focus:ring-pink-500 transition-all shadow-sm"
               value={mergeName}
               onChange={(e) => setMergeName(e.target.value)}
               placeholder={products.find((p) => p.product_id === selectedProductIds[0])?.product_name ?? ""}
@@ -622,9 +591,8 @@ function ProductRow({
   return (
     <tr
       onClick={onClick}
-      className="cursor-pointer transition-colors hover:bg-opacity-50"
+      className={`cursor-pointer transition-colors hover:bg-pink-50 ${last ? '' : 'border-b border-gray-100'}`}
       style={{
-        borderBottom: last ? "none" : "1px solid var(--color-border)",
         opacity: isZeroItem ? 0.65 : 1,
       }}
     >
@@ -634,37 +602,35 @@ function ProductRow({
           checked={selected}
           onChange={onToggleSelect}
           aria-label={t("selectProduct")}
+          className="accent-pink-500"
         />
       </td>
       <td
-        className="px-4 py-3 font-medium"
-        style={{ color: "var(--color-text-primary)" }}
+        className="px-4 py-3 font-medium text-gray-900"
       >
         {p.product_name}
         {isZeroItem && (
-          <div className="text-xs font-normal" style={{ color: "var(--color-text-muted)" }}>
+          <div className="text-xs font-normal text-gray-500">
             {t("includedZeroItem")}
           </div>
         )}
       </td>
-      <td className="px-4 py-3" style={{ color: "var(--color-text-secondary)" }}>
+      <td className="px-4 py-3 text-gray-500">
         {p.supplier_name}
       </td>
-      <td className="px-4 py-3" style={{ color: "var(--color-text-muted)" }}>
+      <td className="px-4 py-3 text-gray-500">
         {p.unit ?? "–"}
       </td>
       <td
-        className="px-4 py-3 text-right font-medium"
-        style={{ color: "var(--color-text-primary)" }}
+        className="px-4 py-3 text-right font-medium text-gray-900"
       >
         {p.latest_price !== null ? formatSEK(p.latest_price) : "–"}
-        <div className="text-xs font-normal" style={{ color: "var(--color-text-muted)" }}>
+        <div className="text-xs font-normal text-gray-500">
           {formatDate(p.latest_date)}
         </div>
       </td>
       <td
-        className="px-4 py-3 text-right"
-        style={{ color: "var(--color-text-muted)" }}
+        className="px-4 py-3 text-right text-gray-500"
       >
         {p.previous_price !== null ? formatSEK(p.previous_price) : "–"}
         {p.previous_date && (
@@ -673,11 +639,10 @@ function ProductRow({
       </td>
       <td className="px-4 py-3 text-right">
         {change === null ? (
-          <span style={{ color: "var(--color-text-muted)" }}>–</span>
+          <span className="text-gray-400">–</span>
         ) : (
           <span
-            className="inline-flex items-center gap-1 font-semibold"
-            style={{ color: increase ? "#ef4444" : decrease ? "#22c55e" : "var(--color-text-muted)" }}
+            className={`inline-flex items-center gap-1 font-semibold ${increase ? 'text-red-500' : decrease ? 'text-emerald-500' : 'text-gray-400'}`}
           >
             {increase && <TrendingUp className="w-3.5 h-3.5" />}
             {decrease && <TrendingDown className="w-3.5 h-3.5" />}
@@ -687,8 +652,7 @@ function ProductRow({
         )}
       </td>
       <td
-        className="px-4 py-3 text-right"
-        style={{ color: "var(--color-text-muted)" }}
+        className="px-4 py-3 text-right text-gray-500"
       >
         {p.invoice_count}
       </td>

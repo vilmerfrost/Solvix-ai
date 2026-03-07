@@ -71,13 +71,13 @@ export default function PriceMonitorLayout({ children }: { children: React.React
 
   return (
     <ToastProvider>
-      <div className="simplitics-theme dark flex h-screen overflow-hidden" style={{ background: "var(--color-bg)", color: "var(--color-text-primary)" }}>
+      <div className="simplitics-theme flex h-screen overflow-hidden bg-gray-50">
         {/* Sidebar */}
-        <aside className="w-64 border-r flex flex-col flex-shrink-0" style={{ backgroundColor: "#000000", borderColor: "var(--color-border)" }}>
+        <aside className="w-64 bg-white border-r border-gray-200 flex flex-col flex-shrink-0 z-10">
           {/* Logo area */}
-          <div className="p-6 border-b" style={{ borderColor: "var(--color-border)" }}>
-            <img src="/simplitics-logo.png" alt="Simplitics" className="h-8 w-auto object-contain" />
-            <p className="text-xs mt-1" style={{ color: "var(--color-text-muted)" }}>Prisövervakning</p>
+          <div className="p-6 border-b border-gray-100">
+            <img src="https://www.simplitics.se/logo.svg" alt="Simplitics" className="h-5" />
+            <p className="text-gray-400 text-[10px] mt-0.5 tracking-wide">Simplifying Analytics</p>
           </div>
           
           {/* Nav items */}
@@ -89,14 +89,13 @@ export default function PriceMonitorLayout({ children }: { children: React.React
                 <Link
                   key={item.href}
                   href={item.href}
-                  className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all"
-                  style={{
-                    backgroundColor: active ? "var(--color-accent-muted)" : "transparent",
-                    color: active ? "var(--color-accent-text)" : "var(--color-text-secondary)",
-                    borderLeft: active ? "2px solid var(--color-accent)" : "2px solid transparent",
-                  }}
+                  className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-all ${
+                    active 
+                      ? 'bg-pink-50 text-pink-600 font-medium border-l-2 border-pink-500 rounded-l-none' 
+                      : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50 border-l-2 border-transparent'
+                  }`}
                 >
-                  <Icon className="w-4 h-4" />
+                  <Icon className={`w-4 h-4 ${active ? 'text-pink-600' : 'text-gray-500'}`} />
                   {item.label}
                 </Link>
               );
@@ -104,22 +103,22 @@ export default function PriceMonitorLayout({ children }: { children: React.React
           </nav>
           
           {/* Language / User section at bottom */}
-          <div className="p-4 border-t flex flex-col gap-4" style={{ borderColor: "var(--color-border)" }}>
+          <div className="p-4 border-t border-gray-100 flex flex-col gap-4">
             <LanguageSwitcher />
             <div className="flex items-center gap-3">
-              <div className="w-8 h-8 rounded-full bg-gradient-to-r from-pink-500 to-fuchsia-500 flex items-center justify-center text-white text-sm font-bold">
+              <div className="w-8 h-8 rounded-full bg-pink-500 flex items-center justify-center text-white text-sm font-bold shadow-sm">
                 N
               </div>
               <div className="min-w-0">
-                <p className="text-sm text-white truncate">Niklas Elm</p>
-                <p className="text-xs truncate" style={{ color: "var(--color-text-muted)" }}>Simplitics</p>
+                <p className="text-sm text-gray-900 font-medium truncate">Niklas Elm</p>
+                <p className="text-xs text-gray-400 truncate">Simplitics</p>
               </div>
             </div>
           </div>
         </aside>
 
         {/* Page content */}
-        <main className="flex-1 overflow-auto bg-black">
+        <main className="flex-1 overflow-auto bg-gray-50">
           <div className="max-w-7xl mx-auto p-6 lg:p-8">
             {children}
           </div>

@@ -118,47 +118,36 @@ export default function AlertsPage() {
     <div className="space-y-6 max-w-5xl mx-auto">
       {/* Header */}
       <div>
-        <h1 className="text-2xl font-bold" style={{ color: "var(--color-text-primary)" }}>
+        <h1 className="text-2xl font-bold text-gray-900">
           {t("title")}
         </h1>
-        <p className="text-sm mt-0.5" style={{ color: "var(--color-text-muted)" }}>
+        <p className="text-sm mt-0.5 text-gray-500">
           {t("description")}
         </p>
       </div>
 
       {/* Tabs */}
       <div
-        className="flex gap-1 p-1 rounded-xl w-fit"
-        style={{ background: "var(--color-bg-secondary)" }}
+        className="flex gap-1 p-1 rounded-xl w-fit bg-gray-100"
       >
         {tabs.map((tab) => (
           <button
             key={tab.id}
             onClick={() => { setActiveTab(tab.id); setSelected(new Set()); }}
-            className="px-3 py-1.5 rounded-lg text-sm font-medium transition-all"
-            style={{
-              background: activeTab === tab.id ? "var(--color-bg-elevated)" : "transparent",
-              color:
-                activeTab === tab.id
-                  ? "var(--color-text-primary)"
-                  : "var(--color-text-muted)",
-              boxShadow: activeTab === tab.id ? "var(--shadow-sm)" : "none",
-            }}
+            className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-all ${
+              activeTab === tab.id
+                ? "bg-white text-gray-900 shadow-sm"
+                : "text-gray-500 hover:text-gray-900 hover:bg-gray-50"
+            }`}
           >
             {tab.label}
             {tabCounts[tab.id] !== undefined && (
               <span
-                className="ml-1.5 text-xs px-1.5 py-0.5 rounded-full"
-                style={{
-                  background:
-                    activeTab === tab.id
-                      ? "var(--color-accent-muted)"
-                      : "var(--color-bg-inset)",
-                  color:
-                    activeTab === tab.id
-                      ? "var(--color-accent)"
-                      : "var(--color-text-muted)",
-                }}
+                className={`ml-1.5 text-xs px-1.5 py-0.5 rounded-full ${
+                  activeTab === tab.id
+                    ? "bg-pink-50 text-pink-600"
+                    : "bg-gray-200 text-gray-500"
+                }`}
               >
                 {tabCounts[tab.id]}
               </span>
@@ -207,17 +196,13 @@ export default function AlertsPage() {
         </div>
       ) : filtered.length === 0 ? (
         <div
-          className="rounded-xl border p-12 text-center"
-          style={{
-            background: "var(--color-bg-secondary)",
-            borderColor: "var(--color-border)",
-          }}
+          className="bg-gray-50 rounded-xl border border-gray-200 p-12 text-center"
         >
-          <AlertTriangle className="w-10 h-10 mx-auto mb-3" style={{ color: "var(--color-text-muted)" }} />
-          <p className="font-medium text-sm" style={{ color: "var(--color-text-primary)" }}>
+          <AlertTriangle className="w-10 h-10 mx-auto mb-3 text-gray-400" />
+          <p className="font-medium text-sm text-gray-900">
             {t("emptyTitle")}
           </p>
-          <p className="text-xs mt-1" style={{ color: "var(--color-text-muted)" }}>
+          <p className="text-xs mt-1 text-gray-500">
             {t("emptyDescription")}
           </p>
         </div>
@@ -262,13 +247,7 @@ function AlertCard({
 
   return (
     <div
-      className="rounded-xl border p-4 transition-all"
-      style={{
-        background: "var(--color-bg-elevated)",
-        borderColor: selected ? "var(--color-accent)" : "var(--color-border)",
-        outline: selected ? "2px solid var(--color-accent)" : "none",
-        outlineOffset: -1,
-      }}
+      className={`bg-white rounded-xl border p-4 transition-all ${selected ? 'border-pink-500 ring-1 ring-pink-500' : 'border-gray-200 hover:border-pink-200 shadow-sm'}`}
     >
       <div className="flex flex-wrap items-start gap-3">
         {/* Checkbox (only for new alerts) */}
@@ -277,20 +256,18 @@ function AlertCard({
             type="checkbox"
             checked={selected}
             onChange={onToggleSelect}
-            className="mt-1 w-4 h-4 cursor-pointer rounded flex-shrink-0"
-            style={{ accentColor: "var(--color-accent)" }}
+            className="mt-1 w-4 h-4 cursor-pointer rounded flex-shrink-0 accent-pink-500"
           />
         )}
 
         {/* Icon */}
         <div
-          className="w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0"
-          style={{ background: increase ? "var(--color-error-bg)" : "var(--color-success-bg)" }}
+          className={`w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0 ${increase ? 'bg-red-50 text-red-500' : 'bg-emerald-50 text-emerald-500'}`}
         >
           {increase ? (
-            <TrendingUp className="w-4 h-4" style={{ color: "#ef4444" }} />
+            <TrendingUp className="w-4 h-4" />
           ) : (
-            <TrendingDown className="w-4 h-4" style={{ color: "#22c55e" }} />
+            <TrendingDown className="w-4 h-4" />
           )}
         </div>
 
@@ -298,31 +275,26 @@ function AlertCard({
         <div className="flex-1 min-w-0">
           <button onClick={onNavigate} className="text-left">
             <p
-              className="font-semibold text-sm hover:underline"
-              style={{ color: "var(--color-text-primary)" }}
+              className="font-semibold text-sm hover:underline text-gray-900"
             >
               {alert.product_name}
             </p>
           </button>
-          <p className="text-xs mt-0.5" style={{ color: "var(--color-text-muted)" }}>
+          <p className="text-xs mt-0.5 text-gray-500">
             {alert.supplier_name} · {formatDate(alert.new_invoice_date)}
           </p>
-          <p className="mt-1 text-xs" style={{ color: "var(--color-text-muted)" }}>
+          <p className="mt-1 text-xs text-gray-500">
             {t("changedBetween", {
               from: formatDate(alert.previous_invoice_date),
               to: formatDate(alert.new_invoice_date)
             })}
           </p>
           <div className="flex items-center flex-wrap gap-3 mt-2">
-            <span className="text-sm" style={{ color: "var(--color-text-secondary)" }}>
+            <span className="text-sm text-gray-500">
               {formatSEK(alert.previous_price)} → {formatSEK(alert.new_price)}
             </span>
             <span
-              className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold"
-              style={{
-                background: increase ? "var(--color-error-bg)" : "var(--color-success-bg)",
-                color: increase ? "var(--color-error)" : "var(--color-success)",
-              }}
+              className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold ${increase ? 'bg-red-50 text-red-500' : 'bg-emerald-50 text-emerald-500'}`}
             >
               {increase && <TrendingUp className="w-3 h-3" />}
               {!increase && <TrendingDown className="w-3 h-3" />}
@@ -333,7 +305,7 @@ function AlertCard({
             {alert.previous_document_id ? (
               <Link
                 href={`/price-monitor/review/${alert.previous_document_id}`}
-                style={{ color: "var(--color-accent)" }}
+                className="text-pink-500 hover:text-pink-600 hover:underline"
               >
                 {t("viewPreviousInvoice")}
               </Link>
@@ -341,7 +313,7 @@ function AlertCard({
             {alert.new_document_id ? (
               <Link
                 href={`/price-monitor/review/${alert.new_document_id}`}
-                style={{ color: "var(--color-accent)" }}
+                className="text-pink-500 hover:text-pink-600 hover:underline"
               >
                 {t("viewNewInvoice")}
               </Link>
@@ -349,11 +321,7 @@ function AlertCard({
           </div>
           {alert.notes && (
             <p
-              className="mt-2 text-xs px-2.5 py-1.5 rounded-md"
-              style={{
-                background: "var(--color-bg-secondary)",
-                color: "var(--color-text-secondary)",
-              }}
+              className="mt-2 text-xs px-2.5 py-1.5 rounded-md bg-gray-50 text-gray-600 border border-gray-100"
             >
               {alert.notes}
             </p>

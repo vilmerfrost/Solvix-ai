@@ -36,19 +36,19 @@ export function SpendBarChart({ suppliers }: SpendBarChartProps) {
   return (
     <ResponsiveContainer width="100%" height={350}>
       <BarChart data={topSuppliers} layout="vertical" margin={{ left: 120 }}>
-        <CartesianGrid strokeDasharray="3 3" stroke="#27272A" horizontal={false} />
-        <XAxis type="number" tickFormatter={(value: number) => formatSEK(value)} stroke="#71717A" tick={{ fill: '#A1A1AA' }} tickLine={false} axisLine={false} />
-        <YAxis type="category" dataKey="name" width={110} stroke="#71717A" tick={{ fill: '#A1A1AA' }} tickLine={false} axisLine={false} />
+        <CartesianGrid strokeDasharray="3 3" stroke="#F3F4F6" horizontal={false} />
+        <XAxis type="number" tickFormatter={(value: number) => formatSEK(value)} stroke="#E5E7EB" tick={{ fill: '#6B7280' }} tickLine={false} axisLine={false} />
+        <YAxis type="category" dataKey="name" width={110} stroke="#E5E7EB" tick={{ fill: '#6B7280' }} tickLine={false} axisLine={false} />
         <Tooltip 
           formatter={(value: number) => formatSEK(value)} 
           contentStyle={{
-            backgroundColor: '#18181B',
-            border: '1px solid #3F3F46',
+            backgroundColor: '#FFFFFF',
+            border: '1px solid #E5E7EB',
             borderRadius: '8px',
-            color: '#FFFFFF',
+            color: '#111827',
           }}
         />
-        <Bar dataKey="spend" fill="#D946EF" radius={[0, 4, 4, 0]} />
+        <Bar dataKey="spend" fill="#EC4899" radius={[0, 4, 4, 0]} />
       </BarChart>
     </ResponsiveContainer>
   );

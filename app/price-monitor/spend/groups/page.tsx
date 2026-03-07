@@ -39,6 +39,7 @@ export default function ProductGroupsPage() {
   const [modal, setModal] = useState<GroupModalState | null>(null);
   const [groupName, setGroupName] = useState("");
   const [categoryId, setCategoryId] = useState("");
+  const [assignProductId, setAssignProductId] = useState("");
 
   useEffect(() => {
     load();
@@ -106,12 +107,14 @@ export default function ProductGroupsPage() {
   function openCreateModal() {
     setGroupName("");
     setCategoryId("");
+    setAssignProductId("");
     setModal({ mode: "create", group: null });
   }
 
   function openAssignModal(group: ProductGroup) {
     setGroupName(group.name);
     setCategoryId(group.category_id ?? "");
+    setAssignProductId("");
     setModal({ mode: "assign", group });
   }
 
@@ -138,7 +141,14 @@ export default function ProductGroupsPage() {
       return;
     }
 
-    if (selectedProductIds.length === 0) {
+    const productIdsToAssign =
+      selectedProductIds.length > 0
+        ? selectedProductIds
+        : modal.mode === "assign" && assignProductId
+          ? [assignProductId]
+          : [];
+
+    if (productIdsToAssign.length === 0) {
       setError("Välj minst en produkt att lägga till.");
       return;
     }
@@ -147,9 +157,10 @@ export default function ProductGroupsPage() {
     setError("");
 
     try {
-      await createProductGroup(name, categoryId || null, selectedProductIds, session);
+      await createProductGroup(name, categoryId || null, productIdsToAssign, session);
       setModal(null);
       setSelectedProductIds([]);
+      setAssignProductId("");
       await load();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Kunde inte spara produktgruppen.");
@@ -349,23 +360,43 @@ export default function ProductGroupsPage() {
                 </div>
               )}
 
-              <select
-                value={categoryId}
-                onChange={(e) => setCategoryId(e.target.value)}
-                className="w-full rounded-lg border px-3 py-2 text-sm"
-                style={{
-                  background: "var(--color-bg)",
-                  borderColor: "var(--color-border)",
-                  color: "var(--color-text-primary)",
-                }}
-              >
-                <option value="">Ingen kategori</option>
-                {categories.map((category) => (
-                  <option key={category.id} value={category.id}>
-                    {category.name}
-                  </option>
-                ))}
-              </select>
+              {modal.mode === "create" ? (
+                <select
+                  value={categoryId}
+                  onChange={(e) => setCategoryId(e.target.value)}
+                  className="w-full rounded-lg border px-3 py-2 text-sm"
+                  style={{
+                    background: "var(--color-bg)",
+                    borderColor: "var(--color-border)",
+                    color: "var(--color-text-primary)",
+                  }}
+                >
+                  <option value="">Ingen kategori</option>
+                  {categories.map((category) => (
+                    <option key={category.id} value={category.id}>
+                      {category.name}
+                    </option>
+                  ))}
+                </select>
+              ) : (
+                <select
+                  value={assignProductId}
+                  onChange={(e) => setAssignProductId(e.target.value)}
+                  className="w-full rounded-lg border px-3 py-2 text-sm"
+                  style={{
+                    background: "var(--color-bg)",
+                    borderColor: "var(--color-border)",
+                    color: "var(--color-text-primary)",
+                  }}
+                >
+                  <option value="">Välj produkt att lägga till</option>
+                  {filteredUnassigned.map((product) => (
+                    <option key={product.product_id} value={product.product_id}>
+                      {product.product_name} - {product.supplier_name}
+                    </option>
+                  ))}
+                </select>
+              )}
 
               <div className="flex justify-end gap-2">
                 <Button variant="secondary" onClick={() => setModal(null)}>

@@ -49,26 +49,26 @@ export function SpendTrendChart({ monthly }: SpendTrendChartProps) {
       <AreaChart data={monthlyData}>
         <defs>
           <linearGradient id="spendGrad" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="5%" stopColor="#D946EF" stopOpacity={0.3} />
-            <stop offset="95%" stopColor="#D946EF" stopOpacity={0} />
+            <stop offset="5%" stopColor="#EC4899" stopOpacity={0.2} />
+            <stop offset="95%" stopColor="#EC4899" stopOpacity={0} />
           </linearGradient>
         </defs>
-        <CartesianGrid strokeDasharray="3 3" stroke="#27272A" vertical={false} />
-        <XAxis dataKey="month" stroke="#71717A" tick={{ fill: '#A1A1AA' }} tickLine={false} axisLine={false} />
-        <YAxis tickFormatter={(value: number) => `${(value / 1000).toFixed(0)}k`} stroke="#71717A" tick={{ fill: '#A1A1AA' }} tickLine={false} axisLine={false} />
+        <CartesianGrid strokeDasharray="3 3" stroke="#F3F4F6" vertical={false} />
+        <XAxis dataKey="month" stroke="#E5E7EB" tick={{ fill: '#6B7280' }} tickLine={false} axisLine={false} />
+        <YAxis tickFormatter={(value: number) => `${(value / 1000).toFixed(0)}k`} stroke="#E5E7EB" tick={{ fill: '#6B7280' }} tickLine={false} axisLine={false} />
         <Tooltip 
           formatter={(value: number) => formatSEK(value)} 
           contentStyle={{
-            backgroundColor: '#18181B',
-            border: '1px solid #3F3F46',
+            backgroundColor: '#FFFFFF',
+            border: '1px solid #E5E7EB',
             borderRadius: '8px',
-            color: '#FFFFFF',
+            color: '#111827',
           }}
         />
         <Area
           type="monotone"
           dataKey="spend"
-          stroke="#D946EF"
+          stroke="#EC4899"
           strokeWidth={2}
           fill="url(#spendGrad)"
         />

@@ -11,14 +11,14 @@ import {
 import { formatSEK, type SpendByCategory } from "@/lib/price-monitor-api";
 
 const FALLBACK_COLORS = [
-  '#D946EF',  // fuchsia-500
-  '#EC4899',  // pink-500
+  '#EC4899',  // pink-500 (primary)
   '#8B5CF6',  // violet-500
   '#06B6D4',  // cyan-500
   '#F59E0B',  // amber-500
   '#10B981',  // emerald-500
   '#F472B6',  // pink-400
   '#A78BFA',  // violet-400
+  '#22D3EE',  // cyan-400
 ];
 
 interface SpendDonutChartProps {
@@ -65,10 +65,10 @@ export function SpendDonutChart({ categories }: SpendDonutChartProps) {
         <Tooltip 
           formatter={(value: number) => formatSEK(value)} 
           contentStyle={{
-            backgroundColor: '#18181B',
-            border: '1px solid #3F3F46',
+            backgroundColor: '#FFFFFF',
+            border: '1px solid #E5E7EB',
             borderRadius: '8px',
-            color: '#FFFFFF',
+            color: '#111827',
           }}
         />
         <Legend />

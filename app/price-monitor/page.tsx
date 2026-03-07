@@ -125,26 +125,24 @@ export default function PriceMonitorDashboard() {
       label: t("trackedProducts"),
       value: overview?.product_count ?? 0,
       icon: Package,
-      color: "var(--color-accent)",
+      alert: false,
     },
     {
       label: t("suppliers"),
       value: overview?.supplier_count ?? 0,
       icon: Truck,
-      color: "var(--color-info)",
+      alert: false,
     },
     {
       label: t("openAlerts"),
       value: overview?.open_alerts ?? 0,
       icon: AlertTriangle,
-      color: overview && overview.open_alerts > 0 ? "#ef4444" : "var(--color-success)",
       alert: (overview?.open_alerts ?? 0) > 0,
     },
     {
       label: t("agreementDeviations"),
       value: overview?.open_deviations ?? 0,
       icon: FileText,
-      color: overview && overview.open_deviations > 0 ? "#ef4444" : "var(--color-accent)",
       alert: (overview?.open_deviations ?? 0) > 0,
     },
   ];
@@ -169,22 +167,22 @@ export default function PriceMonitorDashboard() {
       {/* Page header */}
       <div className="flex items-center justify-between flex-wrap gap-3">
         <div>
-          <h1 className="text-2xl font-bold" style={{ color: "var(--color-text-primary)" }}>
+          <h1 className="text-2xl font-bold text-gray-900">
             {t("title")}
           </h1>
-          <p className="text-sm mt-0.5" style={{ color: "var(--color-text-muted)" }}>
+          <p className="text-sm mt-0.5 text-gray-500">
             {t("description")}
           </p>
         </div>
         <div className="flex gap-2">
           {session && (
-            <Button
-              variant="primary"
-              icon={<Upload className="w-4 h-4" />}
+            <button
+              className="bg-pink-500 hover:bg-pink-600 text-white px-5 py-2.5 rounded-full font-medium transition-all shadow-sm flex items-center gap-2"
               onClick={() => setShowUpload(true)}
             >
+              <Upload className="w-4 h-4" />
               {t("uploadInvoice")}
-            </Button>
+            </button>
           )}
         </div>
       </div>
@@ -196,27 +194,22 @@ export default function PriceMonitorDashboard() {
           return (
             <div
               key={s.label}
-              className="rounded-xl border p-5"
-              style={{
-                background: "var(--color-bg-elevated)",
-                borderColor: s.alert ? "#fca5a5" : "var(--color-border)",
-              }}
+              className={`bg-white border rounded-xl p-6 ${s.alert ? 'border-red-300' : 'border-gray-200'} hover:border-pink-200 hover:shadow-md transition-all`}
             >
               {loading ? (
                 <Skeleton className="h-16" />
               ) : (
                 <div className="flex items-center gap-4">
                   <div
-                    className="w-12 h-12 rounded-xl flex items-center justify-center"
-                    style={{ background: `${s.color}18` }}
+                    className={`w-12 h-12 rounded-lg flex items-center justify-center ${s.alert ? 'bg-red-50 text-red-500' : 'bg-pink-50 text-pink-500'}`}
                   >
-                    <Icon className="w-6 h-6" style={{ color: s.color }} />
+                    <Icon className="w-6 h-6" />
                   </div>
                   <div>
-                    <p className="text-2xl font-bold" style={{ color: s.color }}>
+                    <p className={`text-2xl font-bold ${s.alert ? 'text-red-500' : 'text-gray-900'}`}>
                       {s.value}
                     </p>
-                    <p className="text-sm mt-0.5" style={{ color: "var(--color-text-muted)" }}>
+                    <p className="text-sm mt-0.5 text-gray-500">
                       {s.label}
                     </p>
                   </div>
@@ -240,13 +233,12 @@ export default function PriceMonitorDashboard() {
       {/* Recent alerts */}
       <section>
         <div className="flex items-center justify-between mb-4">
-          <h2 className="font-semibold text-base" style={{ color: "var(--color-text-primary)" }}>
+          <h2 className="font-semibold text-base text-gray-900">
             {t("recentAlerts")}
           </h2>
           <button
             onClick={() => router.push("/price-monitor/alerts")}
-            className="flex items-center gap-1 text-xs"
-            style={{ color: "var(--color-accent)" }}
+            className="flex items-center gap-1 text-xs text-pink-500 hover:text-pink-600 font-medium transition-all"
           >
             {t("showAll")} <ArrowRight className="w-3.5 h-3.5" />
           </button>
@@ -258,22 +250,15 @@ export default function PriceMonitorDashboard() {
           </div>
         ) : !overview?.recent_alerts?.length ? (
           <div
-            className="rounded-xl border p-8 text-center"
-            style={{
-              background: "var(--color-bg-secondary)",
-              borderColor: "var(--color-border)",
-            }}
+            className="bg-white rounded-xl border border-gray-200 p-8 text-center"
           >
-            <AlertTriangle className="w-8 h-8 mx-auto mb-2" style={{ color: "var(--color-text-muted)" }} />
-            <p className="text-sm" style={{ color: "var(--color-text-muted)" }}>
+            <AlertTriangle className="w-8 h-8 mx-auto mb-2 text-gray-400" />
+            <p className="text-sm text-gray-500">
               {t("noAlerts")}
             </p>
           </div>
         ) : (
-          <div
-            className="rounded-xl border overflow-hidden"
-            style={{ borderColor: "var(--color-border)" }}
-          >
+          <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
             {overview.recent_alerts.slice(0, 10).map((alert: Alert, idx: number) => (
               <AlertRow
                 key={alert.id}
@@ -294,13 +279,12 @@ export default function PriceMonitorDashboard() {
 
       <section>
         <div className="flex items-center justify-between mb-4">
-          <h2 className="font-semibold text-base" style={{ color: "var(--color-text-primary)" }}>
+          <h2 className="font-semibold text-base text-gray-900">
             {t("recentAgreementDeviations")}
           </h2>
           <button
             onClick={() => router.push("/price-monitor/agreements/deviations")}
-            className="flex items-center gap-1 text-xs"
-            style={{ color: "var(--color-accent)" }}
+            className="flex items-center gap-1 text-xs text-pink-500 hover:text-pink-600 font-medium transition-all"
           >
             {t("showAll")} <ArrowRight className="w-3.5 h-3.5" />
           </button>
@@ -314,22 +298,15 @@ export default function PriceMonitorDashboard() {
           </div>
         ) : recentDeviations.length === 0 ? (
           <div
-            className="rounded-xl border p-8 text-center"
-            style={{
-              background: "var(--color-bg-secondary)",
-              borderColor: "var(--color-border)",
-            }}
+            className="bg-white rounded-xl border border-gray-200 p-8 text-center"
           >
-            <FileText className="w-8 h-8 mx-auto mb-2" style={{ color: "var(--color-text-muted)" }} />
-            <p className="text-sm" style={{ color: "var(--color-text-muted)" }}>
+            <FileText className="w-8 h-8 mx-auto mb-2 text-gray-400" />
+            <p className="text-sm text-gray-500">
               {t("noDeviations")}
             </p>
           </div>
         ) : (
-          <div
-            className="rounded-xl border overflow-hidden"
-            style={{ borderColor: "var(--color-border)" }}
-          >
+          <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
             {recentDeviations.slice(0, 5).map((deviation, idx) => (
               <DeviationOverviewRow
                 key={deviation.id}
@@ -346,7 +323,7 @@ export default function PriceMonitorDashboard() {
 
       {/* Quick actions */}
       <section>
-        <h2 className="font-semibold text-base mb-4" style={{ color: "var(--color-text-primary)" }}>
+        <h2 className="font-semibold text-base mb-4 text-gray-900">
           {t("quickActions")}
         </h2>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -398,42 +375,37 @@ function AlertRow({
   return (
     <button
       onClick={onClick}
-      className="w-full flex items-center gap-4 px-5 py-3.5 text-left transition-colors hover:bg-opacity-50"
-      style={{
-        background: "var(--color-bg-elevated)",
-        borderBottom: last ? "none" : `1px solid var(--color-border)`,
-      }}
+      className={`w-full flex items-center gap-4 px-5 py-3.5 text-left transition-colors hover:bg-pink-50 ${last ? '' : 'border-b border-gray-100'}`}
     >
       <div
-        className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0"
-        style={{ background: increase ? "var(--color-error-bg)" : "var(--color-success-bg)" }}
+        className={`w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 ${increase ? 'bg-red-50' : 'bg-emerald-50'}`}
       >
         {increase ? (
-          <TrendingUp className="w-4 h-4" style={{ color: "#ef4444" }} />
+          <TrendingUp className="w-4 h-4 text-red-500" />
         ) : (
-          <TrendingDown className="w-4 h-4" style={{ color: "#22c55e" }} />
+          <TrendingDown className="w-4 h-4 text-emerald-500" />
         )}
       </div>
 
       <div className="flex-1 min-w-0">
-        <p className="text-sm font-medium truncate" style={{ color: "var(--color-text-primary)" }}>
+        <p className="text-sm font-medium truncate text-gray-900">
           {alert.product_name}
         </p>
-        <p className="text-xs" style={{ color: "var(--color-text-muted)" }}>
+        <p className="text-xs text-gray-500">
           {alert.supplier_name} · {formatDate(alert.new_invoice_date)}
         </p>
       </div>
 
       <div className="text-right flex-shrink-0">
-        <p className="text-sm font-semibold" style={{ color: increase ? "#ef4444" : "#22c55e" }}>
+        <p className={`text-sm font-semibold ${increase ? 'text-red-500' : 'text-emerald-500'}`}>
           {formatPercent(alert.change_percent)}
         </p>
-        <p className="text-xs" style={{ color: "var(--color-text-muted)" }}>
+        <p className="text-xs text-gray-500">
           {formatSEK(alert.previous_price)} → {formatSEK(alert.new_price)}
         </p>
       </div>
 
-      <ArrowRight className="w-4 h-4 flex-shrink-0" style={{ color: "var(--color-text-muted)" }} />
+      <ArrowRight className="w-4 h-4 flex-shrink-0 text-gray-400" />
     </button>
   );
 }
@@ -452,23 +424,18 @@ function QuickAction({
   return (
     <button
       onClick={onClick}
-      className="flex items-center gap-4 rounded-xl border p-5 text-left transition-all hover:shadow-md"
-      style={{
-        background: "var(--color-bg-elevated)",
-        borderColor: "var(--color-border)",
-      }}
+      className="flex items-center gap-4 bg-white rounded-xl border border-gray-200 p-5 text-left transition-all hover:border-pink-200 hover:shadow-md"
     >
       <div
-        className="w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0"
-        style={{ background: "var(--color-accent-muted)", color: "var(--color-accent)" }}
+        className="w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0 bg-pink-50 text-pink-500"
       >
         {icon}
       </div>
       <div className="min-w-0">
-        <p className="text-sm font-semibold" style={{ color: "var(--color-text-primary)" }}>
+        <p className="text-sm font-semibold text-gray-900">
           {title}
         </p>
-        <p className="text-xs mt-0.5" style={{ color: "var(--color-text-muted)" }}>
+        <p className="text-xs mt-0.5 text-gray-500">
           {desc}
         </p>
       </div>
@@ -487,10 +454,10 @@ function DeviationOverviewRow({
 }) {
   const t = useTranslations("dashboard");
   const typeColors: Record<AgreementDeviation["deviation_type"], { bg: string; text: string }> = {
-    wrong_supplier: { bg: "var(--color-error-bg)", text: "var(--color-error)" },
-    price_above_agreed: { bg: "var(--color-warning-bg)", text: "var(--color-warning)" },
-    no_discount_applied: { bg: "rgba(202, 138, 4, 0.1)", text: "#ca8a04" },
-    expired_agreement: { bg: "rgba(107, 114, 128, 0.1)", text: "var(--color-text-muted)" },
+    wrong_supplier: { bg: "bg-red-50", text: "text-red-600" },
+    price_above_agreed: { bg: "bg-amber-50", text: "text-amber-600" },
+    no_discount_applied: { bg: "bg-amber-50", text: "text-amber-600" },
+    expired_agreement: { bg: "bg-gray-50", text: "text-gray-500" },
   };
 
   const typeLabels: Record<AgreementDeviation["deviation_type"], string> = {
@@ -505,49 +472,43 @@ function DeviationOverviewRow({
   return (
     <button
       onClick={onClick}
-      className="w-full flex items-center gap-4 px-5 py-3.5 text-left"
-      style={{
-        background: "var(--color-bg-elevated)",
-        borderBottom: last ? "none" : `1px solid var(--color-border)`,
-      }}
+      className={`w-full flex items-center gap-4 px-5 py-3.5 text-left hover:bg-pink-50 transition-colors ${last ? '' : 'border-b border-gray-100'}`}
     >
       <div
-        className="flex h-9 w-9 items-center justify-center rounded-lg flex-shrink-0"
-        style={{ background: typeStyle.bg, color: typeStyle.text }}
+        className={`flex h-9 w-9 items-center justify-center rounded-lg flex-shrink-0 ${typeStyle.bg} ${typeStyle.text}`}
       >
         <FileText className="h-4 w-4" />
       </div>
 
       <div className="min-w-0 flex-1">
         <div className="flex flex-wrap items-center gap-2">
-          <p className="text-sm font-medium" style={{ color: "var(--color-text-primary)" }}>
+          <p className="text-sm font-medium text-gray-900">
             {deviation.description}
           </p>
           <span
-            className="rounded-full px-2 py-0.5 text-xs font-medium"
-            style={{ background: typeStyle.bg, color: typeStyle.text }}
+            className={`rounded-full px-2 py-0.5 text-xs font-medium border border-opacity-20 ${typeStyle.bg} ${typeStyle.text}`}
           >
             {typeLabels[deviation.deviation_type]}
           </span>
         </div>
-        <p className="text-xs mt-1" style={{ color: "var(--color-text-muted)" }}>
+        <p className="text-xs mt-1 text-gray-500">
           {deviation.agreements.name}
           {deviation.invoice_date ? ` · ${formatDate(deviation.invoice_date)}` : ""}
         </p>
       </div>
 
       <div className="text-right flex-shrink-0">
-        <p className="text-sm font-semibold" style={{ color: "#ef4444" }}>
+        <p className="text-sm font-semibold text-red-500">
           {deviation.potential_savings != null
             ? formatSEK(deviation.potential_savings)
             : "–"}
         </p>
-        <p className="text-xs" style={{ color: "var(--color-text-muted)" }}>
+        <p className="text-xs text-gray-500">
           {t("possibleSavings")}
         </p>
       </div>
 
-      <ArrowRight className="w-4 h-4 flex-shrink-0" style={{ color: "var(--color-text-muted)" }} />
+      <ArrowRight className="w-4 h-4 flex-shrink-0 text-gray-400" />
     </button>
   );
 }

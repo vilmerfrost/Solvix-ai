@@ -30,6 +30,7 @@ import {
   formatCurrencyValue,
   formatPercent,
   formatSEK,
+  getExchangeRate,
   getPdfPreviewUrl,
   processInvoice,
   type ExtractedInvoiceData,
@@ -90,6 +91,19 @@ function rawToFormItem(item: ExtractedInvoiceLineItem): LineItemForm {
 function convertToSEK(amount: number | null, rate: number): number | null {
   if (amount == null) return null;
   return Math.round(amount * rate * 100) / 100;
+}
+
+/** For non-SEK currencies, rate must be > 0 and != 1. Fetches rate if missing. */
+async function resolveExchangeRate(
+  currency: string,
+  currentRate: number | null | undefined
+): Promise<number> {
+  const norm = currency?.toUpperCase();
+  if (norm === "SEK") return 1;
+  const rate = currentRate ?? 0;
+  if (rate > 0 && rate !== 1) return rate;
+  const { rate: fetched } = await getExchangeRate(norm || "EUR");
+  return fetched > 0 ? fetched : 1;
 }
 
 function isIncludedLineItem(item: LineItemForm): boolean {
@@ -517,7 +531,13 @@ export function InvoiceUploadFlow({
     const targetItems = args?.items ?? lineItems;
     const targetForm = args?.invoiceData ?? formData;
     const targetCurrency = args?.selectedCurrency ?? currency;
-    const targetRate = args?.selectedRate ?? exchangeRate;
+    const rawRate = args?.selectedRate ?? exchangeRate;
+    const targetRate = await resolveExchangeRate(targetCurrency, rawRate);
+    if (targetCurrency !== "SEK" && targetRate !== rawRate) {
+      setExchangeRate(targetRate);
+      setRateSource("auto");
+      setRateFetchedAt(new Date().toISOString());
+    }
     const targetResult = args?.result ?? processResult;
     const targetDbItems = args?.dbItems ?? existingDbItems;
     const normalizedItems = collapseBundledLineItems(targetItems, targetDbItems).items;
