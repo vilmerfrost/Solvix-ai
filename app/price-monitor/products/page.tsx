@@ -12,6 +12,7 @@ import {
   ChevronUp,
   ChevronDown,
   Trash2,
+  Merge,
 } from "lucide-react";
 import { Button, Skeleton, useToast } from "@/components/ui/index";
 import { AiSuggestions } from "@/components/price-monitor/ai-suggestions";
@@ -56,6 +57,9 @@ function ProductsPageContent() {
   const [suggestions, setSuggestions] = useState<AiGroupSuggestion[]>([]);
   const [selectedProductIds, setSelectedProductIds] = useState<string[]>([]);
   const [deletingSelected, setDeletingSelected] = useState(false);
+  const [showMergeDialog, setShowMergeDialog] = useState(false);
+  const [mergeName, setMergeName] = useState("");
+  const [merging, setMerging] = useState(false);
 
   const load = useCallback(async () => {
     const supabase = getSupabaseBrowserClient();
@@ -205,6 +209,48 @@ function ProductsPageContent() {
     }
   }
 
+  async function handleMergeSelected() {
+    if (selectedProductIds.length < 2) return;
+
+    const name = mergeName.trim();
+    const keepId = selectedProductIds[0];
+    const mergeIds = selectedProductIds.slice(1);
+
+    // Fall back to the kept product's current name if user left the field empty
+    const defaultName =
+      products.find((p) => p.product_id === keepId)?.product_name ?? "";
+
+    setMerging(true);
+    setError("");
+
+    try {
+      const response = await fetch("/api/price-monitor/products/merge", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          keepProductId: keepId,
+          mergeProductIds: mergeIds,
+          newName: name || defaultName,
+        }),
+      });
+      const body = await response.json().catch(() => ({}));
+
+      if (!response.ok) {
+        throw new Error(body?.error || t("mergeError"));
+      }
+
+      addToast({ type: "success", title: t("mergeSuccess") });
+      setSelectedProductIds([]);
+      setShowMergeDialog(false);
+      setMergeName("");
+      await load();
+    } catch (e) {
+      setError(e instanceof Error ? e.message : t("mergeError"));
+    } finally {
+      setMerging(false);
+    }
+  }
+
   async function handleAcceptSuggestion(suggestion: AiGroupSuggestion) {
     if (!session) return;
 
@@ -349,6 +395,20 @@ function ProductsPageContent() {
         >
           {t("deleteSelected", { count: selectedProductIds.length })}
         </Button>
+        {selectedProductIds.length >= 2 && (
+          <Button
+            variant="secondary"
+            icon={<Merge className="w-4 h-4" />}
+            onClick={() => {
+              const defaultName =
+                products.find((p) => p.product_id === selectedProductIds[0])?.product_name ?? "";
+              setMergeName(defaultName);
+              setShowMergeDialog(true);
+            }}
+          >
+            {t("mergeSelected", { count: selectedProductIds.length })}
+          </Button>
+        )}
       </div>
 
       <AiSuggestions
@@ -441,6 +501,82 @@ function ProductsPageContent() {
           onClose={() => setShowUpload(false)}
           onProcessed={() => { setShowUpload(false); load(); }}
         />
+      )}
+
+      {/* Merge dialog */}
+      {showMergeDialog && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+          <div
+            className="w-full max-w-md rounded-2xl border p-6 shadow-2xl"
+            style={{
+              background: "var(--color-bg-elevated)",
+              borderColor: "var(--color-border)",
+            }}
+          >
+            <h2 className="text-base font-semibold mb-1" style={{ color: "var(--color-text-primary)" }}>
+              {t("mergeTitle")}
+            </h2>
+            <p className="text-sm mb-4" style={{ color: "var(--color-text-muted)" }}>
+              {t("mergeDescription", { count: selectedProductIds.length })}
+            </p>
+
+            <div className="space-y-2 mb-4 max-h-40 overflow-y-auto">
+              {selectedProductIds.map((id, idx) => {
+                const prod = products.find((p) => p.product_id === id);
+                return (
+                  <div key={id} className="flex items-center gap-2 text-sm">
+                    <span
+                      className="inline-flex items-center justify-center w-5 h-5 rounded-full text-xs font-medium"
+                      style={{ background: idx === 0 ? "var(--color-accent)" : "var(--color-bg-secondary)", color: idx === 0 ? "#fff" : "var(--color-text-muted)" }}
+                    >
+                      {idx === 0 ? "✓" : "→"}
+                    </span>
+                    <span style={{ color: idx === 0 ? "var(--color-text-primary)" : "var(--color-text-muted)" }}>
+                      {prod?.product_name ?? id}
+                      {idx === 0 && (
+                        <span className="ml-1.5 text-xs" style={{ color: "var(--color-accent)" }}>
+                          {t("mergeKept")}
+                        </span>
+                      )}
+                    </span>
+                  </div>
+                );
+              })}
+            </div>
+
+            <label className="block text-xs font-medium mb-1" style={{ color: "var(--color-text-muted)" }}>
+              {t("mergeNameLabel")}
+            </label>
+            <input
+              className="w-full rounded-lg border px-3 py-2 text-sm mb-5 outline-none"
+              style={{
+                background: "var(--color-bg)",
+                borderColor: "var(--color-border)",
+                color: "var(--color-text-primary)",
+              }}
+              value={mergeName}
+              onChange={(e) => setMergeName(e.target.value)}
+              placeholder={products.find((p) => p.product_id === selectedProductIds[0])?.product_name ?? ""}
+            />
+
+            <div className="flex justify-end gap-2">
+              <Button
+                variant="secondary"
+                onClick={() => { setShowMergeDialog(false); setMergeName(""); }}
+              >
+                {t("mergeCancel")}
+              </Button>
+              <Button
+                variant="primary"
+                icon={<Merge className="w-4 h-4" />}
+                loading={merging}
+                onClick={handleMergeSelected}
+              >
+                {t("mergeConfirm")}
+              </Button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );
